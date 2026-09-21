@@ -14,50 +14,70 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid))
           .data.isAdmin == true;
     }
+    function currentUserPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
 
     // ═══════════════════════════════════════════════════════
-    // REPORTS — any user can create, only admins can read/update
+    // INVENTORY — with viewers subcollection
+    // ═══════════════════════════════════════════════════════
+    match /Inventory/{itemId} {
+      allow read: if isSignedIn();
+
+      // Only the seller can create a new product
+      allow create: if isSignedIn()
+                    && request.resource.data.sellers_ref == currentUserPath();
+
+      // Seller can edit own; admin can edit any
+      allow update: if isSignedIn()
+                    && (resource.data.sellers_ref == currentUserPath()
+                        || isAdmin());
+
+      // Seller can delete own; admin can delete any
+      allow delete: if isSignedIn()
+                    && (resource.data.sellers_ref == currentUserPath()
+                        || isAdmin());
+
+      // ─── UNIQUE VIEWERS subcollection ───
+      match /viewers/{viewerId} {
+        // Anyone signed in can register their own view
+        allow create: if isSignedIn()
+                      && viewerId == request.auth.uid
+                      && request.resource.data.user_ref == currentUserPath();
+
+        // Viewers are read-only after creation (nobody can change)
+        allow read: if isAdmin();
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // REPORTS — any user can create; only admins can read/update
     // ═══════════════════════════════════════════════════════
     match /reports/{reportId} {
       allow create: if isSignedIn()
-                    && request.resource.data.reporter_ref ==
-                        /databases/$(database)/documents/users/$(request.auth.uid)
+                    && request.resource.data.reporter_ref == currentUserPath()
                     && request.resource.data.status == 'pending';
 
       allow read: if isAdmin()
-                  || (isSignedIn() &&
-                      resource.data.reporter_ref ==
-                        /databases/$(database)/documents/users/$(request.auth.uid));
+                  || (isSignedIn()
+                      && resource.data.reporter_ref == currentUserPath());
 
       allow update, delete: if isAdmin();
     }
 
     // ═══════════════════════════════════════════════════════
-    // USERS — anyone signed in can read; owner can write
+    // USERS
     // ═══════════════════════════════════════════════════════
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId)
-                    || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
     }
 
     // ═══════════════════════════════════════════════════════
-    // INVENTORY — anyone signed in can read; seller writes own
-    // ═══════════════════════════════════════════════════════
-    match /Inventory/{itemId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn()
-                    && request.resource.data.sellers_ref ==
-                        /databases/$(database)/documents/users/$(request.auth.uid);
-      allow update, delete: if isSignedIn()
-                    && (resource.data.sellers_ref ==
-                          /databases/$(database)/documents/users/$(request.auth.uid)
-                        || isAdmin());
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // SUPPORT CHATS — user reads/writes own; admins read/write all
+    // SUPPORT CHATS
     // ═══════════════════════════════════════════════════════
     match /support_chats/{chatId} {
       allow read, write: if isSignedIn()
@@ -70,18 +90,27 @@ service cloud.firestore {
     }
 
     // ═══════════════════════════════════════════════════════
-    // NOTIFICATIONS — user reads own; system writes
+    // NOTIFICATIONS
     // ═══════════════════════════════════════════════════════
     match /notifications/{notifId} {
       allow read: if isSignedIn()
-                    && (resource.data.user_ref ==
-                          /databases/$(database)/documents/users/$(request.auth.uid)
+                    && (resource.data.user_ref == currentUserPath()
                         || isAdmin());
       allow write: if isAdmin() || isSignedIn();
     }
 
     // ═══════════════════════════════════════════════════════
-    // EVERYTHING ELSE — signed-in users get normal access
+    // SEARCH HISTORY — per user
+    // ═══════════════════════════════════════════════════════
+    match /search_history/{historyId} {
+      allow read, write: if isSignedIn()
+                    && (resource.data.user_ref == currentUserPath()
+                        || request.resource.data.user_ref == currentUserPath()
+                        || isAdmin());
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // EVERYTHING ELSE
     // ═══════════════════════════════════════════════════════
     match /{document=**} {
       allow read, write: if isSignedIn();

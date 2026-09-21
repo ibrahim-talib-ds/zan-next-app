@@ -46,6 +46,41 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   Color get _muted  => _isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
   Color get _border => _isDark ? const Color(0xFF2A2A2C) : const Color(0xFFE5E7EB);
 
+
+  // ═══════════════════════════════════════════════════════════
+  // UNIQUE VIEW TRACKING
+  // Increments view_count only the FIRST time this user
+  // views this product. Uses a subcollection `viewers`.
+  // ═══════════════════════════════════════════════════════════
+  Future<void> _registerView() async {
+    if (widget.inventoryRef == null) return;
+    if (currentUserReference == null) return;
+
+    try {
+      final viewerRef = widget.inventoryRef!
+          .collection('viewers')
+          .doc(currentUserReference!.id);
+
+      final viewerSnap = await viewerRef.get();
+      if (viewerSnap.exists) {
+        // Already viewed by this user — do nothing
+        return;
+      }
+
+      // First time — record the viewer and increment the count
+      await viewerRef.set({
+        'user_ref': currentUserReference,
+        'viewed_at': FieldValue.serverTimestamp(),
+      });
+
+      await widget.inventoryRef!.update({
+        'view_count': FieldValue.increment(1),
+      });
+    } catch (e) {
+      debugPrint('View registration failed: $e');
+    }
+  }
+
   String _imgUrl(String? url) {
     final u = (url ?? '').trim();
     if (u.isEmpty) return '';
@@ -58,13 +93,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     _model = createModel(context, () => ProductDetailsModel());
 
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      try {
-        if (widget.inventoryRef != null) {
-          await widget.inventoryRef!.update({
-            'view_count': FieldValue.increment(1),
-          });
-        }
-      } catch (_) {}
+      await _registerView();
     });
   }
 
