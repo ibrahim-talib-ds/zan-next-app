@@ -340,6 +340,24 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           path: AdminDashboardWidget.routePath,
           builder: (context, params) => const AdminDashboardWidget(),
         ),
+
+        FFRoute(
+          name: AdminBroadcastWidget.routeName,
+          path: AdminBroadcastWidget.routePath,
+          builder: (context, params) => const AdminBroadcastWidget(),
+        ),
+
+        FFRoute(
+          name: AdminSellersWidget.routeName,
+          path: AdminSellersWidget.routePath,
+          builder: (context, params) => const AdminSellersWidget(),
+        ),
+
+        FFRoute(
+          name: AdminReportsWidget.routeName,
+          path: AdminReportsWidget.routePath,
+          builder: (context, params) => const AdminReportsWidget(),
+        ),
         FFRoute(
           name: AboutAppWidget.routeName,
           path: AboutAppWidget.routePath,

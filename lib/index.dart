@@ -144,6 +144,10 @@ export 'about_app/about_app_widget.dart';
 export 'support_chat/support_chat_widget.dart';
 export 'admin_support_inbox/admin_support_inbox_widget.dart';
 export 'admin_dashboard/admin_dashboard_widget.dart';
+export 'admin_broadcast/admin_broadcast_widget.dart';
+export 'admin_sellers/admin_sellers_widget.dart';
+export 'admin_reports/admin_reports_widget.dart';
+export 'components/report_sheet_widget.dart';
 
 // ============================================================================
 // COMPATIBILITY ROUTING ALIASES (Safe String Fallbacks)

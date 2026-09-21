@@ -1,3 +1,4 @@
+import '/components/report_sheet_widget.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
@@ -204,6 +205,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
               },
             ),
             const SizedBox(width: 8),
+            _buildReportBtn(p),
+            const SizedBox(width: 8),
             _buildWishlistBtn(p),
           ],
         ),
@@ -224,6 +227,85 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
         fillColor: Colors.transparent,
         icon: Icon(icon, color: _text, size: 20),
         onPressed: onTap,
+      ),
+    );
+  }
+
+
+  // ═══════════════════════════════════════════════════════════
+  // REPORT BUTTON — with already-reported check
+  // ═══════════════════════════════════════════════════════════
+  Widget _buildReportBtn(InventoryRecord p) {
+    // Owners can't report their own product
+    if (p.sellersRef == currentUserReference) {
+      return const SizedBox.shrink();
+    }
+
+    // Hide entirely if user not signed in
+    if (currentUserReference == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Live check: has the current user already reported this product?
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('reports')
+          .where('reporter_ref', isEqualTo: currentUserReference)
+          .where('target_ref', isEqualTo: p.reference)
+          .limit(1)
+          .snapshots(),
+      builder: (context, snap) {
+        final alreadyReported =
+            (snap.data?.docs.isNotEmpty ?? false);
+
+        return Container(
+          decoration: BoxDecoration(
+            color: alreadyReported
+                ? kAmber.withOpacity(0.12)
+                : _card,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: alreadyReported ? kAmber : _border,
+              width: alreadyReported ? 1.5 : 1,
+            ),
+          ),
+          child: FlutterFlowIconButton(
+            borderRadius: 22,
+            buttonSize: 42,
+            fillColor: Colors.transparent,
+            icon: Icon(
+              alreadyReported
+                  ? Icons.flag_rounded
+                  : Icons.flag_outlined,
+              color: alreadyReported ? kAmber : _text,
+              size: 20,
+            ),
+            onPressed: alreadyReported
+                ? () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'You already reported this. Our team is reviewing it.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                : () => _openReportSheet(p),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openReportSheet(InventoryRecord p) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ReportSheetWidget(
+        targetType: 'product',
+        targetRef: p.reference,
+        targetLabel: valueOrDefault<String>(p.inventoryName, 'Product'),
       ),
     );
   }

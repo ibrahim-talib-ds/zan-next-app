@@ -1,3 +1,4 @@
+import '/components/report_sheet_widget.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
@@ -166,6 +167,78 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
     );
   }
 
+
+  // ═══════════════════════════════════════════════════════════
+  // REPORT BUTTON — for visitors only
+  // ═══════════════════════════════════════════════════════════
+  Widget _buildReportBtn() {
+    if (currentUserReference == null) return const SizedBox.shrink();
+    if (_sellerRef == currentUserReference) return const SizedBox.shrink();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('reports')
+          .where('reporter_ref', isEqualTo: currentUserReference)
+          .where('target_ref', isEqualTo: _sellerRef)
+          .limit(1)
+          .snapshots(),
+      builder: (context, snap) {
+        final alreadyReported = (snap.data?.docs.isNotEmpty ?? false);
+
+        return Container(
+          decoration: BoxDecoration(
+            color: alreadyReported
+                ? kAmber.withOpacity(0.15)
+                : Colors.white.withOpacity(0.15),
+            shape: BoxShape.circle,
+          ),
+          child: FlutterFlowIconButton(
+            borderColor: Colors.transparent,
+            borderRadius: 22,
+            borderWidth: 1,
+            buttonSize: 44,
+            fillColor: Colors.transparent,
+            icon: Icon(
+              alreadyReported
+                  ? Icons.flag_rounded
+                  : Icons.flag_outlined,
+              color: alreadyReported ? kAmber : Colors.white,
+              size: 20,
+            ),
+            onPressed: alreadyReported
+                ? () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'You already reported this seller. Our team is reviewing it.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                : _openReportSheet,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openReportSheet() async {
+    if (_sellerRef == null) return;
+    final name = widget.sellerRef == null
+        ? 'My Shop'
+        : 'Seller';
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ReportSheetWidget(
+        targetType: 'user',
+        targetRef: _sellerRef!,
+        targetLabel: name,
+      ),
+    );
+  }
+
   Widget _scaffold({required Widget body}) {
     return GestureDetector(
       onTap: () {
@@ -235,7 +308,11 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                   ),
                 ),
                 const Spacer(),
-                const SizedBox(width: 44),
+                if (!_isOwner && _sellerRef != null)
+                  _buildReportBtn(),
+                if (!_isOwner && _sellerRef != null)
+                  const SizedBox(width: 8),
+                if (_isOwner) const SizedBox(width: 44),
               ],
             ),
           ),

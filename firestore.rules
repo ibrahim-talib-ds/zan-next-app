@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper functions ───
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid))
+          .data.isAdmin == true;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // REPORTS — any user can create, only admins can read/update
+    // ═══════════════════════════════════════════════════════
+    match /reports/{reportId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.reporter_ref ==
+                        /databases/$(database)/documents/users/$(request.auth.uid)
+                    && request.resource.data.status == 'pending';
+
+      allow read: if isAdmin()
+                  || (isSignedIn() &&
+                      resource.data.reporter_ref ==
+                        /databases/$(database)/documents/users/$(request.auth.uid));
+
+      allow update, delete: if isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // USERS — anyone signed in can read; owner can write
+    // ═══════════════════════════════════════════════════════
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId)
+                    || isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // INVENTORY — anyone signed in can read; seller writes own
+    // ═══════════════════════════════════════════════════════
+    match /Inventory/{itemId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.sellers_ref ==
+                        /databases/$(database)/documents/users/$(request.auth.uid);
+      allow update, delete: if isSignedIn()
+                    && (resource.data.sellers_ref ==
+                          /databases/$(database)/documents/users/$(request.auth.uid)
+                        || isAdmin());
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // SUPPORT CHATS — user reads/writes own; admins read/write all
+    // ═══════════════════════════════════════════════════════
+    match /support_chats/{chatId} {
+      allow read, write: if isSignedIn()
+                    && (isOwner(chatId) || isAdmin());
+
+      match /messages/{msgId} {
+        allow read, write: if isSignedIn()
+                    && (isOwner(chatId) || isAdmin());
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // NOTIFICATIONS — user reads own; system writes
+    // ═══════════════════════════════════════════════════════
+    match /notifications/{notifId} {
+      allow read: if isSignedIn()
+                    && (resource.data.user_ref ==
+                          /databases/$(database)/documents/users/$(request.auth.uid)
+                        || isAdmin());
+      allow write: if isAdmin() || isSignedIn();
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // EVERYTHING ELSE — signed-in users get normal access
+    // ═══════════════════════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

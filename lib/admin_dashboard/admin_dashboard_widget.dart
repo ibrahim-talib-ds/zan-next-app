@@ -222,27 +222,68 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
             ],
           ),
           const Spacer(),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.shield_rounded, color: Colors.white, size: 12),
-                SizedBox(width: 4),
-                Text('ADMIN',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.6,
-                    )),
-              ],
-            ),
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('reports')
+                .where('status', isEqualTo: 'pending')
+                .snapshots(),
+            builder: (context, snap) {
+              final n = snap.data?.docs.length ?? 0;
+              if (n == 0) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.shield_rounded,
+                          color: Colors.white, size: 12),
+                      SizedBox(width: 4),
+                      Text('ADMIN',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.6,
+                          )),
+                    ],
+                  ),
+                );
+              }
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: kRed,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.flag_rounded,
+                        color: Colors.white, size: 12),
+                    const SizedBox(width: 4),
+                    Text('$n',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        )),
+                    const SizedBox(width: 4),
+                    const Text('reports',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        )),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -403,7 +444,8 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                   icon: Icons.verified_user_outlined,
                   color: kBlue,
                   label: 'Sellers',
-                  onTap: () => _showComingSoon('Seller management'),
+                  onTap: () =>
+                      context.pushNamed(AdminSellersWidget.routeName),
                 ),
               ),
             ],
@@ -416,7 +458,8 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                   icon: Icons.flag_outlined,
                   color: kRed,
                   label: 'Reports',
-                  onTap: () => _showComingSoon('Reports'),
+                  onTap: () =>
+                      context.pushNamed(AdminReportsWidget.routeName),
                 ),
               ),
               const SizedBox(width: 10),
@@ -425,7 +468,8 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                   icon: Icons.campaign_outlined,
                   color: kAmber,
                   label: 'Broadcast',
-                  onTap: () => _showComingSoon('Broadcast'),
+                  onTap: () =>
+                      context.pushNamed(AdminBroadcastWidget.routeName),
                 ),
               ),
             ],
