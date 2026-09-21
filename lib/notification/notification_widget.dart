@@ -115,6 +115,95 @@ class _NotificationWidgetState extends State<NotificationWidget> {
   // ═══════════════════════════════════════════════════════════
   // BUILD
   // ═══════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════
+  // SMART ROUTER — send user to the right screen based on
+  // the notification title / content
+  // ═══════════════════════════════════════════════════════════
+  Future<void> _openNotification(dynamic notif) async {
+    final type = (() {
+      try { return (notif.type as String? ?? '').toLowerCase(); } catch (_) {}
+      return '';
+    })();
+    final productId = (() {
+      try { return (notif.productId as String? ?? ''); } catch (_) {}
+      return '';
+    })();
+    final title = (() {
+      try { return (notif.title as String? ?? '').toLowerCase(); } catch (_) {}
+      return '';
+    })();
+
+    // Mark as read first (best effort)
+    try {
+      if (notif.isRead == false) {
+        notif.reference.update({'is_read': true}).catchError((_) {});
+      }
+    } catch (_) {}
+
+    // ── 1. CHAT ─────────────────────────────────────────────
+    if (type == 'chat') {
+      try {
+        final chatRef = await _findChatForNotification(notif);
+        if (chatRef != null) {
+          if (!mounted) return;
+          context.pushNamed(
+            ChatDWidget.routeName,
+            queryParameters: {
+              'receiveChats':
+                  serializeParam(chatRef, ParamType.DocumentReference),
+            }.withoutNulls,
+          );
+          return;
+        }
+      } catch (_) {}
+      // fallback → open messages list
+      try {
+        context.pushNamed(NotificationWidget.routeName);
+        return;
+      } catch (_) {}
+    }
+
+    // ── 2. ORDER ────────────────────────────────────────────
+    if (type == 'order') {
+      if (productId.isNotEmpty) {
+        try {
+          context.pushNamed(
+            Order1Widget.routeName,
+            queryParameters: {'orderId': productId}.withoutNulls,
+          );
+          return;
+        } catch (_) {}
+      }
+      try {
+        context.pushNamed(OrderDetailsWidget.routeName);
+        return;
+      } catch (_) {}
+    }
+
+    // ── 3. PRODUCT ──────────────────────────────────────────
+    if (type == 'product' && productId.isNotEmpty) {
+      try {
+        final docRef =
+            FirebaseFirestore.instance.collection('inventory').doc(productId);
+        context.pushNamed(
+          ProductDetailsWidget.routeName,
+          queryParameters: {
+            'inventoryRef':
+                serializeParam(docRef, ParamType.DocumentReference),
+          }.withoutNulls,
+        );
+        return;
+      } catch (_) {}
+    }
+
+    // ── 4. Anything else → notification list ────────────────
+    try {
+      context.pushNamed(NotificationDetailsWidget.routeName);
+      return;
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -567,7 +656,7 @@ class _NotificationWidgetState extends State<NotificationWidget> {
           return;
 
         case NotifyFilter.system:
-          context.pushNamed(ProfileWidget.routeName, extra: _t());
+          await _openNotification(record);
           return;
 
         case NotifyFilter.all:

@@ -138,60 +138,60 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                   title: 'Welcome to ZanNext!',
                                   subtitle: 'Get 20% OFF your first order',
                                   buttonLabel: 'Claim Offer',
-                                  imageUrl:
-                                      'https://file.aiquickdraw.com/imgcompressed/img/compressed_a7c9025e07be618d506d670cfefc3a95.webp',
+                                  heroIcon: Icons.redeem_rounded,
                                   gradientColors: [
-                                    theme.primary,
+                                    Color(0xFF1B7A4E),
                                     Color(0xFF053020),
                                   ],
+                                  accentColor: Color(0xFF1B7A4E),
                                 ),
                                 _bannerSlide(
                                   context,
                                   title: 'Fresh Today',
                                   subtitle: 'Shop the latest trends in town',
                                   buttonLabel: 'Shop Newest',
-                                  imageUrl:
-                                      'https://file.aiquickdraw.com/imgcompressed/img/compressed_a7c9025e07be618d506d670cfefc3a95.webp',
+                                  heroIcon: Icons.local_fire_department_rounded,
                                   gradientColors: [
-                                    theme.primary,
-                                    theme.tertiary,
+                                    Color(0xFFDC0F0F),
+                                    Color(0xFF7A0808),
                                   ],
+                                  accentColor: Color(0xFFDC0F0F),
                                 ),
                                 _bannerSlide(
                                   context,
                                   title: 'Fast & Secure Delivery',
                                   subtitle: 'From our store to your door',
                                   buttonLabel: 'Order Now',
-                                  imageUrl:
-                                      'https://file.aiquickdraw.com/imgcompressed/img/compressed_a7c9025e07be618d506d670cfefc3a95.webp',
+                                  heroIcon: Icons.delivery_dining_rounded,
                                   gradientColors: [
-                                    theme.primary,
-                                    theme.primary,
+                                    Color(0xFF0D6EFD),
+                                    Color(0xFF082A5C),
                                   ],
+                                  accentColor: Color(0xFF0D6EFD),
                                 ),
                                 _bannerSlide(
                                   context,
                                   title: 'Quality You Can Trust',
                                   subtitle: 'Premium products, best prices',
                                   buttonLabel: 'Shop Quality',
-                                  imageUrl:
-                                      'https://file.aiquickdraw.com/imgcompressed/img/compressed_a7c9025e07be618d506d670cfefc3a95.webp',
+                                  heroIcon: Icons.verified_rounded,
                                   gradientColors: [
-                                    theme.primary,
-                                    theme.tertiary,
+                                    Color(0xFF7B1FA2),
+                                    Color(0xFF3A0B4D),
                                   ],
+                                  accentColor: Color(0xFF7B1FA2),
                                 ),
                                 _bannerSlide(
                                   context,
                                   title: 'We\'re Here for You',
                                   subtitle: '24/7 Dedicated Customer Support',
                                   buttonLabel: 'Chat With Us',
-                                  imageUrl:
-                                      'https://file.aiquickdraw.com/imgcompressed/img/compressed_a7c9025e07be618d506d670cfefc3a95.webp',
+                                  heroIcon: Icons.support_agent_rounded,
                                   gradientColors: [
-                                    theme.primary,
-                                    Color(0xFF053020),
+                                    Color(0xFFFF6F00),
+                                    Color(0xFF7A3500),
                                   ],
+                                  accentColor: Color(0xFFFF6F00),
                                 ),
                               ],
                             ),
@@ -319,10 +319,10 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                         padding: EdgeInsets.zero,
                         gridDelegate:
                             SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 14,
-                          childAspectRatio: 0.72,
+                          crossAxisCount: 5,
+                          crossAxisSpacing: 4,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 0.82,
                         ),
                         primary: false,
                         shrinkWrap: true,
@@ -376,6 +376,50 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                             labelKey: 'ywg5460f',
                             fallback: 'Laundry',
                             categoryValue: 'Laundry',
+                          ),
+                          _categoryTile(
+                            context,
+                            assetImage: 'assets/images/mean.webp',
+                            labelKey: 'wmnswear1',
+                            fallback: 'Women\'s Wear',
+                            categoryValue: 'Women\'s Wear',
+                          ),
+                          _categoryTile(
+                            context,
+                            assetImage: 'assets/images/Luxiary.webp',
+                            labelKey: 'beauty001',
+                            fallback: 'Beauty',
+                            categoryValue: 'Beauty & Health',
+                          ),
+                          _categoryIconTile(
+                            context,
+                            icon: Icons.phone_iphone_rounded,
+                            label: 'Phones',
+                            categoryValue: 'Phones & Tablets',
+                          ),
+                          _categoryIconTile(
+                            context,
+                            icon: Icons.kitchen_rounded,
+                            label: 'Home',
+                            categoryValue: 'Home & Kitchen',
+                          ),
+                          _categoryIconTile(
+                            context,
+                            icon: Icons.sports_soccer_rounded,
+                            label: 'Sports',
+                            categoryValue: 'Sports & Outdoor',
+                          ),
+                          _categoryIconTile(
+                            context,
+                            icon: Icons.checkroom_rounded,
+                            label: 'Shoes',
+                            categoryValue: 'Shoes',
+                          ),
+                          _categoryIconTile(
+                            context,
+                            icon: Icons.shopping_bag_rounded,
+                            label: 'Bags',
+                            categoryValue: 'Bags',
                           ),
                           _moreTile(context),
                         ],
@@ -1249,117 +1293,164 @@ your goals */,
     required String title,
     required String subtitle,
     required String buttonLabel,
-    required String imageUrl,
+    required IconData heroIcon,
     required List<Color> gradientColors,
+    required Color accentColor,
   }) {
-    final theme = FlutterFlowTheme.of(context);
-
-    return Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(0, 0, 0, 0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradientColors,
-              stops: [0, 1],
-              begin: AlignmentDirectional(-1, 0),
-              end: AlignmentDirectional(1, 0),
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            stops: const [0, 1],
+            begin: AlignmentDirectional(-1, -1),
+            end: AlignmentDirectional(1, 1),
           ),
-          child: Stack(
-            children: [
-              Align(
-                alignment: AlignmentDirectional(1, 1),
-                child: Transform.translate(
-                  offset: Offset(30, 20),
-                  child: Opacity(
-                    opacity: 0.9,
-                    child: Image.network(
-                          (imageUrl),
-                      height: 150,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return SizedBox.shrink();
-                      },
-                    ),
-                  ),
+        ),
+        child: Stack(
+          children: [
+            // ─── Decorative circles (Alibaba-style) ───
+            Positioned(
+              top: -30,
+              right: -20,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.06),
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.all(18),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 2,
-                          style: theme.bodyMedium.override(
-                            font: GoogleFonts.inter(
-                              fontWeight: FontWeight.w700,
-                              fontStyle: theme.bodyMedium.fontStyle,
-                            ),
+            ),
+            Positioned(
+              top: 60,
+              right: 40,
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.05),
+                ),
+              ),
+            ),
+            // ─── Big hero icon on the right ───
+            Positioned(
+              right: -10,
+              bottom: -20,
+              child: Transform.rotate(
+                angle: -0.18,
+                child: Icon(
+                  heroIcon,
+                  size: 170,
+                  color: Colors.white.withOpacity(0.14),
+                ),
+              ),
+            ),
+            // ─── Content ───
+            Padding(
+              padding: EdgeInsets.all(18),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Small badge chip
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'LIMITED OFFER',
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
-                            letterSpacing: 0.0,
-                            fontWeight: FontWeight.w700,
-                            fontStyle: theme.bodyMedium.fontStyle,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
                           ),
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          subtitle,
-                          maxLines: 2,
-                          style: theme.bodyMedium.override(
-                            font: GoogleFonts.inter(
-                              fontWeight: FontWeight.normal,
-                              fontStyle: theme.bodyMedium.fontStyle,
+                      ),
+                      SizedBox(height: 10),
+                      // Main headline
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          height: 1.15,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.3,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.15),
+                              offset: Offset(0, 1),
+                              blurRadius: 3,
                             ),
-                            color: Colors.white70,
-                            fontSize: 12.5,
-                            letterSpacing: 0.0,
-                            fontWeight: FontWeight.normal,
-                            fontStyle: theme.bodyMedium.fontStyle,
-                            lineHeight: 1.4,
-                          ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 12.5,
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // CTA button
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 8,
+                          offset: Offset(0, 3),
                         ),
                       ],
                     ),
-                    FFButtonWidget(
-                      onPressed: () {
-                        print('Banner button pressed ...');
-                      },
-                      text: buttonLabel,
-                      options: FFButtonOptions(
-                        height: 32,
-                        padding:
-                            EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-                        iconPadding: EdgeInsets.zero,
-                        color: Colors.white,
-                        textStyle: theme.titleSmall.override(
-                          font: GoogleFonts.interTight(
-                            fontWeight: FontWeight.w700,
-                            fontStyle: theme.titleSmall.fontStyle,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          buttonLabel,
+                          style: TextStyle(
+                            color: accentColor,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.2,
                           ),
-                          color: theme.primary,
-                          fontSize: 13,
-                          letterSpacing: 0.0,
-                          fontWeight: FontWeight.w700,
-                          fontStyle: theme.titleSmall.fontStyle,
                         ),
-                        elevation: 0,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: accentColor,
+                          size: 14,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1405,13 +1496,13 @@ your goals */,
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 66,
-            height: 66,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: theme.secondary,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(14),
             ),
-            padding: EdgeInsets.all(10),
+            padding: EdgeInsets.all(8),
             child: Image.asset(
               assetImage,
               fit: BoxFit.contain,
@@ -1436,11 +1527,86 @@ your goals */,
                 fontStyle: theme.bodyMedium.fontStyle,
               ),
               color: theme.primaryText,
-              fontSize: 11,
+              fontSize: 10,
               letterSpacing: 0.0,
               fontWeight: FontWeight.w600,
               fontStyle: theme.bodyMedium.fontStyle,
-              lineHeight: 1.2,
+              lineHeight: 1.15,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ICON-BASED CATEGORY TILE (for categories without images)
+  // ═══════════════════════════════════════════════════════════
+  Widget _categoryIconTile(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String categoryValue,
+  }) {
+    final theme = FlutterFlowTheme.of(context);
+
+    return InkWell(
+      splashColor: Colors.transparent,
+      focusColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      onTap: () async {
+        logFirebaseEvent('HOME_PAGE_cat_ICN_ON_TAP');
+        logFirebaseEvent('Column_navigate_to');
+
+        context.pushNamed(
+          SpecificCategoriesWidget.routeName,
+          extra: <String, dynamic>{
+            '__transition_info__': TransitionInfo(
+              hasTransition: true,
+              transitionType: PageTransitionType.rightToLeft,
+              duration: Duration(milliseconds: 250),
+            ),
+          },
+        );
+
+        logFirebaseEvent('Column_update_app_state');
+        FFAppState().categories = categoryValue;
+        safeSetState(() {});
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: theme.secondary,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              icon,
+              color: theme.primary,
+              size: 24,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            label,
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: theme.bodyMedium.override(
+              font: GoogleFonts.inter(
+                fontWeight: FontWeight.w600,
+                fontStyle: theme.bodyMedium.fontStyle,
+              ),
+              color: theme.primaryText,
+              fontSize: 10,
+              letterSpacing: 0.0,
+              fontWeight: FontWeight.w600,
+              fontStyle: theme.bodyMedium.fontStyle,
+              lineHeight: 1.15,
             ),
           ),
         ],
@@ -1475,16 +1641,16 @@ your goals */,
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 66,
-            height: 66,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: theme.secondary,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
               Icons.grid_view_rounded,
               color: theme.primary,
-              size: 26,
+              size: 22,
             ),
           ),
           SizedBox(height: 6),
@@ -1521,162 +1687,28 @@ your goals */,
   }) {
     final theme = FlutterFlowTheme.of(context);
 
-    final card = Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: theme.secondaryBackground,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        splashColor: Colors.transparent,
-        focusColor: Colors.transparent,
-        hoverColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        onTap: () async {
-          logFirebaseEvent('HOME_PAGE_product_card_ON_TAP');
-          logFirebaseEvent('product_card_navigate_to');
-
-          context.pushNamed(
-            ProductDetailsWidget.routeName,
-            queryParameters: {
-              'inventoryRef': serializeParam(
-                record.reference,
-                ParamType.DocumentReference,
-              ),
-            }.withoutNulls,
-            extra: <String, dynamic>{
-              '__transition_info__': TransitionInfo(
-                hasTransition: true,
-                transitionType: PageTransitionType.rightToLeft,
-                duration: Duration(milliseconds: 250),
-              ),
-            },
-          );
-        },
-        child: Padding(
-          padding: EdgeInsets.all(8),
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                alignment: AlignmentDirectional(1, -1),
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 130,
-                    decoration: BoxDecoration(
-                      color: theme.secondaryBackground,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: EdgeInsets.all(6),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                          valueOrDefault<String>(
-                            record.inventoryImages.firstOrNull,
-                            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxz9T3n9wAdGgBp1oXZxkQMdECuc3cuvcOw&s',
-                          ),
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.image_not_supported_outlined,
-                            color: theme.secondaryText,
-                            size: 32,
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  if (badge != null)
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(0, 4, 4, 0),
-                      child: badge,
-                    ),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text(
-                valueOrDefault<String>(record.inventoryName, 'Product'),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.bodyMedium.override(
-                  font: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
-                    fontStyle: theme.bodyMedium.fontStyle,
-                  ),
-                  color: theme.primaryText,
-                  fontSize: 13,
-                  letterSpacing: 0.0,
-                  fontWeight: FontWeight.w600,
-                  fontStyle: theme.bodyMedium.fontStyle,
-                  lineHeight: 1.25,
-                ),
-              ),
-              Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Text(
-                      valueOrDefault<String>(
-                        formatNumber(
-                          record.inventoryPrice,
-                          formatType: FormatType.decimal,
-                          decimalType: DecimalType.automatic,
-                          currency: 'TZS ',
-                        ),
-                        '1,500',
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.bodyMedium.override(
-                        font: GoogleFonts.baiJamjuree(
-                          fontWeight: FontWeight.w900,
-                          fontStyle: theme.bodyMedium.fontStyle,
-                        ),
-                        color: theme.error,
-                        fontSize: 15,
-                        letterSpacing: 0.0,
-                        fontWeight: FontWeight.w900,
-                        fontStyle: theme.bodyMedium.fontStyle,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (width == null && height == null) {
-      // For the GridView in Full Catalog, we don't force width/height
-      return Container(
+    // Alibaba-style card — compact, image-forward, bold price
+    Widget buildCard({bool grid = false}) {
+      final card = Container(
+        width: grid ? null : width,
+        height: grid ? null : height,
         decoration: BoxDecoration(
           color: theme.secondaryBackground,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: theme.primary.withOpacity(0.06),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 3),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: Offset(0, 2),
             ),
           ],
         ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           splashColor: Colors.transparent,
           focusColor: Colors.transparent,
           hoverColor: Colors.transparent,
@@ -1700,65 +1732,79 @@ your goals */,
             );
           },
           child: Padding(
-            padding: EdgeInsets.all(8),
+            padding: EdgeInsets.all(6),
             child: Column(
               mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ─── IMAGE BLOCK ───
                 Expanded(
-                  flex: 5,
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: theme.secondaryBackground,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: EdgeInsets.all(6),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                          valueOrDefault<String>(
-                            record.inventoryImages.firstOrNull,
-                            'https://upload.wikimedia.org/wikipedia/commons/0/04/Prezenty_EXP_096_%28ubt%29.JPG',
-                          ),
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.image_not_supported_outlined,
-                            color: theme.secondaryText,
-                            size: 32,
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 8),
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  flex: grid ? 7 : 6,
+                  child: Stack(
                     children: [
-                      Text(
-                        valueOrDefault<String>(
-                            record.inventoryName, 'Product'),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.bodyMedium.override(
-                          font: GoogleFonts.inter(
-                            fontWeight: FontWeight.w600,
-                            fontStyle: theme.bodyMedium.fontStyle,
+                      Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        decoration: BoxDecoration(
+                          color: theme.primaryBackground,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: EdgeInsets.all(4),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            valueOrDefault<String>(
+                              record.inventoryImages.firstOrNull,
+                              'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxz9T3n9wAdGgBp1oXZxkQMdECuc3cuvcOw&s',
+                            ),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.image_not_supported_outlined,
+                                color: theme.secondaryText,
+                                size: 28,
+                              );
+                            },
                           ),
-                          color: theme.primaryText,
-                          fontSize: 13,
-                          letterSpacing: 0.0,
-                          fontWeight: FontWeight.w600,
-                          fontStyle: theme.bodyMedium.fontStyle,
-                          lineHeight: 1.25,
                         ),
                       ),
-                      Spacer(),
-                      Text(
+                      if (badge != null)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: badge,
+                        ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 6),
+
+                // ─── TITLE ───
+                Text(
+                  valueOrDefault<String>(record.inventoryName, 'Product'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.bodyMedium.override(
+                    font: GoogleFonts.inter(
+                      fontWeight: FontWeight.w500,
+                      fontStyle: theme.bodyMedium.fontStyle,
+                    ),
+                    color: theme.primaryText,
+                    fontSize: 12,
+                    letterSpacing: 0.0,
+                    fontWeight: FontWeight.w500,
+                    fontStyle: theme.bodyMedium.fontStyle,
+                    lineHeight: 1.25,
+                  ),
+                ),
+                SizedBox(height: 4),
+
+                // ─── PRICE ROW ───
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Text(
                         valueOrDefault<String>(
                           formatNumber(
                             record.inventoryPrice,
@@ -1766,7 +1812,7 @@ your goals */,
                             decimalType: DecimalType.automatic,
                             currency: 'TZS ',
                           ),
-                          '1,500',
+                          'TZS 0',
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1775,24 +1821,63 @@ your goals */,
                             fontWeight: FontWeight.w900,
                             fontStyle: theme.bodyMedium.fontStyle,
                           ),
-                          color: theme.error,
-                          fontSize: 15,
+                          color: Color(0xFFDC0F0F),
+                          fontSize: 14,
                           letterSpacing: 0.0,
                           fontWeight: FontWeight.w900,
                           fontStyle: theme.bodyMedium.fontStyle,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 2),
+
+                // ─── SELLER / TRUST ROW ───
+                Row(
+                  children: [
+                    Icon(
+                      Icons.verified_rounded,
+                      color: theme.primary,
+                      size: 11,
+                    ),
+                    SizedBox(width: 3),
+                    Expanded(
+                      child: Text(
+                        valueOrDefault<String>(
+                          record.sellerName,
+                          'Verified',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.bodyMedium.override(
+                          font: GoogleFonts.inter(
+                            fontWeight: FontWeight.w400,
+                            fontStyle: theme.bodyMedium.fontStyle,
+                          ),
+                          color: theme.secondaryText,
+                          fontSize: 9.5,
+                          letterSpacing: 0.0,
+                          fontWeight: FontWeight.w400,
+                          fontStyle: theme.bodyMedium.fontStyle,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
       );
+
+      return card;
     }
 
-    return card;
+    if (width == null && height == null) {
+      return buildCard(grid: true);
+    }
+    return buildCard();
   }
 
   Widget _badgeFire(BuildContext context) {

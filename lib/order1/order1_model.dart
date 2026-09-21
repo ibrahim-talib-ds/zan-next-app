@@ -1,21 +1,14 @@
-import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_animations.dart';
-import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:math';
-import 'dart:ui';
+import '/backend/backend.dart';
 import 'order1_widget.dart' show Order1Widget;
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
-import 'package:percent_indicator/percent_indicator.dart';
-import 'package:provider/provider.dart';
 
 class Order1Model extends FlutterFlowModel<Order1Widget> {
+  /// Selected order (from route param or streamed)
+  OrdersRecord? order;
+
+  bool isCancelling = false;
+
   @override
   void initState(BuildContext context) {}
 

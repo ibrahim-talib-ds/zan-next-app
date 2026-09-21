@@ -1,3 +1,4 @@
+import '/components/buy_now_sheet_widget.dart';
 import '/components/report_sheet_widget.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
@@ -1342,40 +1343,36 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       ),
       child: Row(
         children: [
-          Expanded(
-            flex: 4,
-            child: _barBtn(
-              icon: Icons.call_rounded,
-              label: 'Call',
-              onTap: () async {
-                final phone = p.sellerWhatsap;
-                if (phone.isNotEmpty) {
-                  try {
-                    await launchURL('tel:$phone');
-                  } catch (_) {}
-                }
-              },
-            ),
+          _iconBarBtn(
+            icon: Icons.call_rounded,
+            onTap: () async {
+              final phone = p.sellerWhatsap;
+              if (phone.isNotEmpty) {
+                try {
+                  await launchURL('tel:$phone');
+                } catch (_) {}
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+          _iconBarBtn(
+            icon: Icons.chat_rounded,
+            onTap: () async {
+              final ref = await _ensureChat(p);
+              if (!mounted) return;
+              context.pushNamed(
+                ChatDWidget.routeName,
+                queryParameters: {
+                  'receiveChats':
+                      serializeParam(ref, ParamType.DocumentReference),
+                }.withoutNulls,
+              );
+            },
           ),
           const SizedBox(width: 10),
           Expanded(
-            flex: 6,
-            child: _barBtn(
-              icon: Icons.chat_rounded,
-              label: 'Message Seller',
-              primary: true,
-              onTap: () async {
-                final ref = await _ensureChat(p);
-                if (!mounted) return;
-                context.pushNamed(
-                  ChatDWidget.routeName,
-                  queryParameters: {
-                    'receiveChats':
-                        serializeParam(ref, ParamType.DocumentReference),
-                  }.withoutNulls,
-                );
-              },
-            ),
+            flex: 1,
+            child: _buyNowBtn(context, p),
           ),
         ],
       ),
@@ -1420,11 +1417,91 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       ),
     );
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // BOTTOM BAR — compact icon button
+  // ═══════════════════════════════════════════════════════════
+  Widget _iconBarBtn({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          color: kGreen.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon, color: kGreen, size: 22),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // BOTTOM BAR — Buy Now (primary, wide)
+  // ═══════════════════════════════════════════════════════════
+  Widget _buyNowBtn(BuildContext context, InventoryRecord p) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => _openBuyNow(context, p),
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [kGreen, kGreenDeep],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: kGreen.withOpacity(0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.shopping_cart_checkout_rounded,
+                color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Text(
+              'Buy Now',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openBuyNow(BuildContext ctx, InventoryRecord p) async {
+    await showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BuyNowSheetWidget(product: p),
+    );
+  }
+
 }
 
 // ═══════════════════════════════════════════════════════════════
 // FULLSCREEN IMAGE VIEWER
 // ═══════════════════════════════════════════════════════════════
+
+
+
 class _FullscreenImageViewer extends StatefulWidget {
   const _FullscreenImageViewer({
     required this.images,
