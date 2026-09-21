@@ -48,3 +48,8 @@ Thumbs.db
 .env
 *.env.local
 secret*.json
+
+# Node.js (Firebase Functions)
+functions/node_modules/
+functions/.env
+node_modules/
