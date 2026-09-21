@@ -1,0 +1,182 @@
+{
+  "project_info": {
+    "project_number": "129014154360",
+    "project_id": "zannext-f6ff1",
+    "storage_bucket": "zannext-f6ff1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129014154360:android:1bcaf075e58eea422f598d",
+        "android_client_info": {
+          "package_name": "Sell.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "129014154360-34s28qmsg7odaiqsp4klbc888g1fpneo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "Sell.app",
+            "certificate_hash": "7f7e15f8cbc37be7149e595412fdef0022b9b43a"
+          }
+        },
+        {
+          "client_id": "129014154360-q9skndefb2vqvjh9f6fdc43hp0s93vp4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "Sell.app",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNkFML3-kJAc2-6JBcIXtnQ78YiMdtXkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129014154360:android:5f969b482767ac732f598d",
+        "android_client_info": {
+          "package_name": "com.ZanNext.Company"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "129014154360-sgaff3nu2r8l9bs1188latb9mj739oem.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ZanNext.Company",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNkFML3-kJAc2-6JBcIXtnQ78YiMdtXkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129014154360:android:b86f93d277c55c012f598d",
+        "android_client_info": {
+          "package_name": "com.mycompany.zannext"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "129014154360-3n2rtdnjcr4eo6j9fpi5j0ha7i25dtbs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.zannext",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "129014154360-rfomepqh2dbf23ms12lsqjcpm3kqk0ct.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.zannext",
+            "certificate_hash": "7f7e15f8cbc37be7149e595412fdef0022b9b43a"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNkFML3-kJAc2-6JBcIXtnQ78YiMdtXkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129014154360:android:13c40824a38cfb9c2f598d",
+        "android_client_info": {
+          "package_name": "com.zannext"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "129014154360-4ogaar3m1osbbg66rjq6a3g9v1atl9k6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zannext",
+            "certificate_hash": "7f7e15f8cbc37be7149e595412fdef0022b9b43a"
+          }
+        },
+        {
+          "client_id": "129014154360-khphnonq3b7v5p5e549u33dbjjk70vsg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zannext",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNkFML3-kJAc2-6JBcIXtnQ78YiMdtXkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129014154360:android:e988ccc2e8da3e892f598d",
+        "android_client_info": {
+          "package_name": "com.zannext.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "129014154360-20kfsq910ksq8hjt582t43b9j2bi7g3o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zannext.app",
+            "certificate_hash": "7f7e15f8cbc37be7149e595412fdef0022b9b43a"
+          }
+        },
+        {
+          "client_id": "129014154360-s6mihn4anp1eqhm4jfvvbf6a2c24e25g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zannext.app",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNkFML3-kJAc2-6JBcIXtnQ78YiMdtXkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

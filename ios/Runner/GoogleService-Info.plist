@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>129014154360-4mad4i0scm7s1rqs1vh50415ae31q8g4.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.129014154360-4mad4i0scm7s1rqs1vh50415ae31q8g4</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>129014154360-9ou9nhem9c0q2ngm7mu4levr734kmlpo.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAPeKxTR5Hdy2Qqf93kUm7XKNVs5487ABA</string>
+	<key>GCM_SENDER_ID</key>
+	<string>129014154360</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.ZanNext.Company</string>
+	<key>PROJECT_ID</key>
+	<string>zannext-f6ff1</string>
+	<key>STORAGE_BUCKET</key>
+	<string>zannext-f6ff1.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:129014154360:ios:c24d301e770c34fe2f598d</string>
+</dict>
+</plist>
