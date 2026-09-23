@@ -165,17 +165,31 @@ class _NotificationWidgetState extends State<NotificationWidget> {
     }
 
     // ── 2. ORDER ────────────────────────────────────────────
-    // Always go to the Orders list (buyer + seller tabs).
-    // Never use Order1Widget — it's dead.
-    if (type == 'order') {
+    // Schema has no `type` field → infer from title.
+    // Seller notifications contain 'received' or 'new order'.
+    // Buyer notifications contain 'placed', 'ship', 'delivered'.
+    final looksLikeOrder = type == 'order' ||
+        title.contains('order') ||
+        title.contains('received') ||
+        title.contains('shipment') ||
+        title.contains('shipped') ||
+        title.contains('delivered') ||
+        title.contains('delivery');
+
+    if (looksLikeOrder) {
+      final isSellerSide = title.contains('received') ||
+          title.contains('new order') ||
+          title.contains('new_order');
+
       try {
         context.pushNamed(
           OrderDetailsWidget.routeName,
-          queryParameters: {'initialTab': 'seller'}.withoutNulls,
+          queryParameters: {
+            'initialTab': isSellerSide ? 'seller' : 'buyer',
+          }.withoutNulls,
         );
         return;
       } catch (_) {}
-      // fallback — plain route
       try {
         context.pushNamed(OrderDetailsWidget.routeName);
         return;
@@ -892,6 +906,24 @@ class _NotificationWidgetState extends State<NotificationWidget> {
           return;
 
         case NotifyFilter.system:
+          // Check if this is really an order notification
+          final t = record.title.toLowerCase();
+          final b = record.notificationText.toLowerCase();
+          final isOrder =
+              t.contains('order') || b.contains('order') ||
+              t.contains('received') || b.contains('received');
+          if (isOrder) {
+            final isSellerSide = t.contains('received') ||
+                t.contains('new order');
+            context.pushNamed(
+              OrderDetailsWidget.routeName,
+              queryParameters: {
+                'initialTab': isSellerSide ? 'seller' : 'buyer',
+              }.withoutNulls,
+              extra: _t(),
+            );
+            return;
+          }
           await _openNotification(record);
           return;
 

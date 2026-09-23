@@ -147,7 +147,18 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             ),
           );
         }
-        final orders = snapshot.data!;
+        final hiddenField =
+            isBuyerTab ? 'hidden_for_buyer' : 'hidden_for_seller';
+        final orders = snapshot.data!.where((o) {
+          try {
+            final data = (o as dynamic).snapshotData;
+            if (data is Map) {
+              return data[hiddenField] != true;
+            }
+          } catch (_) {}
+          return true;
+        }).toList();
+
         if (orders.isEmpty) {
           return _stateMessage(
             icon: isBuyerTab
@@ -169,10 +180,39 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 24),
             itemCount: orders.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, i) => _buildOrderCard(
-              orders[i],
-              isBuyer: isBuyerTab,
-            ),
+            itemBuilder: (context, i) {
+              final order = orders[i];
+              return Dismissible(
+                key: ValueKey('order_${order.reference.id}'),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding:
+                      const EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
+                  decoration: BoxDecoration(
+                    color: kRed,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.delete_outline_rounded,
+                          color: Colors.white, size: 22),
+                      SizedBox(width: 6),
+                      Text('Delete',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          )),
+                    ],
+                  ),
+                ),
+                confirmDismiss: (_) => _confirmDeleteOrder(order),
+                onDismissed: (_) => _deleteOrder(order),
+                child: _buildOrderCard(order, isBuyer: isBuyerTab),
+              );
+            },
           ),
         );
       },
@@ -229,10 +269,219 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             ],
           ),
           const Spacer(),
-          const SizedBox(width: 44),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded,
+                color: Colors.white, size: 22),
+            onSelected: (v) {
+              if (v == 'clear_delivered') _confirmClearDelivered();
+              if (v == 'clear_cancelled') _confirmClearCancelled();
+              if (v == 'clear_all') _confirmClearAllOrders();
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'clear_delivered',
+                child: Row(
+                  children: [
+                    Icon(Icons.done_all_rounded, size: 18),
+                    SizedBox(width: 10),
+                    Text('Clear delivered'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'clear_cancelled',
+                child: Row(
+                  children: [
+                    Icon(Icons.cancel_outlined, size: 18),
+                    SizedBox(width: 10),
+                    Text('Clear cancelled'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'clear_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep_rounded,
+                        size: 18, color: kRed),
+                    SizedBox(width: 10),
+                    Text('Clear all',
+                        style: TextStyle(color: kRed)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // DELETE HELPERS
+  // ═══════════════════════════════════════════════════════════
+  Future<bool> _confirmDeleteOrder(OrdersRecord order) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _card,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Text('Delete order?',
+                style: TextStyle(
+                    color: _text,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
+            content: Text(
+              '"${order.productName ?? "This order"}" will be removed from your list. The other party still sees it.',
+              style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Cancel',
+                    style: TextStyle(
+                        color: _muted, fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete',
+                    style: TextStyle(
+                        color: kRed, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _deleteOrder(OrdersRecord order) async {
+    try {
+      // Soft delete: hide for this user only
+      final isBuyer = order.buyer == currentUserReference;
+      final field =
+          isBuyer ? 'hidden_for_buyer' : 'hidden_for_seller';
+      await order.reference.update({field: true});
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Order removed from your list'),
+          backgroundColor: kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      safeSetState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not delete: $e'),
+          backgroundColor: kRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmClearDelivered() async {
+    final ok = await _confirmBulk('Clear delivered orders?',
+        'All delivered orders will be removed from your list.');
+    if (ok) await _bulkHide(statuses: ['delivered']);
+  }
+
+  Future<void> _confirmClearCancelled() async {
+    final ok = await _confirmBulk('Clear cancelled orders?',
+        'All cancelled orders will be removed from your list.');
+    if (ok) await _bulkHide(statuses: ['cancelled']);
+  }
+
+  Future<void> _confirmClearAllOrders() async {
+    final ok = await _confirmBulk('Clear all orders?',
+        'Every order in this tab will be removed from your list. The other party still sees them.');
+    if (ok) await _bulkHide(statuses: null);
+  }
+
+  Future<bool> _confirmBulk(String title, String body) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _card,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Text(title,
+                style: TextStyle(
+                    color: _text,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
+            content: Text(body,
+                style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Cancel',
+                    style: TextStyle(
+                        color: _muted, fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Clear',
+                    style: TextStyle(
+                        color: kRed, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _bulkHide({required List<String>? statuses}) async {
+    if (currentUserReference == null) return;
+    final isBuyerTab = _model.activeTab == 'buyer';
+    try {
+      final q = await FirebaseFirestore.instance
+          .collection('orders')
+          .where(isBuyerTab ? 'buyer' : 'seller',
+              isEqualTo: currentUserReference)
+          .get();
+
+      int count = 0;
+      final batch = FirebaseFirestore.instance.batch();
+      final field =
+          isBuyerTab ? 'hidden_for_buyer' : 'hidden_for_seller';
+
+      for (final doc in q.docs) {
+        final data = doc.data();
+        final status =
+            (data['status'] ?? '').toString().toLowerCase();
+        if (statuses != null) {
+          final matches = statuses.any((s) => status.contains(s));
+          if (!matches) continue;
+        }
+        batch.update(doc.reference, {field: true});
+        count++;
+      }
+      await batch.commit();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cleared $count order(s)'),
+          backgroundColor: kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      safeSetState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not clear: $e'),
+          backgroundColor: kRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
