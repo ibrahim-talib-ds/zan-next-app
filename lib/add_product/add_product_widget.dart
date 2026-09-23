@@ -1,3 +1,5 @@
+
+
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
@@ -17,16 +19,75 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'add_product_model.dart';
-import 'package:image_picker/image_picker.dart' show MediaSource;
+import '/flutter_flow/upload_data.dart' show MediaSource;
+import '/services/cloudinary_service.dart';
 export 'add_product_model.dart';
+
+/// 🎯 MASTER CATEGORY LIST — must match categorys_z exactly
+const List<String> kMasterCategories = [
+  'Men’s Wear',
+  'Women’s Wear',
+  'Kids’ Clothing',
+  'Shorts Sporty',
+  'Shorts Casual',
+  'Underwear',
+  'Socks',
+  'Sneakers & Sports',
+  'Formal Shoes',
+  'Sandals & Slippers',
+  'Heels & Wedge',
+  'Computers & Laptops',
+  'Smart Phone',
+  'Audio & Sound',
+  'Skincare',
+  'Fragrances',
+  'Hair Care',
+  'Makeup',
+  'Lighting',
+  'Wall Art',
+  'Furniture',
+  'Bedding',
+  'Fresh Produce',
+  'Grains & Flour',
+  'Beverages',
+  'Snacks',
+  'Wearables',
+  'Mobile Accessories',
+  'Smart Home',
+  'Team Sports',
+  'Gym & Fitness',
+  'Outdoor',
+  'Luxury Watches',
+  'Digital Watches',
+  'Wall Clocks',
+  'Educational Toys',
+  'Baby Gear',
+  'Electronic Toys',
+  'Supplements',
+  'Medical Equipment',
+  'Personal Hygiene',
+  'Stationery',
+  'Office Tech',
+  'Organization',
+  'Car Parts',
+  'Interior Accessories',
+  'Tires & Rims',
+  'Kitchen',
+  'Laundry',
+  'Cooling',
+  'Rings & Wedding',
+  'Necklaces & Pendants',
+  'Bracelets & Earrings',
+  'Digital Cards',
+  'Physical Gifts',
+];
 
 /// Read at build time — never hardcode your real key in source.
 /// Run with:  flutter run --dart-define=IMGBB_KEY=your_actual_key
-const String _imgbbApiKey = String.fromEnvironment("IMGBB_KEY");
 
 /// ZanNext — Add Product page
 /// Seller flow: user has already picked Main Category + Subcategory.
-/// This page collects product details, uploads photos to ImgBB,
+/// This page collects product details, uploads photos to Cloudinary,
 /// then writes the doc to Firestore.
 class AddProductWidget extends StatefulWidget {
   const AddProductWidget({super.key});
@@ -682,9 +743,11 @@ class _AddProductWidgetState extends State<AddProductWidget> {
 
       if (selectedMedia == null || selectedMedia.isEmpty) return;
 
-      if (!selectedMedia
-          .every((m) => validateFileFormat(m.storagePath, context))) {
-        return;
+      print('📸 Picked ${selectedMedia.length} photo(s)');
+      for (final m in selectedMedia) {
+        print('   → path: ${m.storagePath}');
+        print('   → bytes: ${m.bytes?.length ?? 0} bytes');
+        print('   → filename: ${m.storagePath.split('/').last}');
       }
 
       safeSetState(() {
@@ -698,8 +761,12 @@ class _AddProductWidgetState extends State<AddProductWidget> {
       final futures = <Future<String?>>[];
       for (final media in selectedMedia) {
         final bytes = media.bytes;
-        if (bytes == null) continue;
-        futures.add(_uploadToImgBB(
+        print('🔍 Processing: ${media.storagePath} — bytes: ${bytes?.length ?? 0}');
+        if (bytes == null || bytes.isEmpty) {
+          print('   ❌ Skipping — bytes null or empty');
+          continue;
+        }
+        futures.add(_uploadToCloudinary(
           bytes,
           media.storagePath.split('/').last,
           onDone: () {
@@ -714,19 +781,25 @@ class _AddProductWidgetState extends State<AddProductWidget> {
       }
 
       final results = await Future.wait(futures);
+      print('📤 Upload results: $results');
       final urls = results.whereType<String>().toList();
+      print('✅ Successful URLs: $urls');
 
       safeSetState(() {
         _model.isUploadingPhotos = false;
         _model.uploadProgress = 0;
-        _model.uploadedPhotoUrls = urls;
+        // ⚡ APPEND — don't overwrite existing photos
+        _model.uploadedPhotoUrls = [
+          ..._model.uploadedPhotoUrls,
+          ...urls,
+        ];
       });
 
       if (urls.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No photos uploaded. Check ImgBB key / try again.'),
+            content: Text('Upload failed. Check your internet and try again.'),
           ),
         );
       }
@@ -740,58 +813,16 @@ class _AddProductWidgetState extends State<AddProductWidget> {
   }
 
   // ============================================================
-  // ImgBB upload — returns the display_url of the uploaded image
+  // Cloudinary upload — returns the secure URL of the uploaded image
   // ============================================================
-  Future<String?> _uploadToImgBB(
+  Future<String?> _uploadToCloudinary(
     Uint8List bytes,
     String filename, {
     void Function()? onDone,
-    int retries = 2,
   }) async {
-    if (_imgbbApiKey.isEmpty) {
-      print('❌ ImgBB API key missing.');
-      return null;
-    }
-
-    for (var attempt = 0; attempt <= retries; attempt++) {
-      try {
-        final uri = Uri.parse(
-          'https://api.imgbb.com/1/upload?key=$_imgbbApiKey',
-        );
-
-        // ⚡ Multipart is ~30% faster than base64 for large images
-        final request = http.MultipartRequest('POST', uri)
-          ..fields['name'] = filename
-          ..files.add(http.MultipartFile.fromBytes(
-            'image',
-            bytes,
-            filename: filename,
-          ));
-
-        final streamed = await request.send().timeout(
-              const Duration(seconds: 20),
-            );
-        final response = await http.Response.fromStream(streamed);
-
-        if (response.statusCode == 200) {
-          final json = jsonDecode(response.body);
-          if (json['success'] == true) {
-            onDone?.call();
-            return json['data']['display_url'] as String? ??
-                json['data']['url'] as String?;
-          }
-        }
-        print('ImgBB failed (attempt $attempt): ${response.statusCode}');
-      } catch (e) {
-        print('ImgBB exception (attempt $attempt): $e');
-      }
-      // Short backoff before retry
-      if (attempt < retries) {
-        await Future.delayed(Duration(milliseconds: 400 * (attempt + 1)));
-      }
-    }
+    final url = await CloudinaryService.upload(bytes, filename: filename);
     onDone?.call();
-    return null;
+    return url;
   }
 
   // ============================================================

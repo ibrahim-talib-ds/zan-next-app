@@ -51,7 +51,7 @@ class _ElectronicsWidgetState extends State<ElectronicsWidget> {
       icon: Icons.tv_rounded,
     ),
     _Sub(
-      label: 'Smart Phones',
+      label: 'Smart Phone',
       subtitle: 'Android, iPhone, accessories',
       icon: Icons.smartphone_rounded,
     ),

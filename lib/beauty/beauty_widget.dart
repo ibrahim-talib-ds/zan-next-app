@@ -51,22 +51,22 @@ class _BeautyWidgetState extends State<BeautyWidget> {
       icon: Icons.palette_rounded,
     ),
     _Sub(
-      label: 'Bath & Body',
+      label: 'Personal Hygiene',
       subtitle: 'Soap, lotions, scrubs',
       icon: Icons.bathtub_rounded,
     ),
     _Sub(
-      label: 'Nails',
+      label: 'Makeup',
       subtitle: 'Polish, gel, nail art',
       icon: Icons.back_hand_rounded,
     ),
     _Sub(
-      label: 'Tools & Brushes',
+      label: 'Makeup',
       subtitle: 'Brushes, combs, applicators',
       icon: Icons.brush_outlined,
     ),
     _Sub(
-      label: 'Men\'s Grooming',
+      label: 'Personal Hygiene',
       subtitle: 'Beard, shaving, aftershave',
       icon: Icons.face_retouching_natural_rounded,
     ),

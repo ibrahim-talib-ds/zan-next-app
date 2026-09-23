@@ -36,62 +36,62 @@ class _FashionWidgetState extends State<FashionWidget> {
   // ------------------------------------------------------------
   static const List<_Sub> _subs = [
     _Sub(
-      label: "Men's Collection",
+      label: "Men’s Wear",
       subtitle: 'Shirts, trousers, suits & more',
       icon: Icons.man_rounded,
     ),
     _Sub(
-      label: "Women's Collection",
+      label: "Women’s Wear",
       subtitle: 'Dresses, tops, skirts & more',
       icon: Icons.woman_rounded,
     ),
     _Sub(
-      label: 'Kids & Infants',
+      label: 'Kids’ Clothing',
       subtitle: 'Clothing for babies & children',
       icon: Icons.child_care_rounded,
     ),
     _Sub(
-      label: 'Underwear & Socks',
+      label: 'Underwear',
       subtitle: 'Everyday essentials',
       icon: Icons.checkroom_rounded,
     ),
     _Sub(
-      label: 'Heels & Wedges',
+      label: 'Heels & Wedge',
       subtitle: 'High heels, platforms, wedges',
       icon: Icons.ice_skating_rounded,
     ),
     _Sub(
-      label: 'Bags & Accessories',
+      label: 'Bracelets & Earrings',
       subtitle: 'Handbags, belts, scarves',
       icon: Icons.shopping_bag_rounded,
     ),
     _Sub(
-      label: 'Sportswear',
+      label: 'Sneakers & Sports',
       subtitle: 'Activewear, jerseys, tracksuits',
       icon: Icons.sports_rounded,
     ),
     _Sub(
-      label: 'Traditional Wear',
+      label: 'Women’s Wear',
       subtitle: 'Kanga, kitenge, dashiki & more',
       icon: Icons.local_florist_rounded,
     ),
     _Sub(
-      label: 'Jackets & Coats',
+      label: 'Men’s Wear',
       subtitle: 'Winter, denim, leather, bomber',
       icon: Icons.dry_cleaning_rounded,
     ),
     _Sub(
-      label: 'Sweaters & Hoodies',
+      label: 'Men’s Wear',
       subtitle: 'Pullovers, cardigans, sweatshirts',
       icon: Icons.ac_unit_rounded,
     ),
     _Sub(
-      label: 'Shorts & Skirts',
+      label: 'Shorts Casual',
       subtitle: 'Casual, denim, mini, maxi',
       icon: Icons.crop_16_9_rounded,
     ),
     _Sub(
-      label: 'Sleepwear',
+      label: 'Underwear',
       subtitle: 'Pyjamas, nightgowns, robes',
       icon: Icons.bedtime_rounded,
     ),

@@ -10,6 +10,7 @@ import '/flutter_flow/upload_data.dart';
 import 'package:flutter/material.dart';
 
 import 'profile_edit_model.dart';
+import '/services/cloudinary_service.dart';
 export 'profile_edit_model.dart';
 
 class ProfileEditWidget extends StatefulWidget {
@@ -23,8 +24,7 @@ class ProfileEditWidget extends StatefulWidget {
 }
 
 class _ProfileEditWidgetState extends State<ProfileEditWidget> {
-  static const String _imgbbApiKey =
-      String.fromEnvironment('IMGBB_KEY');
+
 
   late ProfileEditModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
@@ -369,7 +369,7 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
       safeSetState(() => _model.isDataUploading_uploadDataDr6 = true);
 
       try {
-        final url = await _uploadToImgBB(
+        final url = await _uploadToCloudinary(
           selectedMedia.first.bytes,
           selectedMedia.first.storagePath.split('/').last,
         );
@@ -734,47 +734,11 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
   // ═══════════════════════════════════════════════════════════
   // ImgBB upload — returns display_url of uploaded image
   // ═══════════════════════════════════════════════════════════
-  Future<String?> _uploadToImgBB(Uint8List bytes, String filename) async {
-    if (_imgbbApiKey.isEmpty) {
-      debugPrint('❌ IMGBB_KEY missing');
-      return null;
-    }
-
-    for (var attempt = 0; attempt <= 2; attempt++) {
-      try {
-        final uri = Uri.parse(
-          'https://api.imgbb.com/1/upload?key=$_imgbbApiKey',
-        );
-
-        final request = http.MultipartRequest('POST', uri)
-          ..fields['name'] = filename
-          ..files.add(http.MultipartFile.fromBytes(
-            'image',
-            bytes,
-            filename: filename,
-          ));
-
-        final streamed = await request.send().timeout(
-              const Duration(seconds: 20),
-            );
-        final response = await http.Response.fromStream(streamed);
-
-        if (response.statusCode == 200) {
-          final json = jsonDecode(response.body);
-          if (json['success'] == true) {
-            return json['data']['display_url'] as String? ??
-                json['data']['url'] as String?;
-          }
-        }
-        debugPrint('ImgBB failed (try ${attempt + 1}): ${response.statusCode}');
-      } catch (e) {
-        debugPrint('ImgBB error (try ${attempt + 1}): $e');
-      }
-      if (attempt < 2) {
-        await Future.delayed(Duration(milliseconds: 400 * (attempt + 1)));
-      }
-    }
-    return null;
+  // ═══════════════════════════════════════════════════════════
+  // Cloudinary upload — returns secure URL of uploaded image
+  // ═══════════════════════════════════════════════════════════
+  Future<String?> _uploadToCloudinary(Uint8List bytes, String filename) async {
+    return CloudinaryService.upload(bytes, filename: filename);
   }
 
   Future<void> _save() async {

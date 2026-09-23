@@ -13,7 +13,15 @@ import '../auth/firebase_auth/auth_util.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import 'flutter_flow_util.dart';
 
-const allowedFormats = {'image/png', 'image/jpeg', 'video/mp4', 'image/gif'};
+const allowedFormats = {
+  // Images
+  'image/png', 'image/jpeg', 'image/jpg', 'image/webp',
+  'image/gif', 'image/bmp', 'image/heic', 'image/heif',
+  'image/tiff', 'image/svg+xml',
+  // Video
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo',
+  'video/3gpp', 'video/x-matroska',
+};
 
 class SelectedFile {
   const SelectedFile({
@@ -279,7 +287,12 @@ Future<List<SelectedFile>?> selectMedia({
 }
 
 bool validateFileFormat(String filePath, BuildContext context) {
-  if (allowedFormats.contains(mime(filePath))) {
+  final m = mime(filePath) ?? '';
+  if (allowedFormats.contains(m)) {
+    return true;
+  }
+  // Safety net: accept anything that starts with image/ or video/
+  if (m.startsWith('image/') || m.startsWith('video/')) {
     return true;
   }
   ScaffoldMessenger.of(context)

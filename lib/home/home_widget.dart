@@ -112,8 +112,16 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
           child: Stack(
             children: [
               // ============ MAIN SCROLL CONTENT ============
-              SingleChildScrollView(
-                child: Column(
+              RefreshIndicator(
+                color: theme.primary,
+                backgroundColor: theme.secondaryBackground,
+                onRefresh: () async {
+                  safeSetState(() {});
+                  await Future.delayed(const Duration(milliseconds: 600));
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -382,44 +390,44 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                             assetImage: 'assets/images/mean.webp',
                             labelKey: 'wmnswear1',
                             fallback: 'Women\'s Wear',
-                            categoryValue: 'Women\'s Wear',
+                            categoryValue: 'Women’s Wear',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/Luxiary.webp',
                             labelKey: 'beauty001',
                             fallback: 'Beauty',
-                            categoryValue: 'Beauty & Health',
+                            categoryValue: 'Skincare',
                           ),
                           _categoryIconTile(
                             context,
                             icon: Icons.phone_iphone_rounded,
                             label: 'Phones',
-                            categoryValue: 'Phones & Tablets',
+                            categoryValue: 'Smart Phone',
                           ),
                           _categoryIconTile(
                             context,
                             icon: Icons.kitchen_rounded,
                             label: 'Home',
-                            categoryValue: 'Home & Kitchen',
+                            categoryValue: 'Furniture',
                           ),
                           _categoryIconTile(
                             context,
                             icon: Icons.sports_soccer_rounded,
                             label: 'Sports',
-                            categoryValue: 'Sports & Outdoor',
+                            categoryValue: 'Team Sports',
                           ),
                           _categoryIconTile(
                             context,
                             icon: Icons.checkroom_rounded,
                             label: 'Shoes',
-                            categoryValue: 'Shoes',
+                            categoryValue: 'Formal Shoes',
                           ),
                           _categoryIconTile(
                             context,
                             icon: Icons.shopping_bag_rounded,
                             label: 'Bags',
-                            categoryValue: 'Bags',
+                            categoryValue: 'Bracelets & Earrings',
                           ),
                           _moreTile(context),
                         ],
@@ -919,6 +927,7 @@ your goals */,
 
                     SizedBox(height: 24),
                   ],
+                ),
                 ),
               ),
 

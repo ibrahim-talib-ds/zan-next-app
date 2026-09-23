@@ -18,9 +18,9 @@ import 'package:image_picker/image_picker.dart' show MediaSource;
 import 'package:provider/provider.dart';
 
 import 'edit_mode_model.dart';
+import '/services/cloudinary_service.dart';
 export 'edit_mode_model.dart';
 
-const String _imgbbApiKey = String.fromEnvironment('IMGBB_KEY');
 
 class EditModeWidget extends StatefulWidget {
   const EditModeWidget({
@@ -716,7 +716,7 @@ class _EditModeWidgetState extends State<EditModeWidget> {
         for (final media in selectedMedia) {
           final bytes = media.bytes;
           if (bytes == null) continue;
-          final uploaded = await _uploadToImgBB(
+          final uploaded = await _uploadToCloudinary(
               bytes, media.storagePath.split('/').last);
           if (uploaded != null) urls.add(uploaded);
         }
@@ -741,33 +741,14 @@ class _EditModeWidgetState extends State<EditModeWidget> {
     }
   }
 
-  Future<String?> _uploadToImgBB(Uint8List bytes, String filename) async {
-    if (_imgbbApiKey.isEmpty) {
-      print('❌ ImgBB API key missing.');
-      return null;
-    }
-    try {
-      final uri = Uri.parse(
-        'https://api.imgbb.com/1/upload?key=$_imgbbApiKey',
-      );
-      final base64Image = base64Encode(bytes);
-      final response = await http
-          .post(uri, body: {'image': base64Image, 'name': filename})
-          .timeout(const Duration(seconds: 30));
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        if (json['success'] == true) {
-          return json['data']['display_url'] as String? ??
-              json['data']['url'] as String?;
-        }
-      }
-      print('ImgBB upload failed: ${response.statusCode}');
-      return null;
-    } catch (e) {
-      print('ImgBB upload exception: $e');
-      return null;
-    }
+  Future<String?> _uploadToCloudinary(
+    Uint8List bytes,
+    String filename, {
+    void Function()? onDone,
+  }) async {
+    final url = await CloudinaryService.upload(bytes, filename: filename);
+    onDone?.call();
+    return url;
   }
 
   // ============================================================
