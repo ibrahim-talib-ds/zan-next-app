@@ -2,118 +2,67 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Helper functions ───
     function isSignedIn() {
       return request.auth != null;
     }
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-    function isAdmin() {
-      return isSignedIn() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid))
-          .data.isAdmin == true;
-    }
-    function currentUserPath() {
-      return /databases/$(database)/documents/users/$(request.auth.uid);
+
+    function isSelf(ref) {
+      return isSignedIn() && request.auth.uid == ref.id;
     }
 
-    // ═══════════════════════════════════════════════════════
-    // INVENTORY — with viewers subcollection
-    // ═══════════════════════════════════════════════════════
-    match /Inventory/{itemId} {
+    // ─── ORDERS — buyer cannot order own product ───
+    match /orders/{orderId} {
       allow read: if isSignedIn();
-
-      // Only the seller can create a new product
       allow create: if isSignedIn()
-                    && request.resource.data.sellers_ref == currentUserPath();
+        && request.resource.data.buyer.id == request.auth.uid
+        && request.resource.data.seller.id != request.auth.uid; // 🚫 no self-order
+      allow update, delete: if isSignedIn()
+        && (resource.data.buyer.id == request.auth.uid
+            || resource.data.seller.id == request.auth.uid);
+    }
 
-      // Seller can edit own; admin can edit any
+    // ─── CHATS — no chat with yourself ───
+    match /Chats/{chatId} {
+      allow read: if isSignedIn()
+        && request.auth.uid in resource.data.users.map(u, u.id);
+      allow create: if isSignedIn()
+        && request.resource.data.buyer_ref.id != request.resource.data.seller_ref.id; // 🚫 no self-chat
       allow update: if isSignedIn()
-                    && (resource.data.sellers_ref == currentUserPath()
-                        || isAdmin());
-
-      // Seller can delete own; admin can delete any
+        && request.auth.uid in resource.data.users.map(u, u.id);
       allow delete: if isSignedIn()
-                    && (resource.data.sellers_ref == currentUserPath()
-                        || isAdmin());
-
-      // ─── UNIQUE VIEWERS subcollection ───
-      match /viewers/{viewerId} {
-        // Anyone signed in can register their own view
-        allow create: if isSignedIn()
-                      && viewerId == request.auth.uid
-                      && request.resource.data.user_ref == currentUserPath();
-
-        // Viewers are read-only after creation (nobody can change)
-        allow read: if isAdmin();
-        allow update: if false;
-        allow delete: if isAdmin();
-      }
+        && request.auth.uid in resource.data.users.map(u, u.id);
     }
 
-    // ═══════════════════════════════════════════════════════
-    // REPORTS — any user can create; only admins can read/update
-    // ═══════════════════════════════════════════════════════
-    match /reports/{reportId} {
-      allow create: if isSignedIn()
-                    && request.resource.data.reporter_ref == currentUserPath()
-                    && request.resource.data.status == 'pending';
-
-      allow read: if isAdmin()
-                  || (isSignedIn()
-                      && resource.data.reporter_ref == currentUserPath());
-
-      allow update, delete: if isAdmin();
+    // ─── CHAT MESSAGES ───
+    match /chat_messages/{msgId} {
+      allow read, create, delete: if isSignedIn();
     }
 
-    // ═══════════════════════════════════════════════════════
-    // USERS
-    // ═══════════════════════════════════════════════════════
-    match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // SUPPORT CHATS
-    // ═══════════════════════════════════════════════════════
-    match /support_chats/{chatId} {
-      allow read, write: if isSignedIn()
-                    && (isOwner(chatId) || isAdmin());
-
-      match /messages/{msgId} {
-        allow read, write: if isSignedIn()
-                    && (isOwner(chatId) || isAdmin());
-      }
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // NOTIFICATIONS
-    // ═══════════════════════════════════════════════════════
+    // ─── NOTIFICATIONS — user can delete own ───
     match /notifications/{notifId} {
       allow read: if isSignedIn()
-                    && (resource.data.user_ref == currentUserPath()
-                        || isAdmin());
-      allow write: if isAdmin() || isSignedIn();
+        && resource.data.user_ref.id == request.auth.uid;
+      allow update, delete: if isSignedIn()
+        && resource.data.user_ref.id == request.auth.uid;
+      allow create: if isSignedIn();
     }
 
-    // ═══════════════════════════════════════════════════════
-    // SEARCH HISTORY — per user
-    // ═══════════════════════════════════════════════════════
-    match /search_history/{historyId} {
-      allow read, write: if isSignedIn()
-                    && (resource.data.user_ref == currentUserPath()
-                        || request.resource.data.user_ref == currentUserPath()
-                        || isAdmin());
+    // ─── INVENTORY — public read, owner write ───
+    match /inventory/{itemId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn()
+        && resource.data.sellers_ref.id == request.auth.uid;
     }
 
-    // ═══════════════════════════════════════════════════════
-    // EVERYTHING ELSE
-    // ═══════════════════════════════════════════════════════
-    match /{document=**} {
-      allow read, write: if isSignedIn();
+    // ─── USERS — self write ───
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isUserSelf(userId);
+    }
+
+    function isUserSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
   }
 }

@@ -281,7 +281,10 @@ class _NotificationWidgetState extends State<NotificationWidget> {
                             const SizedBox(height: 8),
                             ...unread.map((n) => Padding(
                                   padding: const EdgeInsets.only(bottom: 10),
-                                  child: _notificationTile(n, unread: true),
+                                  child: _swipeToDelete(
+                                    n,
+                                    _notificationTile(n, unread: true),
+                                  ),
                                 )),
                             const SizedBox(height: 16),
                           ],
@@ -290,7 +293,10 @@ class _NotificationWidgetState extends State<NotificationWidget> {
                             const SizedBox(height: 8),
                             ...read.map((n) => Padding(
                                   padding: const EdgeInsets.only(bottom: 10),
-                                  child: _notificationTile(n, unread: false),
+                                  child: _swipeToDelete(
+                                    n,
+                                    _notificationTile(n, unread: false),
+                                  ),
                                 )),
                           ],
                         ],
@@ -348,10 +354,239 @@ class _NotificationWidgetState extends State<NotificationWidget> {
                 style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded,
+                  color: Colors.white, size: 22),
+              onSelected: (v) {
+                if (v == 'clear_all') _confirmClearAll();
+                if (v == 'clear_read') _confirmClearRead();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'clear_read',
+                  child: Row(
+                    children: [
+                      Icon(Icons.done_all_rounded, size: 18),
+                      SizedBox(width: 10),
+                      Text('Clear read only'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'clear_all',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_sweep_rounded,
+                          size: 18, color: Color(0xFFDC0F0F)),
+                      SizedBox(width: 10),
+                      Text('Clear all',
+                          style: TextStyle(color: Color(0xFFDC0F0F))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // SWIPE-TO-DELETE WRAPPER
+  // ═══════════════════════════════════════════════════════════
+  Widget _swipeToDelete(NotificationsRecord n, Widget child) {
+    return Dismissible(
+      key: ValueKey('notif_${n.reference.id}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDC0F0F),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+            SizedBox(width: 6),
+            Text('Delete',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                )),
+          ],
+        ),
+      ),
+      confirmDismiss: (_) => _confirmDeleteOne(n),
+      onDismissed: (_) => _deleteOne(n),
+      child: child,
+    );
+  }
+
+  Future<bool> _confirmDeleteOne(NotificationsRecord n) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _cardColor,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Text('Delete notification?',
+                style: TextStyle(
+                    color: _textColor, fontWeight: FontWeight.w800, fontSize: 16)),
+            content: Text(
+              valueOrDefault<String>(n.title, 'This notification'),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: _mutedColor, fontSize: 13),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Keep',
+                    style: TextStyle(
+                        color: _mutedColor, fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete',
+                    style: TextStyle(
+                        color: Color(0xFFDC0F0F), fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _deleteOne(NotificationsRecord n) async {
+    try {
+      await n.reference.delete();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Notification deleted'),
+          backgroundColor: kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not delete: $e'),
+          backgroundColor: const Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmClearAll() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Clear all notifications?',
+            style: TextStyle(
+                color: _textColor, fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text(
+          'This will permanently delete every notification. You cannot undo.',
+          style: TextStyle(color: _mutedColor, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel',
+                style: TextStyle(
+                    color: _mutedColor, fontWeight: FontWeight.w600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Clear All',
+                style: TextStyle(
+                    color: Color(0xFFDC0F0F), fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await _deleteAllNotifications(onlyRead: false);
+  }
+
+  Future<void> _confirmClearRead() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Clear read notifications?',
+            style: TextStyle(
+                color: _textColor, fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text("Only notifications you've already seen will be removed.",
+            style: TextStyle(color: _mutedColor, fontSize: 13)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel',
+                style: TextStyle(
+                    color: _mutedColor, fontWeight: FontWeight.w600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Clear',
+                style: TextStyle(
+                    color: Color(0xFFDC0F0F), fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await _deleteAllNotifications(onlyRead: true);
+  }
+
+  Future<void> _deleteAllNotifications({required bool onlyRead}) async {
+    try {
+      final q = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('user_ref', isEqualTo: currentUserReference)
+          .where('is_read', isEqualTo: onlyRead ? true : false)
+          .get();
+
+      if (q.docs.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nothing to clear')),
+        );
+        return;
+      }
+
+      final batch = FirebaseFirestore.instance.batch();
+      for (final doc in q.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cleared ${q.docs.length} notification(s)'),
+          backgroundColor: kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      safeSetState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not clear: $e'),
+          backgroundColor: const Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   // ═══════════════════════════════════════════════════════════

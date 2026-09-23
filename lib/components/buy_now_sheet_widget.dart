@@ -660,6 +660,18 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
     if (_model.selectedAddress == null) return;
     if (currentUserReference == null) return;
 
+    // 🚫 Block buying your own product
+    if (widget.product.sellersRef == currentUserReference) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("You can't buy your own product."),
+          backgroundColor: Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final phone = _model.phoneController?.text.trim() ?? '';
     if (phone.isEmpty || phone.length < 10) {
       ScaffoldMessenger.of(context).showSnackBar(

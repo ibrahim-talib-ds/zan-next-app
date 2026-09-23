@@ -836,6 +836,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   }
 
   Future<void> _sendQuickMessage(InventoryRecord p, String message) async {
+    if (p.sellersRef == currentUserReference) return;
     try {
       final chatRef = await _ensureChat(p);
       // Send the message
@@ -870,6 +871,10 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   }
 
   Future<DocumentReference> _ensureChat(InventoryRecord p) async {
+    // 🚫 Block self-chat — seller cannot chat with themselves
+    if (p.sellersRef == currentUserReference) {
+      throw Exception("You can't message yourself on your own product.");
+    }
     // Look for existing chat for this product + this buyer
     final existing = await FirebaseFirestore.instance
         .collection('Chats')
@@ -1358,15 +1363,30 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
           _iconBarBtn(
             icon: Icons.chat_rounded,
             onTap: () async {
-              final ref = await _ensureChat(p);
-              if (!mounted) return;
-              context.pushNamed(
-                ChatDWidget.routeName,
-                queryParameters: {
-                  'receiveChats':
-                      serializeParam(ref, ParamType.DocumentReference),
-                }.withoutNulls,
-              );
+              if (p.sellersRef == currentUserReference) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("This is your product — you can't chat with yourself."),
+                  ),
+                );
+                return;
+              }
+              try {
+                final ref = await _ensureChat(p);
+                if (!mounted) return;
+                context.pushNamed(
+                  ChatDWidget.routeName,
+                  queryParameters: {
+                    'receiveChats':
+                        serializeParam(ref, ParamType.DocumentReference),
+                  }.withoutNulls,
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$e')),
+                );
+              }
             },
           ),
           const SizedBox(width: 10),
@@ -1444,9 +1464,19 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   // BOTTOM BAR — Buy Now (primary, wide)
   // ═══════════════════════════════════════════════════════════
   Widget _buyNowBtn(BuildContext context, InventoryRecord p) {
+    final isOwner = p.sellersRef == currentUserReference;
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () => _openBuyNow(context, p),
+      onTap: isOwner
+          ? () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content:
+                      Text("You can't buy your own product — this is yours."),
+                ),
+              );
+            }
+          : () => _openBuyNow(context, p),
       child: Container(
         height: 52,
         decoration: BoxDecoration(
