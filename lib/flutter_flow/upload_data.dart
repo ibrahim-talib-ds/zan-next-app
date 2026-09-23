@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
@@ -239,7 +240,7 @@ Future<List<SelectedFile>?> selectMedia({
   }
 
   // 🛡️ Read bytes defensively — some devices return empty files briefly.
-  List<int> mediaBytes;
+  Uint8List mediaBytes;
   try {
     mediaBytes = await pickedMedia.readAsBytes();
   } catch (e) {
