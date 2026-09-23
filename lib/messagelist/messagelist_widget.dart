@@ -96,7 +96,39 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
               padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, i) => _chatTile(items[i]),
+              itemBuilder: (context, i) {
+                final chat = items[i];
+                return Dismissible(
+                  key: ValueKey('chat_${chat.reference.id}'),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding:
+                        const EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC0F0F),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.delete_outline_rounded,
+                            color: Colors.white, size: 22),
+                        SizedBox(width: 6),
+                        Text('Delete',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            )),
+                      ],
+                    ),
+                  ),
+                  confirmDismiss: (_) => _confirmDeleteChat(chat),
+                  onDismissed: (_) => _deleteChat(chat),
+                  child: _chatTile(chat),
+                );
+              },
             ),
           );
         },
@@ -166,10 +198,203 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
             ],
           ),
           const Spacer(),
-          const SizedBox(width: 44),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded,
+                color: Colors.white, size: 22),
+            onSelected: (v) {
+              if (v == 'clear_all') _confirmClearAllChats();
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'clear_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep_rounded,
+                        size: 18, color: Color(0xFFDC0F0F)),
+                    SizedBox(width: 10),
+                    Text('Clear all',
+                        style: TextStyle(color: Color(0xFFDC0F0F))),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // DELETE HELPERS
+  // ═══════════════════════════════════════════════════════════
+  Future<bool> _confirmDeleteChat(ChatsRecord chat) async {
+    final names = chat.userName;
+    final isMeBuyer = chat.buyerRef == currentUserReference;
+    String otherName = 'this chat';
+    if (names.length >= 2) {
+      otherName = isMeBuyer ? names[1] : names[0];
+    } else if (names.isNotEmpty) {
+      otherName = names.first;
+    }
+
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _card,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Text('Delete conversation?',
+                style: TextStyle(
+                    color: _text,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
+            content: Text(
+              'Chat with $otherName and all its messages will be removed permanently.',
+              style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Cancel',
+                    style: TextStyle(
+                        color: _muted, fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete',
+                    style: TextStyle(
+                        color: Color(0xFFDC0F0F),
+                        fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _deleteChat(ChatsRecord chat) async {
+    try {
+      // 1. Delete all messages in this chat
+      final msgs = await FirebaseFirestore.instance
+          .collection('chat_messages')
+          .where('chat_ref', isEqualTo: chat.reference)
+          .get();
+
+      if (msgs.docs.isNotEmpty) {
+        final batch = FirebaseFirestore.instance.batch();
+        for (final d in msgs.docs) {
+          batch.delete(d.reference);
+        }
+        await batch.commit();
+      }
+
+      // 2. Delete the chat document
+      await chat.reference.delete();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Conversation deleted'),
+          backgroundColor: kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      safeSetState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not delete: $e'),
+          backgroundColor: const Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmClearAllChats() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Clear all conversations?',
+            style: TextStyle(
+                color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text(
+          'Every chat and its messages will be permanently deleted.',
+          style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel',
+                style: TextStyle(
+                    color: _muted, fontWeight: FontWeight.w600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Clear All',
+                style: TextStyle(
+                    color: Color(0xFFDC0F0F),
+                    fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await _clearAllChats();
+  }
+
+  Future<void> _clearAllChats() async {
+    if (currentUserReference == null) return;
+    try {
+      final chats = await FirebaseFirestore.instance
+          .collection('Chats')
+          .where('users', arrayContains: currentUserReference)
+          .get();
+
+      if (chats.docs.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No conversations to clear')),
+        );
+        return;
+      }
+
+      for (final chat in chats.docs) {
+        final msgs = await FirebaseFirestore.instance
+            .collection('chat_messages')
+            .where('chat_ref', isEqualTo: chat.reference)
+            .get();
+        if (msgs.docs.isNotEmpty) {
+          final batch = FirebaseFirestore.instance.batch();
+          for (final d in msgs.docs) {
+            batch.delete(d.reference);
+          }
+          await batch.commit();
+        }
+        await chat.reference.delete();
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cleared ${chats.docs.length} conversation(s)'),
+          backgroundColor: kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      safeSetState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not clear: $e'),
+          backgroundColor: const Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
