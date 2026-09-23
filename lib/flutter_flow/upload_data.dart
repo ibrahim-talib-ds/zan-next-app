@@ -210,20 +210,56 @@ Future<List<SelectedFile>?> selectMedia({
   final source = mediaSource == MediaSource.camera
       ? ImageSource.camera
       : ImageSource.gallery;
-  final pickedMediaFuture = isVideo
-      ? picker.pickVideo(source: source)
-      : picker.pickImage(
-          maxWidth: maxWidth,
-          maxHeight: maxHeight,
-          imageQuality: imageQuality,
-          source: source,
-        );
-  final pickedMedia = await pickedMediaFuture;
-  final mediaBytes = await pickedMedia?.readAsBytes();
-  if (mediaBytes == null) {
+
+  // 🛡️ Recover from Android killing the app while the camera was open.
+  // This is the #1 cause of "corrupt/empty" camera photos.
+  XFile? pickedMedia;
+  if (source == ImageSource.camera && !isWeb) {
+    final lostData = await picker.retrieveLostData();
+    if (!lostData.isEmpty && lostData.files != null && lostData.files!.isNotEmpty) {
+      pickedMedia = lostData.files!.first;
+    }
+  }
+
+  if (pickedMedia == null) {
+    final pickedMediaFuture = isVideo
+        ? picker.pickVideo(source: source)
+        : picker.pickImage(
+            maxWidth: maxWidth,
+            maxHeight: maxHeight,
+            imageQuality: imageQuality ?? 85,
+            source: source,
+            preferredCameraDevice: CameraDevice.rear,
+          );
+    pickedMedia = await pickedMediaFuture;
+  }
+
+  if (pickedMedia == null) {
     return null;
   }
-  final path = _getStoragePath(storageFolderPath, pickedMedia!.name, isVideo);
+
+  // 🛡️ Read bytes defensively — some devices return empty files briefly.
+  List<int> mediaBytes;
+  try {
+    mediaBytes = await pickedMedia.readAsBytes();
+  } catch (e) {
+    debugPrint('❌ Camera readAsBytes failed: $e');
+    return null;
+  }
+
+  if (mediaBytes.isEmpty) {
+    debugPrint('❌ Camera returned empty bytes');
+    // Retry once after a short delay — some devices need a moment
+    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      mediaBytes = await pickedMedia.readAsBytes();
+    } catch (_) {
+      return null;
+    }
+    if (mediaBytes.isEmpty) return null;
+  }
+
+  final path = _getStoragePath(storageFolderPath, pickedMedia.name, isVideo);
   final dimensions = includeDimensions
       ? isVideo
           ? _getVideoDimensions(pickedMedia.path)
