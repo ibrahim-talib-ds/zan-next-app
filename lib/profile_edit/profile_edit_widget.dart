@@ -1,4 +1,7 @@
 import '/auth/firebase_auth/auth_util.dart';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
+import 'dart:convert';
 import '/backend/backend.dart';
 import '/backend/firebase_storage/storage.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
@@ -20,6 +23,9 @@ class ProfileEditWidget extends StatefulWidget {
 }
 
 class _ProfileEditWidgetState extends State<ProfileEditWidget> {
+  static const String _imgbbApiKey =
+      String.fromEnvironment('IMGBB_KEY');
+
   late ProfileEditModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
@@ -353,7 +359,7 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
         context: context,
         maxWidth: 720,
         maxHeight: 720,
-        imageQuality: 90,
+        imageQuality: 75,
         allowPhoto: true,
         textColor: _text,
       );
@@ -363,14 +369,22 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
       safeSetState(() => _model.isDataUploading_uploadDataDr6 = true);
 
       try {
-        final url = await uploadData(
-          selectedMedia.first.storagePath,
+        final url = await _uploadToImgBB(
           selectedMedia.first.bytes,
+          selectedMedia.first.storagePath.split('/').last,
         );
         if (url != null && url.isNotEmpty && mounted) {
           safeSetState(() {
             _model.uploadedFileUrl_uploadDataDr6 = url;
           });
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Upload failed — check your connection and try again.'),
+              backgroundColor: kRed,
+            ),
+          );
         }
       } finally {
         if (mounted) {
@@ -715,6 +729,52 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
         ),
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ImgBB upload — returns display_url of uploaded image
+  // ═══════════════════════════════════════════════════════════
+  Future<String?> _uploadToImgBB(Uint8List bytes, String filename) async {
+    if (_imgbbApiKey.isEmpty) {
+      debugPrint('❌ IMGBB_KEY missing');
+      return null;
+    }
+
+    for (var attempt = 0; attempt <= 2; attempt++) {
+      try {
+        final uri = Uri.parse(
+          'https://api.imgbb.com/1/upload?key=$_imgbbApiKey',
+        );
+
+        final request = http.MultipartRequest('POST', uri)
+          ..fields['name'] = filename
+          ..files.add(http.MultipartFile.fromBytes(
+            'image',
+            bytes,
+            filename: filename,
+          ));
+
+        final streamed = await request.send().timeout(
+              const Duration(seconds: 20),
+            );
+        final response = await http.Response.fromStream(streamed);
+
+        if (response.statusCode == 200) {
+          final json = jsonDecode(response.body);
+          if (json['success'] == true) {
+            return json['data']['display_url'] as String? ??
+                json['data']['url'] as String?;
+          }
+        }
+        debugPrint('ImgBB failed (try ${attempt + 1}): ${response.statusCode}');
+      } catch (e) {
+        debugPrint('ImgBB error (try ${attempt + 1}): $e');
+      }
+      if (attempt < 2) {
+        await Future.delayed(Duration(milliseconds: 400 * (attempt + 1)));
+      }
+    }
+    return null;
   }
 
   Future<void> _save() async {
