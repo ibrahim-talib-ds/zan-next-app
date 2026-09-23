@@ -27,9 +27,6 @@ void main() async {
   GoRouter.optionURLReflectsImperativeAPIs = true;
   usePathUrlStrategy();
 
-  // ⚡ Show branded splash INSTANTLY — no white flash before init finishes
-  runApp(const _BootstrapSplash());
-
   await initFirebase();
 
   // ─── Push notifications ───────────────────────────────
@@ -54,82 +51,7 @@ void main() async {
   ));
 }
 
-// ═══════════════════════════════════════════════════════════
-// BOOTSTRAP SPLASH — shown while Firebase/Stripe/theme load.
-// Matches the app's brand so the launch feels seamless.
-// ═══════════════════════════════════════════════════════════
-class _BootstrapSplash extends StatelessWidget {
-  const _BootstrapSplash();
 
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: Color(0xFF0A3A22),
-        body: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1B7A4E), Color(0xFF0A3A22)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Logo
-                SizedBox(
-                  width: 110,
-                  height: 110,
-                  child: Image(
-                    image: AssetImage('assets/images/zannext_logo.png'),
-                    fit: BoxFit.contain,
-                    errorBuilder: _logoFallback,
-                  ),
-                ),
-                SizedBox(height: 18),
-                Text(
-                  'ZanNext',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'Buy. Sell. Delivered.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12.5,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-                SizedBox(height: 36),
-                SizedBox(
-                  width: 26,
-                  height: 26,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-Widget _logoFallback(BuildContext c, Object e, StackTrace? s) {
-  return const Icon(Icons.storefront_rounded,
-      color: Colors.white, size: 76);
-}
 
 class MyApp extends StatefulWidget {
   @override

@@ -545,11 +545,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
         const SizedBox(width: 8),
         _circleIcon(
           icon: Icons.local_shipping_outlined,
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Tracking coming soon')),
-            );
-          },
+          onTap: () => _openTrackingSheet(order),
         ),
       ],
     );
@@ -655,6 +651,29 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   // ═══════════════════════════════════════════════════════════
   // CHAT
   // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // TRACKING BOTTOM SHEET
+  // ═══════════════════════════════════════════════════════════
+  Future<void> _openTrackingSheet(OrdersRecord order) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _TrackingSheet(
+        order: order,
+        colors: _SheetColors(
+          bg: _bg,
+          card: _card,
+          soft: _soft,
+          text: _text,
+          muted: _muted,
+          border: _border,
+          isDark: _isDark,
+        ),
+      ),
+    );
+  }
+
   Future<void> _openChatWith(
       DocumentReference? otherRef, OrdersRecord order) async {
     if (otherRef == null || currentUserReference == null) return;
@@ -816,4 +835,695 @@ class _OrderStatus {
   final Color color;
   final IconData icon;
   const _OrderStatus(this.label, this.color, this.icon);
+}
+
+// ═══════════════════════════════════════════════════════════
+// TRACKING SHEET — a modal bottom sheet with live timeline
+// ═══════════════════════════════════════════════════════════
+class _SheetColors {
+  final Color bg;
+  final Color card;
+  final Color soft;
+  final Color text;
+  final Color muted;
+  final Color border;
+  final bool isDark;
+  const _SheetColors({
+    required this.bg,
+    required this.card,
+    required this.soft,
+    required this.text,
+    required this.muted,
+    required this.border,
+    required this.isDark,
+  });
+}
+
+class _TrackingSheet extends StatelessWidget {
+  const _TrackingSheet({required this.order, required this.colors});
+
+  final OrdersRecord order;
+  final _SheetColors colors;
+
+  static const Color kGreen = Color(0xFF1B7A4E);
+  static const Color kGreenDeep = Color(0xFF0A3A22);
+  static const Color kRed = Color(0xFFDC0F0F);
+  static const Color kAmber = Color(0xFFFFB300);
+  static const Color kBlue = Color(0xFF3B82F6);
+
+  static const List<String> kFlow = [
+    'Pending',
+    'Confirmed',
+    'On the way',
+    'Delivered',
+  ];
+
+  int _statusIndex(String s) {
+    final v = s.trim().toLowerCase();
+    for (var i = 0; i < kFlow.length; i++) {
+      if (kFlow[i].toLowerCase() == v) return i;
+    }
+    if (v == 'processing' || v == 'accepted') return 1;
+    if (v == 'way' || v.contains('ship') || v.contains('on the')) return 2;
+    if (v == 'delivered' || v == 'completed') return 3;
+    return 0;
+  }
+
+  ({Color color, Color deep, IconData icon, String subtitle}) _cfg(
+      String s) {
+    switch (s.trim().toLowerCase()) {
+      case 'confirmed':
+        return (
+          color: kBlue,
+          deep: const Color(0xFF0A2A6B),
+          icon: Icons.verified_rounded,
+          subtitle: 'Seller confirmed your order',
+        );
+      case 'on the way':
+      case 'on_the_way':
+      case 'shipped':
+        return (
+          color: kAmber,
+          deep: const Color(0xFF7A4A00),
+          icon: Icons.delivery_dining_rounded,
+          subtitle: 'Your order is on the way',
+        );
+      case 'delivered':
+      case 'completed':
+        return (
+          color: kGreen,
+          deep: kGreenDeep,
+          icon: Icons.check_circle_rounded,
+          subtitle: 'Delivered — enjoy!',
+        );
+      case 'cancelled':
+      case 'canceled':
+        return (
+          color: kRed,
+          deep: const Color(0xFF5A0505),
+          icon: Icons.cancel_rounded,
+          subtitle: 'This order was cancelled',
+        );
+      case 'pending':
+      default:
+        return (
+          color: kGreen,
+          deep: kGreenDeep,
+          icon: Icons.hourglass_top_rounded,
+          subtitle: 'Waiting for seller confirmation',
+        );
+    }
+  }
+
+  String _eta(String s) {
+    if (s.contains('pending')) return 'Within 1–2 hours';
+    if (s.contains('confirm')) return 'Within 45 minutes';
+    if (s.contains('way') || s.contains('ship')) return '15–30 minutes';
+    if (s.contains('deliver')) return 'Delivered';
+    if (s.contains('cancel')) return 'Cancelled';
+    return '—';
+  }
+
+  String _fmtTime(DateTime dt) {
+    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final ap = dt.hour < 12 ? 'AM' : 'PM';
+    return '$h:$m $ap';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = order.status ?? 'Pending';
+    final cfg = _cfg(status);
+    final idx = _statusIndex(status);
+    final progress = ((idx + 1) / kFlow.length).clamp(0.0, 1.0);
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(24),
+        topRight: Radius.circular(24),
+      ),
+      child: Container(
+        color: colors.bg,
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 10, bottom: 6),
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header row
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 8, 8),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: kGreen.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: const Icon(Icons.local_shipping_rounded,
+                          color: kGreen, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Track Order',
+                            style: TextStyle(
+                              color: colors.text,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '#${order.reference.id.substring(0, 8).toUpperCase()}',
+                            style: TextStyle(
+                              color: colors.muted,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close_rounded,
+                          color: colors.text, size: 20),
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ─── Status hero ───
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [cfg.color, cfg.deep],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: cfg.color.withOpacity(0.30),
+                              blurRadius: 14,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.20),
+                                    borderRadius: BorderRadius.circular(11),
+                                  ),
+                                  child: Icon(cfg.icon,
+                                      color: Colors.white, size: 22),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'CURRENT STATUS',
+                                        style: TextStyle(
+                                          color:
+                                              Colors.white.withOpacity(0.75),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 1.2,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        status.toUpperCase(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 0.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: LinearProgressIndicator(
+                                value: progress,
+                                minHeight: 7,
+                                backgroundColor:
+                                    Colors.white.withOpacity(0.22),
+                                valueColor:
+                                    const AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              cfg.subtitle,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.92),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // ─── ETA card ───
+                      if (idx >= 0 && idx < 3)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: kGreen.withOpacity(0.10),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: kGreen.withOpacity(0.25),
+                                width: 1.2),
+                          ),
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: kGreen,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                    Icons.access_time_filled_rounded,
+                                    color: Colors.white,
+                                    size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'ESTIMATED ARRIVAL',
+                                      style: TextStyle(
+                                        color: colors.muted,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.1,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      _eta(status),
+                                      style: const TextStyle(
+                                        color: kGreen,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      if (idx >= 0 && idx < 3)
+                        const SizedBox(height: 14),
+
+                      // ─── Timeline ───
+                      Container(
+                        decoration: BoxDecoration(
+                          color: colors.card,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: colors.border),
+                        ),
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 4,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color: kGreen,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Order Timeline',
+                                  style: TextStyle(
+                                    color: colors.text,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            ...List.generate(kFlow.length, (i) {
+                              final label = kFlow[i];
+                              final done = i <= idx;
+                              final isNow = i == idx;
+                              return IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Column(
+                                      children: [
+                                        Container(
+                                          width: 22,
+                                          height: 22,
+                                          decoration: BoxDecoration(
+                                            color: done
+                                                ? kGreen
+                                                : Colors.transparent,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: done
+                                                  ? kGreen
+                                                  : colors.border,
+                                              width: 2,
+                                            ),
+                                            boxShadow: isNow
+                                                ? [
+                                                    BoxShadow(
+                                                      color: kGreen
+                                                          .withOpacity(0.45),
+                                                      blurRadius: 8,
+                                                      spreadRadius: 1,
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                          child: done
+                                              ? const Icon(
+                                                  Icons.check_rounded,
+                                                  color: Colors.white,
+                                                  size: 13)
+                                              : null,
+                                        ),
+                                        if (i < kFlow.length - 1)
+                                          Expanded(
+                                            child: Container(
+                                              width: 2,
+                                              color: i < idx
+                                                  ? kGreen
+                                                  : colors.border,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: i < kFlow.length - 1
+                                              ? 18
+                                              : 0,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  label,
+                                                  style: TextStyle(
+                                                    color: done
+                                                        ? colors.text
+                                                        : colors.muted,
+                                                    fontSize: 13.5,
+                                                    fontWeight: isNow
+                                                        ? FontWeight.w900
+                                                        : FontWeight.w700,
+                                                  ),
+                                                ),
+                                                if (isNow) ...[
+                                                  const SizedBox(width: 8),
+                                                  Container(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 7,
+                                                        vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: kGreen
+                                                          .withOpacity(0.14),
+                                                      borderRadius:
+                                                          BorderRadius
+                                                              .circular(6),
+                                                    ),
+                                                    child: const Text(
+                                                      'NOW',
+                                                      style: TextStyle(
+                                                        color: kGreen,
+                                                        fontSize: 9.5,
+                                                        fontWeight:
+                                                            FontWeight.w900,
+                                                        letterSpacing: 0.6,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              done
+                                                  ? (isNow
+                                                      ? 'In progress'
+                                                      : 'Completed')
+                                                  : 'Pending',
+                                              style: TextStyle(
+                                                color: colors.muted,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // ─── Product card ───
+                      Container(
+                        decoration: BoxDecoration(
+                          color: colors.card,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: colors.border),
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: colors.soft,
+                                borderRadius: BorderRadius.circular(11),
+                              ),
+                              padding: const EdgeInsets.all(4),
+                              child: order.itemImages.isNotEmpty
+                                  ? Image.network(
+                                      order.itemImages.first,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) => Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: colors.muted,
+                                        size: 20,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.image_not_supported_outlined,
+                                      color: colors.muted,
+                                      size: 20,
+                                    ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    order.productName ?? 'Product',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: colors.text,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    formatNumber(
+                                      order.price,
+                                      formatType: FormatType.decimal,
+                                      decimalType: DecimalType.automatic,
+                                      currency: 'TZS ',
+                                    ),
+                                    style: const TextStyle(
+                                      color: kGreen,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // ─── Delivery address ───
+                      if (order.address.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: colors.card,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: colors.border),
+                          ),
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: kGreen.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                child: const Icon(
+                                    Icons.location_on_rounded,
+                                    color: kGreen,
+                                    size: 16),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'DELIVERING TO',
+                                      style: TextStyle(
+                                        color: colors.muted,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      order.address,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: colors.text,
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 14),
+
+                      // ─── Close button ───
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: kGreen,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: kGreen.withOpacity(0.35),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Done',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -1,3 +1,4 @@
+import '/auth/firebase_auth/auth_util.dart';
 import '/flutter_flow/flutter_flow_animations.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -58,14 +59,18 @@ class _SplashWidgetState extends State<SplashWidget>
       logFirebaseEvent('SPLASH_PAGE_splash_ON_INIT_STATE');
       logFirebaseEvent('splash_wait__delay');
       await Future.delayed(
-        Duration(
-          milliseconds: 2000,
-        ),
+        Duration(milliseconds: 2000),
       );
+      if (!mounted) return;
       logFirebaseEvent('splash_navigate_to');
 
+      // Route based on auth state
+      final loggedIn = currentUserReference != null;
+      final destination =
+          loggedIn ? HomeWidget.routeName : LogInWidget.routeName;
+
       context.pushNamed(
-        LogInWidget.routeName,
+        destination,
         extra: <String, dynamic>{
           '__transition_info__': TransitionInfo(
             hasTransition: true,

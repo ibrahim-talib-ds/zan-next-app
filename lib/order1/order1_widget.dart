@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
@@ -711,8 +712,16 @@ class _Order1WidgetState extends State<Order1Widget> {
     final status = valueOrDefault<String>(order.status, 'Pending');
     final canCancel = status == 'Pending';
 
+    final isDelivered = status.toLowerCase() == 'delivered';
+    final isCancelled = status.toLowerCase() == 'cancelled';
+
     return Column(
       children: [
+        // ─── Estimated arrival card ───
+        if (!isDelivered && !isCancelled) _etaCard(order),
+
+        if (!isDelivered && !isCancelled) const SizedBox(height: 10),
+
         Row(
           children: [
             Expanded(
@@ -728,6 +737,26 @@ class _Order1WidgetState extends State<Order1Widget> {
                 icon: Icons.chat_bubble_outline_rounded,
                 label: 'Chat',
                 onTap: () => _openChat(order),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _outlineBtn(
+                icon: Icons.share_rounded,
+                label: 'Share',
+                onTap: () => _shareOrder(order),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _outlineBtn(
+                icon: Icons.copy_rounded,
+                label: 'Copy ID',
+                onTap: () => _copyOrderId(order),
               ),
             ),
           ],
@@ -785,6 +814,91 @@ class _Order1WidgetState extends State<Order1Widget> {
   // ═══════════════════════════════════════════════════════════
   // ACTIONS
   // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // ETA + SHARE (kept for compilation; page not used)
+  // ═══════════════════════════════════════════════════════════
+  Widget _etaCard(OrdersRecord order) {
+    final status =
+        valueOrDefault<String>(order.status, 'Pending').toLowerCase();
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [kGreen.withOpacity(0.12), kGreenDeep.withOpacity(0.06)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: kGreen.withOpacity(0.28), width: 1.2),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: kGreen,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.access_time_filled_rounded,
+                color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ESTIMATED ARRIVAL',
+                  style: TextStyle(
+                    color: _muted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  status.contains('way')
+                      ? '15–30 minutes'
+                      : (status.contains('confirm')
+                          ? 'Within 45 minutes'
+                          : 'Within 1–2 hours'),
+                  style: const TextStyle(
+                    color: kGreen,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _shareOrder(OrdersRecord order) async {
+    try {
+      await Clipboard.setData(ClipboardData(
+          text: 'Order #${order.reference.id.substring(0, 8).toUpperCase()}'));
+      if (!mounted) return;
+      _snack('Order copied', kGreen);
+    } catch (_) {
+      _snack('Could not copy', kRed);
+    }
+  }
+
+  Future<void> _copyOrderId(OrdersRecord order) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: order.reference.id));
+      if (!mounted) return;
+      _snack('Order ID copied', kGreen);
+    } catch (_) {
+      _snack('Could not copy', kRed);
+    }
+  }
+
   Future<void> _call(String phone) async {
     final p = phone.trim();
     if (p.isEmpty) {
