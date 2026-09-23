@@ -75,6 +75,11 @@ class AddProductModel extends FlutterFlowModel<AddProductWidget> {
     uploadedPhotoUrls.remove(url);
   }
 
+  // ─── Upload progress ───
+  double uploadProgress = 0;
+  int uploadDone = 0;
+  int uploadTotal = 0;
+
   @override
   void initState(BuildContext context) {}
 

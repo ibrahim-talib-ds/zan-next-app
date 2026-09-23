@@ -667,15 +667,17 @@ class _AddProductWidgetState extends State<AddProductWidget> {
   // ============================================================
   // PICK PHOTOS + UPLOAD TO IMGBB
   // ============================================================
-  Future<void> _pickPhotos() async {
+  Future<void> _pickPhotos({bool fromCamera = false}) async {
     logFirebaseEvent('ADD_PRODUCT_pick_photos');
     try {
       final selectedMedia = await selectMedia(
-        maxWidth: 1080,
-        maxHeight: 1080,
-        imageQuality: 90,
-        mediaSource: MediaSource.photoGallery,
-        multiImage: true,
+        maxWidth: 1280,           // smaller = faster
+        maxHeight: 1280,
+        imageQuality: 65,         // strong compression
+        mediaSource: fromCamera
+            ? MediaSource.camera
+            : MediaSource.photoGallery,
+        multiImage: !fromCamera,  // camera = 1 photo, gallery = many
       );
 
       if (selectedMedia == null || selectedMedia.isEmpty) return;
@@ -685,26 +687,38 @@ class _AddProductWidgetState extends State<AddProductWidget> {
         return;
       }
 
-      safeSetState(() => _model.isUploadingPhotos = true);
+      safeSetState(() {
+        _model.isUploadingPhotos = true;
+        _model.uploadProgress = 0;
+        _model.uploadTotal = selectedMedia.length;
+        _model.uploadDone = 0;
+      });
 
-      final urls = <String>[];
-
-      try {
-        for (final media in selectedMedia) {
-          final bytes = media.bytes;
-          if (bytes == null) continue;
-
-          final uploaded = await _uploadToImgBB(
-            bytes, media.storagePath.split('/').last);
-          if (uploaded != null) {
-            urls.add(uploaded);
-          }
-        }
-      } finally {
-        _model.isUploadingPhotos = false;
+      // ⚡ PARALLEL upload — all photos at once, not one by one
+      final futures = <Future<String?>>[];
+      for (final media in selectedMedia) {
+        final bytes = media.bytes;
+        if (bytes == null) continue;
+        futures.add(_uploadToImgBB(
+          bytes,
+          media.storagePath.split('/').last,
+          onDone: () {
+            if (!mounted) return;
+            safeSetState(() {
+              _model.uploadDone = _model.uploadDone + 1;
+              _model.uploadProgress =
+                  _model.uploadDone / _model.uploadTotal;
+            });
+          },
+        ));
       }
 
+      final results = await Future.wait(futures);
+      final urls = results.whereType<String>().toList();
+
       safeSetState(() {
+        _model.isUploadingPhotos = false;
+        _model.uploadProgress = 0;
         _model.uploadedPhotoUrls = urls;
       });
 
@@ -718,6 +732,7 @@ class _AddProductWidgetState extends State<AddProductWidget> {
       }
     } catch (e) {
       if (!mounted) return;
+      safeSetState(() => _model.isUploadingPhotos = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Upload failed: $e')),
       );
@@ -727,44 +742,56 @@ class _AddProductWidgetState extends State<AddProductWidget> {
   // ============================================================
   // ImgBB upload — returns the display_url of the uploaded image
   // ============================================================
-  Future<String?> _uploadToImgBB(Uint8List bytes, String filename) async {
+  Future<String?> _uploadToImgBB(
+    Uint8List bytes,
+    String filename, {
+    void Function()? onDone,
+    int retries = 2,
+  }) async {
     if (_imgbbApiKey.isEmpty) {
-      print('❌ ImgBB API key missing. Run with '
-          '--dart-define=IMGBB_KEY=your_key');
+      print('❌ ImgBB API key missing.');
       return null;
     }
 
-    try {
-      final uri = Uri.parse(
-        'https://api.imgbb.com/1/upload?key=$_imgbbApiKey',
-      );
+    for (var attempt = 0; attempt <= retries; attempt++) {
+      try {
+        final uri = Uri.parse(
+          'https://api.imgbb.com/1/upload?key=$_imgbbApiKey',
+        );
 
-      final base64Image = base64Encode(bytes);
+        // ⚡ Multipart is ~30% faster than base64 for large images
+        final request = http.MultipartRequest('POST', uri)
+          ..fields['name'] = filename
+          ..files.add(http.MultipartFile.fromBytes(
+            'image',
+            bytes,
+            filename: filename,
+          ));
 
-      final response = await http
-          .post(
-            uri,
-            body: {
-              'image': base64Image,
-              'name': filename,
-            },
-          )
-          .timeout(const Duration(seconds: 30));
+        final streamed = await request.send().timeout(
+              const Duration(seconds: 20),
+            );
+        final response = await http.Response.fromStream(streamed);
 
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        if (json['success'] == true) {
-          return json['data']['display_url'] as String? ??
-              json['data']['url'] as String?;
+        if (response.statusCode == 200) {
+          final json = jsonDecode(response.body);
+          if (json['success'] == true) {
+            onDone?.call();
+            return json['data']['display_url'] as String? ??
+                json['data']['url'] as String?;
+          }
         }
+        print('ImgBB failed (attempt $attempt): ${response.statusCode}');
+      } catch (e) {
+        print('ImgBB exception (attempt $attempt): $e');
       }
-
-      print('ImgBB upload failed: ${response.statusCode} ${response.body}');
-      return null;
-    } catch (e) {
-      print('ImgBB upload exception: $e');
-      return null;
+      // Short backoff before retry
+      if (attempt < retries) {
+        await Future.delayed(Duration(milliseconds: 400 * (attempt + 1)));
+      }
     }
+    onDone?.call();
+    return null;
   }
 
   // ============================================================
