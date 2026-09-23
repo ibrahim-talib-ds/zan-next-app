@@ -32,7 +32,7 @@ jobs:
         run: |
           flutter build web --release \
             --base-href /zan-next-app/ \
-            --dart-define=IMGBB_KEY=9a8ea72b10d9c5b6d62d8ba7ed341e19
+            --dart-define=IMGBB_KEY=${{ secrets.IMGBB_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
