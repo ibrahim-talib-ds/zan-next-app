@@ -165,16 +165,17 @@ class _NotificationWidgetState extends State<NotificationWidget> {
     }
 
     // ── 2. ORDER ────────────────────────────────────────────
+    // Always go to the Orders list (buyer + seller tabs).
+    // Never use Order1Widget — it's dead.
     if (type == 'order') {
-      if (productId.isNotEmpty) {
-        try {
-          context.pushNamed(
-            Order1Widget.routeName,
-            queryParameters: {'orderId': productId}.withoutNulls,
-          );
-          return;
-        } catch (_) {}
-      }
+      try {
+        context.pushNamed(
+          OrderDetailsWidget.routeName,
+          queryParameters: {'initialTab': 'seller'}.withoutNulls,
+        );
+        return;
+      } catch (_) {}
+      // fallback — plain route
       try {
         context.pushNamed(OrderDetailsWidget.routeName);
         return;
