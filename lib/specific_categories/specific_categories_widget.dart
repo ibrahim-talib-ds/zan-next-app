@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'specific_categories_model.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 export 'specific_categories_model.dart';
 
 /// Modern category page — Alibaba-style.

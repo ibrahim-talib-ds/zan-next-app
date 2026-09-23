@@ -13,6 +13,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'log_in_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 export 'log_in_model.dart';
 
 class LogInWidget extends StatefulWidget {
@@ -44,7 +45,43 @@ class _LogInWidgetState extends State<LogInWidget>
     _model.passwordTextController ??= TextEditingController();
     _model.passwordFocusNode ??= FocusNode();
 
+    // 🔐 Load saved "Remember me" email
+    _loadRememberedEmail();
+
     WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // REMEMBER ME — persist email via SharedPreferences
+  // ═══════════════════════════════════════════════════════════
+  Future<void> _loadRememberedEmail() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final remember = prefs.getBool('remember_me') ?? false;
+      final savedEmail = prefs.getString('remembered_email') ?? '';
+
+      if (remember && savedEmail.isNotEmpty && mounted) {
+        safeSetState(() {
+          _model.emailAddressTextController?.text = savedEmail;
+          _model.checkboxValue = true;
+        });
+      } else if (mounted) {
+        safeSetState(() => _model.checkboxValue = false);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveRememberedEmail(String email) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_model.checkboxValue == true) {
+        await prefs.setBool('remember_me', true);
+        await prefs.setString('remembered_email', email);
+      } else {
+        await prefs.setBool('remember_me', false);
+        await prefs.remove('remembered_email');
+      }
+    } catch (_) {}
   }
 
   @override
@@ -278,27 +315,55 @@ class _LogInWidgetState extends State<LogInWidget>
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // Email
-                            _fieldLabel(context, 'Email'),
-                            const SizedBox(height: 8),
-                            _textField(
-                              context,
-                              controller:
-                                  _model.emailAddressTextController!,
-                              focusNode: _model.emailAddressFocusNode!,
-                              hint: 'you@example.com',
-                              icon: Icons.alternate_email_rounded,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.email],
-                              validator: _model
-                                  .emailAddressTextControllerValidator
-                                  .asValidator(context),
-                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _fieldLabel(context, 'Email'),
+                                const SizedBox(height: 8),
+                                _textField(
+                                  context,
+                                  controller:
+                                      _model.emailAddressTextController!,
+                                  focusNode: _model.emailAddressFocusNode!,
+                                  hint: 'you@example.com',
+                                  icon: Icons.alternate_email_rounded,
+                                  keyboardType: TextInputType.emailAddress,
+                                  autofillHints: const [AutofillHints.email],
+                                  validator: _model
+                                      .emailAddressTextControllerValidator
+                                      .asValidator(context),
+                                ),
+                              ],
+                            )
+                                .animate()
+                                .fadeIn(duration: 400.ms, delay: 100.ms)
+                                .slideY(
+                                  begin: 0.15,
+                                  end: 0,
+                                  duration: 400.ms,
+                                  delay: 100.ms,
+                                  curve: Curves.easeOutCubic,
+                                ),
                             const SizedBox(height: 18),
 
                             // Password
-                            _fieldLabel(context, 'Password'),
-                            const SizedBox(height: 8),
-                            _passwordField(context),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _fieldLabel(context, 'Password'),
+                                const SizedBox(height: 8),
+                                _passwordField(context),
+                              ],
+                            )
+                                .animate()
+                                .fadeIn(duration: 400.ms, delay: 200.ms)
+                                .slideY(
+                                  begin: 0.15,
+                                  end: 0,
+                                  duration: 400.ms,
+                                  delay: 200.ms,
+                                  curve: Curves.easeOutCubic,
+                                ),
                             const SizedBox(height: 12),
 
                             // Remember + Forgot
@@ -375,7 +440,16 @@ class _LogInWidgetState extends State<LogInWidget>
                             const SizedBox(height: 24),
 
                             // Sign In
-                            _signInButton(context),
+                            _signInButton(context)
+                                .animate()
+                                .fadeIn(duration: 400.ms, delay: 300.ms)
+                                .slideY(
+                                  begin: 0.15,
+                                  end: 0,
+                                  duration: 400.ms,
+                                  delay: 300.ms,
+                                  curve: Curves.easeOutCubic,
+                                ),
                             const SizedBox(height: 24),
 
                             // Divider
@@ -714,9 +788,13 @@ class _LogInWidgetState extends State<LogInWidget>
         logFirebaseEvent('LOG_IN_PAGE_SIGN_IN_BTN_ON_TAP');
         GoRouter.of(context).prepareAuthEvent();
 
+        final email = _model.emailAddressTextController.text.trim();
+        // 🔐 Remember this email if checkbox is ticked
+        await _saveRememberedEmail(email);
+
         final user = await authManager.signInWithEmail(
           context,
-          _model.emailAddressTextController.text.trim(),
+          email,
           _model.passwordTextController.text,
         );
         if (user == null) return;
