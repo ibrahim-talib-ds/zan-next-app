@@ -122,9 +122,16 @@ class _CartWidgetState extends State<CartWidget> {
             children: [
               Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(5.0, 0.0, 5.0, 0.0),
-                child: SingleChildScrollView(
-                  primary: false,
-                  child: Column(
+                child: RefreshIndicator(
+                  color: FlutterFlowTheme.of(context).primary,
+                  onRefresh: () async {
+                    safeSetState(() {});
+                    await Future.delayed(const Duration(milliseconds: 500));
+                  },
+                  child: SingleChildScrollView(
+                    primary: false,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Padding(
@@ -872,7 +879,8 @@ class _CartWidgetState extends State<CartWidget> {
                         ),
                       ),
                     ],
-                  ),
+
+                ),                  ),
                 ),
               ),
               Align(

@@ -767,8 +767,19 @@ class _SearchWidgetState extends State<SearchWidget> {
   }
 
   Widget _buildResults() {
-    return ListView.builder(
+    return RefreshIndicator(
+      color: kGreen,
+      onRefresh: () async {
+        // Re-run the search with current query
+        final q = _model.query.trim();
+        if (q.isNotEmpty) {
+          await _runSearch(q);
+        }
+        safeSetState(() {});
+      },
+      child: ListView.builder(
       controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 24),
       itemCount: _model.visibleResults.length + (_model.hasMore ? 1 : 0),
       itemBuilder: (context, i) {
@@ -792,6 +803,7 @@ class _SearchWidgetState extends State<SearchWidget> {
         final r = _model.visibleResults[i];
         return _resultCard(r);
       },
+      ),
     );
   }
 

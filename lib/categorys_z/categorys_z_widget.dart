@@ -28,11 +28,14 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
 
   static const Color kGreen     = Color(0xFF1B7A4E);
   static const Color kGreenDeep = Color(0xFF0A3A22);
-  static const Color kBg        = Color(0xFFF5F7F8);
-  static const Color kCard      = Colors.white;
-  static const Color kText      = Color(0xFF111827);
-  static const Color kMuted     = Color(0xFF6B7280);
-  static const Color kBorder    = Color(0xFFE5E7EB);
+
+  // ─── Theme-aware colors (dark + light) ───
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get kBg     => _isDark ? Color(0xFF0F0F0F) : const Color(0xFFF5F7F8);
+  Color get kCard   => _isDark ? Color(0xFF1C1C1E) : Colors.white;
+  Color get kText   => _isDark ? Colors.white : Color(0xFF111827);
+  Color get kMuted  => _isDark ? Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+  Color get kBorder => _isDark ? Color(0xFF2A2A2C) : const Color(0xFFE5E7EB);
 
   late final Stream<List<InventoryRecord>> _trendingStream;
   late final Stream<List<InventoryRecord>> _newStream;
@@ -240,9 +243,9 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 6, 0),
                 child: Row(
                   children: [
-                    const Icon(Icons.search_rounded, color: kMuted, size: 20),
+                    Icon(Icons.search_rounded, color: kMuted, size: 20),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Search Products...',
                         style: TextStyle(
@@ -321,7 +324,14 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
   Widget _buildCategoryTab() {
     return Container(
       color: kBg,
-      child: GridView.builder(
+      child: RefreshIndicator(
+        color: kGreen,
+        onRefresh: () async {
+          safeSetState(() {});
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
@@ -368,7 +378,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                       child: Image.network(
                         _imgUrl(cat[0]),
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        errorBuilder: (_, __, ___) => Icon(
                           Icons.category_outlined,
                           color: kMuted,
                           size: 28,
@@ -382,7 +392,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                     maxLines: 2,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: kText,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -394,6 +404,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
             ),
           );
         },
+      ),
       ),
     );
   }
@@ -511,7 +522,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxz9T3n9wAdGgBp1oXZxkQMdECuc3cuvcOw&s',
                         )),
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(
+                        errorBuilder: (_, __, ___) => Icon(
                           Icons.image_not_supported_outlined,
                           color: kMuted,
                           size: 32,
@@ -531,7 +542,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                 valueOrDefault<String>(record.inventoryName, 'Product'),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   color: kText,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -600,12 +611,12 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.inventory_2_outlined, color: kMuted, size: 48),
+              Icon(Icons.inventory_2_outlined, color: kMuted, size: 48),
               const SizedBox(height: 12),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: kMuted, fontSize: 14),
+                style: TextStyle(color: kMuted, fontSize: 14),
               ),
             ],
           ),
@@ -624,7 +635,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: kText, fontSize: 14),
+                style: TextStyle(color: kText, fontSize: 14),
               ),
             ],
           ),
