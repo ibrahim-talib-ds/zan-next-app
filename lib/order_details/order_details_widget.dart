@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'order_details_model.dart';
+import '/services/notification_sender.dart';
 export 'order_details_model.dart';
 
 class OrderDetailsWidget extends StatefulWidget {
@@ -885,6 +886,18 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
 
     try {
       await order.reference.update({'status': newStatus});
+
+      // 🔔 Push notify the buyer
+      await NotificationSender.sendToUser(
+        userRef: order.buyer,
+        title: 'Order Update: $newStatus',
+        body: 'Your order for "${order.productName}" is now $newStatus',
+        data: {
+          'route': 'Order_details',
+          'orderId': order.reference.id,
+        },
+      );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Status updated to "$newStatus"')),

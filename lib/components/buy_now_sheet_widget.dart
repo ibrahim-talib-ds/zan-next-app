@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'buy_now_sheet_model.dart';
+import '/services/notification_sender.dart';
 export 'buy_now_sheet_model.dart';
 
 /// Advanced "Buy Now" sheet — collects delivery address + phone,
@@ -732,7 +733,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
         }),
       });
 
-      // 2. Notify the seller
+      // 2. Notify the seller (in-app + push)
       if (p.sellersRef != null) {
         await NotificationsRecord.collection.doc().set({
           ...createNotificationsRecordData(
@@ -747,6 +748,14 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
             productId: orderRef.id,
           ),
         });
+
+        // 🔔 Push notification via Cloudflare Worker
+        await NotificationSender.sendToUser(
+          userRef: p.sellersRef,
+          title: 'New Order Received',
+          body: '${currentUserDisplayName} ordered "${p.inventoryName}"',
+          data: {'route': 'Order_details', 'orderId': orderRef.id},
+        );
       }
 
       // 3. Also notify the buyer

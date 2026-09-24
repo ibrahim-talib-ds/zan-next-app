@@ -1,0 +1,43 @@
+{
+  "project_info": {
+    "project_number": "129014154360",
+    "project_id": "zannext-f6ff1",
+    "storage_bucket": "zannext-f6ff1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129014154360:android:5f969b482767ac732f598d",
+        "android_client_info": {
+          "package_name": "com.ZanNext.Company"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "129014154360-kqh0ujne1mbhu1l5c9ng6ic6enrcebrl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ZanNext.Company",
+            "certificate_hash": "7f7e15f8cbc37be7149e595412fdef0022b9b43a"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNkFML3-kJAc2-6JBcIXtnQ78YiMdtXkA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "129014154360-g5rm7h1c2aiqogjfrn4n21s7oainoc6b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

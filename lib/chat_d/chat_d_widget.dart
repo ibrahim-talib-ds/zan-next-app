@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'chat_d_model.dart';
+import '/services/notification_sender.dart';
 export 'chat_d_model.dart';
 
 class ChatDWidget extends StatefulWidget {
@@ -582,6 +583,22 @@ class _ChatDWidgetState extends State<ChatDWidget> {
         'last_message_time': getCurrentTimestamp,
         'last_message_seen_by': FieldValue.arrayUnion([currentUserReference]),
       });
+
+      // 🔔 Push notify the other participant
+      final isMeBuyer = chat.buyerRef == currentUserReference;
+      final recipientRef = isMeBuyer ? chat.sellerRef : chat.buyerRef;
+      if (recipientRef != null) {
+        final preview = text.length > 60 ? '${text.substring(0, 60)}...' : text;
+        await NotificationSender.sendToUser(
+          userRef: recipientRef,
+          title: currentUserDisplayName,
+          body: preview,
+          data: {
+            'route': 'ChatD',
+            'chatId': widget.receiveChats!.id,
+          },
+        );
+      }
 
       _model.textController?.clear();
       if (mounted) safeSetState(() {});
