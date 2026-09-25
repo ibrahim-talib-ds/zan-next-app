@@ -64,7 +64,6 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
         await currentUserReference!.update(createUsersRecordData(
           isOnline: true,
           lastActive: getCurrentTimestamp,
-          fcmToken: 'fcm_token ',
         ));
       }
     });
