@@ -582,6 +582,87 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // DELETE HELPERS
+  // ═══════════════════════════════════════════════════════════
+  Future<bool> _confirmDeleteOrder(String name) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Delete order?',
+            style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('"$name" will be permanently removed.',
+            style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: kRed, fontWeight: FontWeight.w800))),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  Future<void> _deleteOrderDoc(DocumentSnapshot doc) async {
+    try {
+      await doc.reference.delete();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Order deleted'),
+        backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not delete: $e'),
+        backgroundColor: kRed, behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
+  Future<bool> _confirmDeleteUser(String name) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Delete user?',
+            style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('"$name" will be permanently removed.',
+            style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: kRed, fontWeight: FontWeight.w800))),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  Future<void> _deleteUserDoc(DocumentSnapshot doc) async {
+    try {
+      await doc.reference.delete();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('User deleted'),
+        backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not delete: $e'),
+        backgroundColor: kRed, behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // LATEST ORDERS
   // ═══════════════════════════════════════════════════════════
   Widget _buildLatestOrders() {
@@ -614,7 +695,25 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
 
                 return Column(
                   children: [
-                    InkWell(
+                    Dismissible(
+                      key: ValueKey('dash_order_${docs[i].id}'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
+                        color: kRed,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+                            SizedBox(width: 6),
+                            Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      confirmDismiss: (_) => _confirmDeleteOrder(name),
+                      onDismissed: (_) => _deleteOrderDoc(docs[i]),
+                      child: InkWell(
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Order: $name')),
@@ -682,6 +781,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                         ),
                       ),
                     ),
+                    ),
                     if (i < docs.length - 1)
                       Divider(height: 1, color: _border, indent: 68),
                   ],
@@ -735,7 +835,25 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
 
                 return Column(
                   children: [
-                    Padding(
+                    Dismissible(
+                      key: ValueKey('dash_user_${docs[i].id}'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
+                        color: kRed,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+                            SizedBox(width: 6),
+                            Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      confirmDismiss: (_) => _confirmDeleteUser(name),
+                      onDismissed: (_) => _deleteUserDoc(docs[i]),
+                      child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(
                         children: [
@@ -807,6 +925,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                           ),
                         ],
                       ),
+                    ),
                     ),
                     if (i < docs.length - 1)
                       Divider(height: 1, color: _border, indent: 64),
