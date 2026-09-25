@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -655,7 +656,14 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             path: SellerDashbordWidget.routePath,
             builder: (context, params) => NavBarPage(
                   initialPage: '',
-                  page: SellerDashbordWidget(),
+                  page: SellerDashbordWidget(
+                    sellerRef: params.getParam(
+                      'sellerRef',
+                      ParamType.DocumentReference,
+                      isList: false,
+                      collectionNamePath: ['users'],
+                    ),
+                  ),
                 )),
         FFRoute(
           name: BraceletsEarringWidget.routeName,
