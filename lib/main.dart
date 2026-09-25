@@ -22,6 +22,21 @@ import 'index.dart';
 import 'backend/stripe/payment_manager.dart';
 import 'services/push_service.dart';
 
+/// Detect password reset params in the URL on web.
+/// Example: ?mode=resetPassword&oobCode=XXX&apiKey=YYY
+String? _detectResetCode() {
+  if (!kIsWeb) return null;
+  try {
+    final uri = Uri.base;
+    final mode = uri.queryParameters['mode'];
+    final oobCode = uri.queryParameters['oobCode'];
+    if (mode == 'resetPassword' && oobCode != null && oobCode.isNotEmpty) {
+      return oobCode;
+    }
+  } catch (_) {}
+  return null;
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   GoRouter.optionURLReflectsImperativeAPIs = true;
@@ -45,10 +60,31 @@ void main() async {
         FirebaseCrashlytics.instance.recordFlutterFatalError;
   }
 
+  // 🔐 Check for password reset link in URL (web)
+  final resetCode = _detectResetCode();
+
   runApp(ChangeNotifierProvider(
     create: (context) => appState,
-    child: MyApp(),
+    child: resetCode != null
+        ? _ResetRouter(oobCode: resetCode)
+        : MyApp(),
   ));
+}
+
+/// Minimal MaterialApp that shows only ResetPasswordWidget.
+/// Used when the app is opened via a password reset email link.
+class _ResetRouter extends StatelessWidget {
+  const _ResetRouter({required this.oobCode});
+  final String oobCode;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ZanNext',
+      debugShowCheckedModeBanner: false,
+      home: ResetPasswordWidget(oobCode: oobCode),
+    );
+  }
 }
 
 

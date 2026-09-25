@@ -139,7 +139,17 @@ class FirebaseAuthManager extends AuthManager
     required BuildContext context,
   }) async {
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: email,
+        actionCodeSettings: ActionCodeSettings(
+          url: 'https://ibrahim-talib-ds.github.io/zan-next-app/?mode=resetPassword',
+          handleCodeInApp: true,
+          androidPackageName: 'com.ZanNext.Company',
+          androidInstallApp: true,
+          androidMinimumVersion: '1',
+          iOSBundleId: 'com.ZanNext.Company',
+        ),
+      );
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(

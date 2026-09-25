@@ -4,8 +4,6 @@ export 'add_product/add_product_widget.dart';
 
 // Export pages
 export '/forgot_password/forgot_password_widget.dart' show ForgotPasswordWidget;
-export '/resetpasswordnotification/resetpasswordnotification_widget.dart'
-    show ResetpasswordnotificationWidget;
 export '/notifications_splash/notifications_splash_widget.dart'
     show NotificationsSplashWidget;
 export '/order_splash/order_splash_widget.dart' show OrderSplashWidget;
@@ -155,6 +153,7 @@ export 'notification_view/notification_view_widget.dart';
 export 'admin_users/admin_users_widget.dart';
 export 'admin_products/admin_products_widget.dart';
 export 'admin_orders/admin_orders_widget.dart';
+export 'reset_password/reset_password_widget.dart';
 
 // ============================================================================
 // COMPATIBILITY ROUTING ALIASES (Safe String Fallbacks)

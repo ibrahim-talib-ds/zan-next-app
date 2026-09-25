@@ -418,8 +418,25 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget>
           );
 
           if (!mounted) return;
-          context.pushNamed(
-            ResetpasswordnotificationWidget.routeName,
+          // Show success inline; no external page needed
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Reset link sent! Check your email inbox.\nIf it\'s not there, check spam.',
+              ),
+              backgroundColor: Color(0xFF1B7A4E),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 6),
+            ),
+          );
+          await Future.delayed(const Duration(seconds: 1));
+          if (!mounted) return;
+          Navigator.of(context).pop();
+
+          // OLD (kept for reference, unused):
+          // context.pushNamed(
+          //   ResetpasswordnotificationWidget.routeName,
             extra: <String, dynamic>{
               '__transition_info__': TransitionInfo(
                 hasTransition: true,

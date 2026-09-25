@@ -98,9 +98,15 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => ForgotPasswordWidget(),
         ),
         FFRoute(
-          name: ResetpasswordnotificationWidget.routeName,
-          path: ResetpasswordnotificationWidget.routePath,
-          builder: (context, params) => ResetpasswordnotificationWidget(),
+          name: ResetPasswordWidget.routeName,
+          path: ResetPasswordWidget.routePath,
+          builder: (context, params) => ResetPasswordWidget(
+            oobCode: params.getParam(
+              'oobCode',
+              ParamType.String,
+              isList: false,
+            ) ?? '',
+          ),
         ),
         FFRoute(
           name: NotificationsSplashWidget.routeName,
