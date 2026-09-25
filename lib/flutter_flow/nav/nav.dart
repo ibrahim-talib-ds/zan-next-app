@@ -113,6 +113,18 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => OrderSplashWidget(),
         ),
         FFRoute(
+            name: NotificationViewWidget.routeName,
+            path: NotificationViewWidget.routePath,
+            builder: (context, params) => NotificationViewWidget(
+              notificationRef: params.getParam(
+                'notificationRef',
+                ParamType.DocumentReference,
+                isList: false,
+                collectionNamePath: ['notifications'],
+              ),
+            ),
+        ),
+        FFRoute(
           name: NotificationDetailsWidget.routeName,
           path: NotificationDetailsWidget.routePath,
           builder: (context, params) => NotificationDetailsWidget(),

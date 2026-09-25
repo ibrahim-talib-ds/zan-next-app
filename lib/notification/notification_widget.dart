@@ -212,10 +212,19 @@ class _NotificationWidgetState extends State<NotificationWidget> {
       } catch (_) {}
     }
 
-    // ── 4. Anything else → notification list ────────────────
+    // ── 4. Anything else → full notification detail page ────
     try {
-      context.pushNamed(NotificationDetailsWidget.routeName);
-      return;
+      final ref = notif.reference as DocumentReference?;
+      if (ref != null) {
+        context.pushNamed(
+          NotificationViewWidget.routeName,
+          queryParameters: {
+            'notificationRef':
+                serializeParam(ref, ParamType.DocumentReference),
+          }.withoutNulls,
+        );
+        return;
+      }
     } catch (_) {}
   }
 
