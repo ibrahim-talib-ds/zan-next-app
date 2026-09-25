@@ -733,9 +733,11 @@ class _SigninWidgetState extends State<SigninWidget> {
                           text: FFLocalizations.of(context).getText(
                             'vf7faqry' /* Continue with Google */,
                           ),
-                          icon: FaIcon(
-                            FontAwesomeIcons.google,
-                            size: 20.0,
+                          icon: Image.asset(
+                            'assets/images/google_logo.png',
+                            width: 20,
+                            height: 20,
+                            fit: BoxFit.contain,
                           ),
                           options: FFButtonOptions(
                             width: double.infinity,

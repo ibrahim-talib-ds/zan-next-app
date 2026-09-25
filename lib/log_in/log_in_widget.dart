@@ -489,55 +489,24 @@ class _LogInWidgetState extends State<LogInWidget>
                             ),
                             const SizedBox(height: 20),
 
-                            // Social buttons
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _socialButton(
-                                    context,
-                                    label: 'Google',
-                                    icon: const FaIcon(
-                                      FontAwesomeIcons.google,
-                                      size: 18,
-                                      color: Color(0xFFDB4437),
-                                    ),
-                                    onTap: () async {
-                                      GoRouter.of(context)
-                                          .prepareAuthEvent();
-                                      final user = await authManager
-                                          .signInWithGoogle(context);
-                                      if (user == null) return;
-                                      context.goNamedAuth(
-                                          HomeWidget.routeName,
-                                          context.mounted);
-                                    },
-                                  ),
-                                ),
-                                if (!isAndroid) ...[
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _socialButton(
-                                      context,
-                                      label: 'Apple',
-                                      icon: const FaIcon(
-                                        FontAwesomeIcons.apple,
-                                        size: 18,
-                                        color: Colors.black,
-                                      ),
-                                      onTap: () async {
-                                        GoRouter.of(context)
-                                            .prepareAuthEvent();
-                                        final user = await authManager
-                                            .signInWithApple(context);
-                                        if (user == null) return;
-                                        context.goNamedAuth(
-                                            HomeWidget.routeName,
-                                            context.mounted);
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ],
+                            // Social buttons — Google only (Apple removed)
+                            _socialButton(
+                              context,
+                              label: 'Continue with Google',
+                              icon: Image.asset(
+                                'assets/images/google_logo.png',
+                                width: 20,
+                                height: 20,
+                                fit: BoxFit.contain,
+                              ),
+                              onTap: () async {
+                                GoRouter.of(context).prepareAuthEvent();
+                                final user = await authManager
+                                    .signInWithGoogle(context);
+                                if (user == null) return;
+                                context.goNamedAuth(
+                                    HomeWidget.routeName, context.mounted);
+                              },
                             ),
                             const SizedBox(height: 24),
 
