@@ -1,4 +1,5 @@
 import '/auth/firebase_auth/auth_util.dart';
+import '/backend/backend.dart';
 import '/components/logout_widget.dart';
 import '/components/dark_light_switch_small_widget.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
@@ -87,8 +88,6 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                       _buildQuickActions(),
                       const SizedBox(height: 16),
                       _buildDeliveryStatus(),
-                      const SizedBox(height: 16),
-                      _buildBalanceCard(),
                       const SizedBox(height: 24),
                       _buildSection('General', [
                         _tile(
@@ -460,61 +459,169 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // DELIVERY STATUS
+  // DELIVERY STATUS — real latest order for current user
   // ═══════════════════════════════════════════════════════════
   Widget _buildDeliveryStatus() {
+    if (currentUserReference == null) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: _card,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _border),
+      child: StreamBuilder<List<OrdersRecord>>(
+        stream: queryOrdersRecord(
+          queryBuilder: (q) => q
+              .where('buyer', isEqualTo: currentUserReference)
+              .orderBy('date', descending: true),
+          limit: 1,
         ),
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
+        builder: (context, snap) {
+          // No order yet → show empty hint
+          if (!snap.hasData || snap.data!.isEmpty) {
+            return Container(
               decoration: BoxDecoration(
-                color: _bg,
-                borderRadius: BorderRadius.circular(10),
+                color: _card,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _border),
               ),
-              padding: const EdgeInsets.all(4),
-              child: Lottie.network(
-                'https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/assets-3ajpcu/assets/a64eg1y1dpmc/Delivery_man_on_a_bike.json',
-                fit: BoxFit.contain,
-                animate: true,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+              padding: const EdgeInsets.all(14),
+              child: Row(
                 children: [
-                  Text(
-                    'Status: On the way',
-                    style: TextStyle(
-                      color: _text,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: kGreen.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(10),
                     ),
+                    child: const Icon(Icons.shopping_bag_outlined,
+                        color: kGreen, size: 20),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '1234 Park Avenue, Apt 12B',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: _muted, fontSize: 12),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'No active orders',
+                          style: TextStyle(
+                            color: _text,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Your orders will appear here',
+                          style: TextStyle(color: _muted, fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
+            );
+          }
+
+          final order = snap.data!.first;
+          final status = (order.status ?? 'Pending');
+
+          // Status color + icon
+          Color statusColor = kGreen;
+          IconData statusIcon = Icons.hourglass_top_rounded;
+          final lower = status.toLowerCase();
+          if (lower.contains('confirm')) {
+            statusColor = const Color(0xFF3B82F6);
+            statusIcon = Icons.verified_rounded;
+          } else if (lower.contains('way') || lower.contains('ship')) {
+            statusColor = const Color(0xFFFFB300);
+            statusIcon = Icons.delivery_dining_rounded;
+          } else if (lower.contains('deliver')) {
+            statusColor = kGreen;
+            statusIcon = Icons.check_circle_rounded;
+          } else if (lower.contains('cancel')) {
+            statusColor = const Color(0xFFDC0F0F);
+            statusIcon = Icons.cancel_rounded;
+          }
+
+          return GestureDetector(
+            onTap: () => context.pushNamed(
+              OrderDetailsWidget.routeName,
+              queryParameters: {
+                'initialTab': 'buyer',
+              }.withoutNulls,
             ),
-            Icon(Icons.chevron_right_rounded, color: _muted, size: 20),
-          ],
-        ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _card,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: statusColor.withOpacity(0.35), width: 1.2),
+              ),
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(statusIcon, color: statusColor, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                status.toUpperCase(),
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          order.productName ?? 'Order',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: _text,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          order.address ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: _muted, fontSize: 11.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: _muted, size: 20),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -388,8 +388,8 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                             context,
                             assetImage: 'assets/images/mean.webp',
                             labelKey: 'wmnswear1',
-                            fallback: 'Women\'s Wear',
-                            categoryValue: 'Women’s Wear',
+                            fallback: 'Womens Wear',
+                            categoryValue: 'Womens Wear',
                           ),
                           _categoryTile(
                             context,
