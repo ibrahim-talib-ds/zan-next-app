@@ -434,17 +434,6 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget>
           if (!mounted) return;
           Navigator.of(context).pop();
 
-          // OLD (kept for reference, unused):
-          // context.pushNamed(
-          //   ResetpasswordnotificationWidget.routeName,
-            extra: <String, dynamic>{
-              '__transition_info__': TransitionInfo(
-                hasTransition: true,
-                transitionType: PageTransitionType.fade,
-                duration: const Duration(milliseconds: 300),
-              ),
-            },
-          );
         } catch (e) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
