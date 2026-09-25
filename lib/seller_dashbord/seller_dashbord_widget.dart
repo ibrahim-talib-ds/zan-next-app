@@ -1,3 +1,4 @@
+import 'package:share_plus/share_plus.dart';
 import '/components/report_sheet_widget.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
@@ -39,6 +40,25 @@ class SellerDashbordWidget extends StatefulWidget {
 class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   late SellerDashbordModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  /// Selected category filter (null = All)
+  String? _selectedCategory;
+
+  List<InventoryRecord> _filteredProducts(List<InventoryRecord> all) {
+    if (_selectedCategory == null) return all;
+    return all.where((p) => p.categories == _selectedCategory).toList();
+  }
+
+  List<String> _uniqueCategories(List<InventoryRecord> all) {
+    final set = <String>{};
+    for (final p in all) {
+      final c = p.categories.trim();
+      if (c.isNotEmpty) set.add(c);
+    }
+    final list = set.toList();
+    list.sort();
+    return list;
+  }
 
   // Brand
   static const Color kGreen = Color(0xFF1B7A4E);
@@ -143,18 +163,20 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                           trailing: '${products.length}',
                         ),
                       ] else ...[
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 18),
                         _buildVisitorActions(seller),
-                        const SizedBox(height: 20),
-                        _buildSellerHighlights(seller, products),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 18),
+                        _buildShopInfoCard(seller, products),
+                        const SizedBox(height: 18),
+                        _buildCategoryFilter(products),
+                        const SizedBox(height: 14),
                         _buildSectionHeader(
                           'Shop',
-                          trailing: '${products.length} items',
+                          trailing: '${_filteredProducts(products).length} items',
                         ),
                       ],
                       const SizedBox(height: 12),
-                      _buildProductGrid(products),
+                      _buildProductGrid(_isOwner ? products : _filteredProducts(products)),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -219,6 +241,121 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildThreeDotMenu() {
+    return PopupMenuButton<String>(
+      icon: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.more_vert_rounded,
+            color: Colors.white, size: 22),
+      ),
+      onSelected: (v) async {
+        if (v == 'share') {
+          try {
+            await Share.share(
+              'Check out this shop on ZanNext!',
+              sharePositionOrigin: getWidgetBoundingBox(context),
+            );
+          } catch (_) {}
+        } else if (v == 'report') {
+          _openReportSheet();
+        } else if (v == 'hide') {
+          _hideSellerConfirm();
+        }
+      },
+      itemBuilder: (_) => const [
+        PopupMenuItem(
+          value: 'share',
+          child: Row(
+            children: [
+              Icon(Icons.share_outlined, size: 18),
+              SizedBox(width: 10),
+              Text('Share shop'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'hide',
+          child: Row(
+            children: [
+              Icon(Icons.visibility_off_outlined, size: 18),
+              SizedBox(width: 10),
+              Text('Hide from feed'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'report',
+          child: Row(
+            children: [
+              Icon(Icons.flag_outlined, size: 18, color: kRed),
+              SizedBox(width: 10),
+              Text('Report', style: TextStyle(color: kRed)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _hideSellerConfirm() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Hide this seller?',
+            style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text(
+          "You won't see their products in your feed anymore.",
+          style: TextStyle(color: _muted, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: _muted)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              if (currentUserReference == null || _sellerRef == null) return;
+              try {
+                final userDoc = await currentUserReference!.get();
+                final data = userDoc.data() as Map<String, dynamic>? ?? {};
+                final hidden = List<dynamic>.from(data['hidden_sellers'] ?? []);
+                if (!hidden.contains(_sellerRef!.id)) {
+                  hidden.add(_sellerRef!.id);
+                  await currentUserReference!
+                      .update({'hidden_sellers': hidden});
+                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Seller hidden'),
+                    backgroundColor: kGreen,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                context.safePop();
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Could not hide: $e')),
+                );
+              }
+            },
+            child: const Text('Hide',
+                style: TextStyle(color: kRed, fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -309,9 +446,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                 ),
                 const Spacer(),
                 if (!_isOwner && _sellerRef != null)
-                  _buildReportBtn(),
-                if (!_isOwner && _sellerRef != null)
-                  const SizedBox(width: 8),
+                  _buildThreeDotMenu(),
                 if (_isOwner) const SizedBox(width: 44),
               ],
             ),
@@ -707,39 +842,256 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // VISITOR: PRIMARY ACTIONS
+  // VISITOR: PRIMARY ACTIONS (Chat + Call + WhatsApp)
   // ═══════════════════════════════════════════════════════════
   Widget _buildVisitorActions(UsersRecord? seller) {
+    final phone = seller?.phoneNumber.trim() ?? '';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
+          // Chat button (primary, wide)
           Expanded(
-            child: _primaryButton(
-              icon: Icons.chat_bubble_outline_rounded,
-              label: 'Message Seller',
+            flex: 3,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
               onTap: () => _openChatWithSeller(seller),
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [kGreen, kGreenDeep],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: kGreen.withOpacity(0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.chat_bubble_outline_rounded,
+                        color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      'Chat',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
+
+          // Call button
           _circleAction(
-            icon: Icons.favorite_border_rounded,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Following this seller')),
-              );
-            },
+            icon: Icons.call_rounded,
+            color: kBlue,
+            onTap: phone.isEmpty
+                ? null
+                : () async {
+                    try {
+                      await launchURL('tel:$phone');
+                    } catch (_) {}
+                  },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
+
+          // WhatsApp button
           _circleAction(
-            icon: Icons.share_outlined,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Share coming soon')),
-              );
-            },
+            icon: Icons.chat_bubble_rounded,
+            color: const Color(0xFF25D366),
+            onTap: phone.isEmpty
+                ? null
+                : () async {
+                    try {
+                      final clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
+                      await launchURL('https://wa.me/$clean');
+                    } catch (_) {}
+                  },
           ),
         ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // VISITOR: SHOP INFO CARD (location, joined, rating)
+  // ═══════════════════════════════════════════════════════════
+  Widget _buildShopInfoCard(UsersRecord? seller, List<InventoryRecord> products) {
+    final city = (seller?.city ?? '').trim();
+    final district = (seller?.district ?? '').trim();
+    final joined = seller?.createdTime;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _border),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _infoRow(
+              icon: Icons.location_on_rounded,
+              color: kRed,
+              label: 'Shop location',
+              value: city.isNotEmpty
+                  ? (district.isNotEmpty ? '$district, $city' : city)
+                  : 'Zanzibar, Tanzania',
+            ),
+            const SizedBox(height: 12),
+            _infoRow(
+              icon: Icons.calendar_today_rounded,
+              color: kBlue,
+              label: 'Joined ZanNext',
+              value: joined != null
+                  ? '${joined.day}/${joined.month}/${joined.year}'
+                  : 'Recently',
+            ),
+            const SizedBox(height: 12),
+            _infoRow(
+              icon: Icons.inventory_2_rounded,
+              color: kAmber,
+              label: 'Active listings',
+              value: '${products.length} products',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  color: _muted,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _text,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // VISITOR: CATEGORY FILTER CHIPS
+  // ═══════════════════════════════════════════════════════════
+  Widget _buildCategoryFilter(List<InventoryRecord> allProducts) {
+    final categories = _uniqueCategories(allProducts);
+    if (categories.length <= 1) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: categories.length + 1,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          // i=0 → "All"
+          if (i == 0) {
+            final active = _selectedCategory == null;
+            return _filterChip(
+              label: 'All (${allProducts.length})',
+              active: active,
+              onTap: () => safeSetState(() => _selectedCategory = null),
+            );
+          }
+          final cat = categories[i - 1];
+          final count = allProducts.where((p) => p.categories == cat).length;
+          final active = _selectedCategory == cat;
+          return _filterChip(
+            label: '$cat ($count)',
+            active: active,
+            onTap: () => safeSetState(() => _selectedCategory = cat),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _filterChip({
+    required String label,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: active ? kGreen : _card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? kGreen : _border,
+            width: 1.2,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: active ? Colors.white : _text,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -786,8 +1138,10 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
 
   Widget _circleAction({
     required IconData icon,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
+    Color? color,
   }) {
+    final c = color ?? _text;
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: onTap,
@@ -795,11 +1149,11 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
         width: 52,
         height: 52,
         decoration: BoxDecoration(
-          color: _card,
+          color: c.withOpacity(0.10),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _border),
+          border: Border.all(color: c.withOpacity(0.30), width: 1.2),
         ),
-        child: Icon(icon, color: _text, size: 20),
+        child: Icon(icon, color: c, size: 20),
       ),
     );
   }
