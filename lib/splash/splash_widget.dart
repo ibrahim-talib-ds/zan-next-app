@@ -128,7 +128,7 @@ class _SplashWidgetState extends State<SplashWidget>
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: const Color(0xFF0A3A22),  // matches native splash
         body: Stack(
           children: [
             Align(
