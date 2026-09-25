@@ -171,7 +171,20 @@ class _ChatDWidgetState extends State<ChatDWidget> {
                 final photo = user?.photoUrl ?? '';
                 final city = user?.city ?? '';
 
-                return Row(
+                return GestureDetector(
+                  onTap: () {
+                    if (otherRef == null) return;
+                    context.pushNamed(
+                      SellerDashbordWidget.routeName,
+                      queryParameters: {
+                        'sellerRef': serializeParam(
+                          otherRef,
+                          ParamType.DocumentReference,
+                        ),
+                      }.withoutNulls,
+                    );
+                  },
+                  child: Row(
                   children: [
                     Container(
                       width: 40,
@@ -239,6 +252,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
                       ),
                     ),
                   ],
+                ),
                 );
               },
             ),

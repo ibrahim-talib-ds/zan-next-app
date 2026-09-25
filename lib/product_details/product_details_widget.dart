@@ -923,7 +923,20 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   Widget _buildSellerCard(InventoryRecord p) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
+      child: GestureDetector(
+        onTap: () {
+          if (p.sellersRef == null) return;
+          context.pushNamed(
+            SellerDashbordWidget.routeName,
+            queryParameters: {
+              'sellerRef': serializeParam(
+                p.sellersRef,
+                ParamType.DocumentReference,
+              ),
+            }.withoutNulls,
+          );
+        },
+        child: Container(
         decoration: BoxDecoration(
           color: _card,
           borderRadius: BorderRadius.circular(14),
@@ -1025,6 +1038,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
               ],
             );
           },
+        ),
         ),
       ),
     );
