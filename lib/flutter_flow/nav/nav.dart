@@ -113,6 +113,21 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => OrderSplashWidget(),
         ),
         FFRoute(
+            name: AdminUsersWidget.routeName,
+            path: AdminUsersWidget.routePath,
+            builder: (context, params) => AdminUsersWidget(),
+        ),
+        FFRoute(
+            name: AdminProductsWidget.routeName,
+            path: AdminProductsWidget.routePath,
+            builder: (context, params) => AdminProductsWidget(),
+        ),
+        FFRoute(
+            name: AdminOrdersWidget.routeName,
+            path: AdminOrdersWidget.routePath,
+            builder: (context, params) => AdminOrdersWidget(),
+        ),
+        FFRoute(
             name: NotificationViewWidget.routeName,
             path: NotificationViewWidget.routePath,
             builder: (context, params) => NotificationViewWidget(

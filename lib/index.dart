@@ -152,6 +152,9 @@ export 'components/buy_now_sheet_widget.dart';
 export 'order1/order1_widget.dart';
 export 'specific_categories/specific_categories_widget.dart';
 export 'notification_view/notification_view_widget.dart';
+export 'admin_users/admin_users_widget.dart';
+export 'admin_products/admin_products_widget.dart';
+export 'admin_orders/admin_orders_widget.dart';
 
 // ============================================================================
 // COMPATIBILITY ROUTING ALIASES (Safe String Fallbacks)

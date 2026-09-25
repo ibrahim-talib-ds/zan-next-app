@@ -148,17 +148,13 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                         const SizedBox(height: 24),
                         _buildSectionHeader('Latest Orders', trailing: 'View all',
                             onTrailingTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Full orders view coming soon')),
-                          );
+                          context.pushNamed(AdminOrdersWidget.routeName);
                         }),
                         _buildLatestOrders(),
                         const SizedBox(height: 24),
                         _buildSectionHeader('Recently Joined Users', trailing: 'View all',
                             onTrailingTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Full users view coming soon')),
-                          );
+                          context.pushNamed(AdminUsersWidget.routeName);
                         }),
                         _buildRecentUsers(),
                         const SizedBox(height: 24),
@@ -308,6 +304,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                   stream: FirebaseFirestore.instance
                       .collection('users')
                       .snapshots(),
+                  onTap: () => context.pushNamed(AdminUsersWidget.routeName),
                 ),
               ),
               const SizedBox(width: 10),
@@ -319,6 +316,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                   stream: FirebaseFirestore.instance
                       .collection('Inventory')
                       .snapshots(),
+                  onTap: () => context.pushNamed(AdminProductsWidget.routeName),
                 ),
               ),
             ],
@@ -334,6 +332,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                   stream: FirebaseFirestore.instance
                       .collection('orders')
                       .snapshots(),
+                  onTap: () => context.pushNamed(AdminOrdersWidget.routeName),
                 ),
               ),
               const SizedBox(width: 10),
@@ -345,6 +344,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                   stream: FirebaseFirestore.instance
                       .collection('support_chats')
                       .snapshots(),
+                  onTap: () => context.pushNamed(AdminSupportInboxWidget.routeName),
                 ),
               ),
             ],
@@ -358,13 +358,16 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
     required IconData icon,
     required Color color,
     required String label,
+    VoidCallback? onTap,
     required Stream<QuerySnapshot> stream,
   }) {
     return StreamBuilder<QuerySnapshot>(
       stream: stream,
       builder: (context, snap) {
         final count = snap.data?.docs.length ?? 0;
-        return Container(
+        return GestureDetector(
+          onTap: onTap,
+          child: Container(
           decoration: BoxDecoration(
             color: _card,
             borderRadius: BorderRadius.circular(16),
@@ -410,6 +413,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                 ),
               ),
             ],
+          ),
           ),
         );
       },
