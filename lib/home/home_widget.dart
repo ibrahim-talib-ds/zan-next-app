@@ -398,34 +398,39 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                             fallback: 'Beauty',
                             categoryValue: 'Skincare',
                           ),
-                          _categoryIconTile(
+                          _categoryTile(
                             context,
-                            icon: Icons.phone_iphone_rounded,
-                            label: 'Phones',
+                            assetImage: 'assets/images/phone.png',
+                            labelKey: 'phones001',
+                            fallback: 'Phones',
                             categoryValue: 'Smart Phone',
                           ),
-                          _categoryIconTile(
+                          _categoryTile(
                             context,
-                            icon: Icons.kitchen_rounded,
-                            label: 'Home',
+                            assetImage: 'assets/images/home.png',
+                            labelKey: 'home001',
+                            fallback: 'Home',
                             categoryValue: 'Furniture',
                           ),
-                          _categoryIconTile(
+                          _categoryTile(
                             context,
-                            icon: Icons.sports_soccer_rounded,
-                            label: 'Sports',
+                            assetImage: 'assets/images/sport.png',
+                            labelKey: 'sports001',
+                            fallback: 'Sports',
                             categoryValue: 'Team Sports',
                           ),
-                          _categoryIconTile(
+                          _categoryTile(
                             context,
-                            icon: Icons.checkroom_rounded,
-                            label: 'Shoes',
+                            assetImage: 'assets/images/shoes.png',
+                            labelKey: 'shoes001',
+                            fallback: 'Shoes',
                             categoryValue: 'Formal Shoes',
                           ),
-                          _categoryIconTile(
+                          _categoryTile(
                             context,
-                            icon: Icons.shopping_bag_rounded,
-                            label: 'Bags',
+                            assetImage: 'assets/images/bag.png',
+                            labelKey: 'bags001',
+                            fallback: 'Bags',
                             categoryValue: 'Bracelets & Earrings',
                           ),
                           _moreTile(context),
@@ -1112,10 +1117,9 @@ your goals */,
                     ),
                   ),
 
-                  // Notification button — always visible, real-time count
-                  AuthUserStreamWidget(
-                    builder: (context) => StreamBuilder<
-                        List<NotificationsRecord>>(
+                  // Notification button — only for signed-in users
+                  if (currentUserReference != null)
+                    StreamBuilder<List<NotificationsRecord>>(
                       stream: queryNotificationsRecord(
                         queryBuilder: (notificationsRecord) =>
                             notificationsRecord
@@ -1131,8 +1135,22 @@ your goals */,
                           showBadge: count >= 1,
                         );
                       },
+                    )
+                  else
+                    // Not signed in — show icon without badge
+                    FlutterFlowIconButton(
+                      borderRadius: 12,
+                      buttonSize: 42,
+                      fillColor: Colors.white.withOpacity(0.15),
+                      icon: const Icon(
+                        Icons.notifications_active_outlined,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                      onPressed: () async {
+                        context.pushNamed(LogInWidget.routeName);
+                      },
                     ),
-                  ),
                 ],
               ),
             ),
