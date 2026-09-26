@@ -154,6 +154,7 @@ export 'admin_users/admin_users_widget.dart';
 export 'admin_products/admin_products_widget.dart';
 export 'admin_orders/admin_orders_widget.dart';
 export 'reset_password/reset_password_widget.dart';
+export 'boosted_products/boosted_products_widget.dart';
 
 // ============================================================================
 // COMPATIBILITY ROUTING ALIASES (Safe String Fallbacks)

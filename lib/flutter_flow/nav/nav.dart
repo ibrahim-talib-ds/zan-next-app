@@ -134,6 +134,11 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             builder: (context, params) => AdminOrdersWidget(),
         ),
         FFRoute(
+            name: BoostedProductsWidget.routeName,
+            path: BoostedProductsWidget.routePath,
+            builder: (context, params) => BoostedProductsWidget(),
+        ),
+        FFRoute(
             name: NotificationViewWidget.routeName,
             path: NotificationViewWidget.routePath,
             builder: (context, params) => NotificationViewWidget(

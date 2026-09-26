@@ -126,7 +126,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Reserve space for the fixed header (170px tall)
-                    SizedBox(height: 178),
+                    SizedBox(height: 140),
 
                     // ============ BANNER SLIDER ============
                     Padding(
@@ -152,6 +152,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                     Color(0xFF053020),
                                   ],
                                   accentColor: Color(0xFF1B7A4E),
+                                  routeName: CategorysZWidget.routeName,
                                 ),
                                 _bannerSlide(
                                   context,
@@ -164,6 +165,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                     Color(0xFF7A0808),
                                   ],
                                   accentColor: Color(0xFFDC0F0F),
+                                  routeName: NewProductsWidget.routeName,
                                 ),
                                 _bannerSlide(
                                   context,
@@ -176,6 +178,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                     Color(0xFF082A5C),
                                   ],
                                   accentColor: Color(0xFF0D6EFD),
+                                  routeName: TrendingProductWidget.routeName,
                                 ),
                                 _bannerSlide(
                                   context,
@@ -188,6 +191,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                     Color(0xFF3A0B4D),
                                   ],
                                   accentColor: Color(0xFF7B1FA2),
+                                  routeName: CategorysZWidget.routeName,
                                 ),
                                 _bannerSlide(
                                   context,
@@ -200,6 +204,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                     Color(0xFF7A3500),
                                   ],
                                   accentColor: Color(0xFFFF6F00),
+                                  routeName: SupportChatWidget.routeName,
                                 ),
                               ],
                             ),
@@ -240,86 +245,6 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                       ),
                     ),
 
-                    SizedBox(height: 18),
-
-                    // ============ SHOP CATEGORY HEADER ============
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            FFLocalizations.of(context).getText(
-                              'c7gxdsxp' /* Shop Category */,
-                            ),
-                            style: theme.titleMedium.override(
-                              font: GoogleFonts.interTight(
-                                fontWeight: FontWeight.w700,
-                                fontStyle: theme.titleMedium.fontStyle,
-                              ),
-                              color: theme.primaryText,
-                              fontSize: 17,
-                              letterSpacing: 0.0,
-                              fontWeight: FontWeight.w700,
-                              fontStyle: theme.titleMedium.fontStyle,
-                            ),
-                          ),
-                          InkWell(
-                            splashColor: Colors.transparent,
-                            focusColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            onTap: () async {
-                              logFirebaseEvent(
-                                  'HOME_PAGE_Text_hg2jy5i1_ON_TAP');
-                              logFirebaseEvent('Text_navigate_to');
-
-                              context.pushNamed(
-                                CategorysZWidget.routeName,
-                                extra: <String, dynamic>{
-                                  '__transition_info__': TransitionInfo(
-                                    hasTransition: true,
-                                    transitionType:
-                                        PageTransitionType.rightToLeft,
-                                    duration: Duration(milliseconds: 250),
-                                  ),
-                                },
-                              );
-                            },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  FFLocalizations.of(context).getText(
-                                    'pmhmguyd' /* See all */,
-                                  ),
-                                  style: theme.bodyMedium.override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: theme.bodyMedium.fontStyle,
-                                    ),
-                                    color: theme.primary,
-                                    fontSize: 13,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: theme.bodyMedium.fontStyle,
-                                  ),
-                                ),
-                                SizedBox(width: 2),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: theme.primary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: 12),
-
                     // ============ CATEGORY GRID (2 ROWS x 4) ============
                     Padding(
                       padding: EdgeInsetsDirectional.fromSTEB(
@@ -330,10 +255,16 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                         padding: EdgeInsets.zero,
                         gridDelegate:
                             SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: Responsive.categoryCols(context),
-                          crossAxisSpacing: 6,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 0.78,
+                          crossAxisCount: MediaQuery.of(context).size.width >= 1200
+                              ? 12
+                              : MediaQuery.of(context).size.width >= 900
+                                  ? 10
+                                  : MediaQuery.of(context).size.width >= 600
+                                      ? 8
+                                      : 6,
+                          crossAxisSpacing: 4,
+                          mainAxisSpacing: 4,
+                          childAspectRatio: 0.75,
                         ),
                         primary: false,
                         shrinkWrap: true,
@@ -392,7 +323,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                             context,
                             assetImage: 'assets/images/mean.webp',
                             labelKey: 'wmnswear1',
-                            fallback: 'Womens Wear',
+                            fallback: 'Women',
                             categoryValue: 'Womens Wear',
                           ),
                           _categoryTile(
@@ -413,7 +344,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                             context,
                             assetImage: 'assets/images/home.png',
                             labelKey: 'home001',
-                            fallback: 'Home',
+                            fallback: 'Home Decor',
                             categoryValue: 'Furniture',
                           ),
                           _categoryTile(
@@ -434,15 +365,36 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                             context,
                             assetImage: 'assets/images/bag.png',
                             labelKey: 'bags001',
-                            fallback: 'Bags',
+                            fallback: 'Handbags',
                             categoryValue: 'Bracelets & Earrings',
+                          ),
+                          _categoryTile(
+                            context,
+                            assetImage: 'assets/images/copm.png',
+                            labelKey: 'audio001',
+                            fallback: 'Audio',
+                            categoryValue: 'Audio & Sound',
+                          ),
+                          _categoryTile(
+                            context,
+                            assetImage: 'assets/images/furniture.png',
+                            labelKey: 'bedding001',
+                            fallback: 'Bedding',
+                            categoryValue: 'Bedding',
+                          ),
+                          _categoryTile(
+                            context,
+                            assetImage: 'assets/images/1yi0p_L.png',
+                            labelKey: 'kitchen001',
+                            fallback: 'Kitchen',
+                            categoryValue: 'Kitchen',
                           ),
                           _moreTile(context),
                         ],
                       ),
                     ),
 
-                    SizedBox(height: 22),
+                    SizedBox(height: 14),
 
                     // ============ BOOSTED (admin-promoted, auto-hide)
                     _buildBoostedSection(theme),
@@ -553,41 +505,8 @@ your goals */,
 
                     SizedBox(height: 22),
 
-                    // ============ FULL CATALOG ============
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 4,
-                            height: 18,
-                            decoration: BoxDecoration(
-                              color: theme.primary,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            FFLocalizations.of(context).getText(
-                              '4gyar5ix' /* Full Catalog */,
-                            ),
-                            style: theme.titleMedium.override(
-                              font: GoogleFonts.interTight(
-                                fontWeight: FontWeight.w700,
-                                fontStyle: theme.titleMedium.fontStyle,
-                              ),
-                              color: theme.primaryText,
-                              fontSize: 17,
-                              letterSpacing: 0.0,
-                              fontWeight: FontWeight.w700,
-                              fontStyle: theme.titleMedium.fontStyle,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: 12),
+                    // ============ FULL CATALOG (no title) ============
+                    SizedBox(height: 4),
 
                     Padding(
                       padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
@@ -627,10 +546,9 @@ your goals */,
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: Responsive.productCols(context),
-                              crossAxisSpacing: Responsive.cardGap(context),
-                              mainAxisSpacing: Responsive.cardGap(context),
-                              childAspectRatio:
-                                  Responsive.cardAspectRatio(context),
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                              childAspectRatio: 0.72,
                             ),
                             primary: false,
                             shrinkWrap: true,
@@ -743,23 +661,7 @@ your goals */,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: EdgeInsets.all(4),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.asset(
-                                'assets/images/zannext_logo.png',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 10),
+
                           Expanded(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -1044,8 +946,31 @@ your goals */,
     required IconData heroIcon,
     required List<Color> gradientColors,
     required Color accentColor,
+    String? routeName,
+    DocumentReference? productRef,
   }) {
-    return ClipRRect(
+    return GestureDetector(
+      onTap: () {
+        if (routeName == null) return;
+        try {
+          if (routeName == ProductDetailsWidget.routeName && productRef != null) {
+            context.pushNamed(
+              routeName,
+              queryParameters: {
+                'inventoryRef': serializeParam(
+                  productRef,
+                  ParamType.DocumentReference,
+                ),
+              }.withoutNulls,
+            );
+          } else {
+            context.pushNamed(routeName);
+          }
+        } catch (e) {
+          debugPrint('Banner nav error: $e');
+        }
+      },
+      child: ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: Container(
         decoration: BoxDecoration(
@@ -1201,6 +1126,7 @@ your goals */,
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -1215,12 +1141,10 @@ your goals */,
     required String categoryValue,
   }) {
     final theme = FlutterFlowTheme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
-      splashColor: Colors.transparent,
-      focusColor: Colors.transparent,
-      hoverColor: Colors.transparent,
-      highlightColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
       onTap: () async {
         logFirebaseEvent('HOME_PAGE_Column_cat_ON_TAP');
         logFirebaseEvent('Column_navigate_to');
@@ -1231,26 +1155,38 @@ your goals */,
             '__transition_info__': TransitionInfo(
               hasTransition: true,
               transitionType: PageTransitionType.rightToLeft,
-              duration: Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 250),
             ),
           },
         );
-
-        logFirebaseEvent('Column_update_app_state');
         FFAppState().categories = categoryValue;
         safeSetState(() {});
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Circle image with soft shadow
           Container(
-            width: 52,
-            height: 52,
+            width: 58,
+            height: 58,
             decoration: BoxDecoration(
-              color: theme.secondary,
-              borderRadius: BorderRadius.circular(14),
+              shape: BoxShape.circle,
+              color: isDark
+                  ? const Color(0xFF1E1E1E)
+                  : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              border: Border.all(
+                color: theme.primary.withOpacity(0.15),
+                width: 1.5,
+              ),
             ),
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             child: Image.asset(
               assetImage,
               fit: BoxFit.contain,
@@ -1258,28 +1194,32 @@ your goals */,
                 return Icon(
                   Icons.category_outlined,
                   color: theme.primary,
-                  size: 28,
+                  size: 26,
                 );
               },
             ),
           ),
-          SizedBox(height: 6),
-          Text(
-            FFLocalizations.of(context).getText(labelKey),
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            style: theme.bodyMedium.override(
-              font: GoogleFonts.inter(
+          const SizedBox(height: 6),
+          // Clean label — no box
+          SizedBox(
+            height: 24,
+            child: Text(
+              fallback,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: theme.bodyMedium.override(
+                font: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontStyle: theme.bodyMedium.fontStyle,
+                ),
+                color: theme.primaryText,
+                fontSize: 10,
+                letterSpacing: 0.0,
                 fontWeight: FontWeight.w600,
                 fontStyle: theme.bodyMedium.fontStyle,
+                lineHeight: 1.15,
               ),
-              color: theme.primaryText,
-              fontSize: 10,
-              letterSpacing: 0.0,
-              fontWeight: FontWeight.w600,
-              fontStyle: theme.bodyMedium.fontStyle,
-              lineHeight: 1.15,
             ),
           ),
         ],
@@ -1364,23 +1304,19 @@ your goals */,
 
   Widget _moreTile(BuildContext context) {
     final theme = FlutterFlowTheme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
-      splashColor: Colors.transparent,
-      focusColor: Colors.transparent,
-      hoverColor: Colors.transparent,
-      highlightColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
       onTap: () async {
         logFirebaseEvent('HOME_PAGE_Column_more_ON_TAP');
-        logFirebaseEvent('Column_navigate_to');
-
         context.pushNamed(
           CategorysZWidget.routeName,
           extra: <String, dynamic>{
             '__transition_info__': TransitionInfo(
               hasTransition: true,
               transitionType: PageTransitionType.rightToLeft,
-              duration: Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 250),
             ),
           },
         );
@@ -1389,33 +1325,40 @@ your goals */,
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 58,
+            height: 58,
             decoration: BoxDecoration(
-              color: theme.secondary,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              Icons.grid_view_rounded,
+              shape: BoxShape.circle,
               color: theme.primary,
-              size: 22,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.primary.withOpacity(0.35),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.grid_view_rounded,
+              color: Colors.white,
+              size: 26,
             ),
           ),
-          SizedBox(height: 6),
-          Text(
-            FFLocalizations.of(context).getText(
-              'hhkgn4p5' /* More */,
-            ),
-            style: theme.bodyMedium.override(
-              font: GoogleFonts.inter(
-                fontWeight: FontWeight.w600,
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 24,
+            child: Text(
+              'More',
+              style: theme.bodyMedium.override(
+                font: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  fontStyle: theme.bodyMedium.fontStyle,
+                ),
+                color: theme.primary,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
                 fontStyle: theme.bodyMedium.fontStyle,
               ),
-              color: theme.primary,
-              fontSize: 11,
-              letterSpacing: 0.0,
-              fontWeight: FontWeight.w600,
-              fontStyle: theme.bodyMedium.fontStyle,
             ),
           ),
         ],
@@ -1426,7 +1369,7 @@ your goals */,
   // ============================================================
   // BOOSTED SECTION — admin-promoted products
   // ============================================================
-  Widget _buildBoostedSection(dynamic theme) {
+  Widget _buildBoostedSection(FlutterFlowTheme theme) {
     return StreamBuilder<List<InventoryRecord>>(
       stream: queryInventoryRecord(
         queryBuilder: (r) => r.where('boosted', isEqualTo: true),
@@ -1440,45 +1383,25 @@ your goals */,
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 4,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFB300),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    '⭐ Boosted',
-                    style: theme.titleMedium.override(
-                      font: GoogleFonts.interTight(
-                        fontWeight: FontWeight.w700,
-                        fontStyle: theme.titleMedium.fontStyle,
-                      ),
-                      color: theme.primaryText,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      fontStyle: theme.titleMedium.fontStyle,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 8),
             SizedBox(
-              height: 258,
+              height: 220,
               child: ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 12),
                 scrollDirection: Axis.horizontal,
-                itemCount: items.length,
+                itemCount: items.length + 1,
                 itemBuilder: (context, i) {
+                  if (i == items.length) {
+                    return Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(0, 4, 8, 4),
+                      child: _seeAllCard(
+                        context,
+                        BoostedProductsWidget.routeName,
+                        'Boosted',
+                      ),
+                    );
+                  }
                   return Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(0, 6, 10, 6),
+                    padding: EdgeInsetsDirectional.fromSTEB(0, 4, 8, 4),
                     child: _productCard(
                       context,
                       record: items[i],
@@ -1488,7 +1411,7 @@ your goals */,
                 },
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 14),
           ],
         );
       },
@@ -1501,12 +1424,6 @@ your goals */,
       decoration: BoxDecoration(
         color: Color(0xFFFFB300),
         borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0xFFFFB300).withOpacity(0.4),
-            blurRadius: 6,
-          ),
-        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1530,90 +1447,39 @@ your goals */,
   // ============================================================
   // TRENDING SECTION — auto-hidden if empty
   // ============================================================
-  Widget _buildTrendingSection(dynamic theme) {
+  Widget _buildTrendingSection(FlutterFlowTheme theme) {
     return StreamBuilder<List<InventoryRecord>>(
       stream: queryInventoryRecord(
         queryBuilder: (r) => r.orderBy('view_count', descending: true),
         limit: 20,
       ),
       builder: (context, snap) {
-        // Hide entire section if loading or empty
         if (!snap.hasData) return const SizedBox.shrink();
-        final items = snap.data!.where((p) => p.viewCount > 0).toList();
+        final items = snap.data!.take(10).toList();
         if (items.isEmpty) return const SizedBox.shrink();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: theme.primary,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Trending Now',
-                        style: theme.titleMedium.override(
-                          font: GoogleFonts.interTight(
-                            fontWeight: FontWeight.w700,
-                            fontStyle: theme.titleMedium.fontStyle,
-                          ),
-                          color: theme.primaryText,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          fontStyle: theme.titleMedium.fontStyle,
-                        ),
-                      ),
-                    ],
-                  ),
-                  InkWell(
-                    onTap: () => context.pushNamed(TrendingProductWidget.routeName),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'See All',
-                          style: theme.bodyMedium.override(
-                            font: GoogleFonts.inter(
-                              fontWeight: FontWeight.w600,
-                              fontStyle: theme.bodyMedium.fontStyle,
-                            ),
-                            color: theme.primary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            fontStyle: theme.bodyMedium.fontStyle,
-                          ),
-                        ),
-                        SizedBox(width: 2),
-                        Icon(Icons.chevron_right_rounded,
-                            color: theme.primary, size: 18),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 8),
             SizedBox(
-              height: 258,
+              height: 220,
               child: ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 12),
                 scrollDirection: Axis.horizontal,
-                itemCount: items.length,
+                itemCount: items.length + 1,
                 itemBuilder: (context, i) {
+                  if (i == items.length) {
+                    return Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(0, 4, 8, 4),
+                      child: _seeAllCard(
+                        context,
+                        TrendingProductWidget.routeName,
+                        'Trending',
+                      ),
+                    );
+                  }
                   return Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(0, 6, 10, 6),
+                    padding: EdgeInsetsDirectional.fromSTEB(0, 4, 8, 4),
                     child: _productCard(
                       context,
                       record: items[i],
@@ -1623,7 +1489,7 @@ your goals */,
                 },
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 14),
           ],
         );
       },
@@ -1633,7 +1499,7 @@ your goals */,
   // ============================================================
   // NEW ARRIVALS SECTION — auto-hidden if empty
   // ============================================================
-  Widget _buildNewArrivalsSection(dynamic theme) {
+  Widget _buildNewArrivalsSection(FlutterFlowTheme theme) {
     return StreamBuilder<List<InventoryRecord>>(
       stream: queryInventoryRecord(
         queryBuilder: (r) => r.orderBy('created_at', descending: true),
@@ -1642,8 +1508,7 @@ your goals */,
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
 
-        // Filter to last 14 days
-        final cutoff = DateTime.now().subtract(const Duration(days: 14));
+        final cutoff = DateTime.now().subtract(const Duration(days: 7));
         final items = snap.data!.where((p) {
           try {
             final data = (p as dynamic).snapshotData;
@@ -1652,7 +1517,7 @@ your goals */,
               if (created is DateTime) return created.isAfter(cutoff);
             }
           } catch (_) {}
-          return true; // include if uncertain
+          return true;
         }).toList();
 
         if (items.isEmpty) return const SizedBox.shrink();
@@ -1660,74 +1525,25 @@ your goals */,
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: theme.primary,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'New Arrivals',
-                        style: theme.titleMedium.override(
-                          font: GoogleFonts.interTight(
-                            fontWeight: FontWeight.w700,
-                            fontStyle: theme.titleMedium.fontStyle,
-                          ),
-                          color: theme.primaryText,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          fontStyle: theme.titleMedium.fontStyle,
-                        ),
-                      ),
-                    ],
-                  ),
-                  InkWell(
-                    onTap: () => context.pushNamed(NewProductsWidget.routeName),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'See All',
-                          style: theme.bodyMedium.override(
-                            font: GoogleFonts.inter(
-                              fontWeight: FontWeight.w600,
-                              fontStyle: theme.bodyMedium.fontStyle,
-                            ),
-                            color: theme.primary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            fontStyle: theme.bodyMedium.fontStyle,
-                          ),
-                        ),
-                        SizedBox(width: 2),
-                        Icon(Icons.chevron_right_rounded,
-                            color: theme.primary, size: 18),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 8),
             SizedBox(
-              height: 248,
+              height: 220,
               child: ListView.builder(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 12),
                 scrollDirection: Axis.horizontal,
-                itemCount: items.length,
+                itemCount: items.length + 1,
                 itemBuilder: (context, i) {
+                  if (i == items.length) {
+                    return Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(0, 4, 8, 4),
+                      child: _seeAllCard(
+                        context,
+                        NewProductsWidget.routeName,
+                        'New Arrivals',
+                      ),
+                    );
+                  }
                   return Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(0, 6, 10, 6),
+                    padding: EdgeInsetsDirectional.fromSTEB(0, 4, 8, 4),
                     child: _productCard(
                       context,
                       record: items[i],
@@ -1737,10 +1553,94 @@ your goals */,
                 },
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 14),
           ],
         );
       },
+    );
+  }
+
+  // ============================================================
+  // SEE ALL CARD — last item in horizontal scrollers
+  // ============================================================
+  Widget _seeAllCard(BuildContext context, String routeName, String label) {
+    final theme = FlutterFlowTheme.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        try {
+          context.pushNamed(routeName);
+        } catch (_) {}
+      },
+      child: Container(
+        width: 130,
+        decoration: BoxDecoration(
+          color: theme.primary.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: theme.primary.withOpacity(0.35),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: theme.primary,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.primary.withOpacity(0.35),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'See All',
+              style: theme.bodyMedium.override(
+                font: GoogleFonts.inter(
+                  fontWeight: FontWeight.w800,
+                  fontStyle: theme.bodyMedium.fontStyle,
+                ),
+                color: theme.primary,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                fontStyle: theme.bodyMedium.fontStyle,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                label,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: theme.bodySmall.override(
+                  font: GoogleFonts.inter(
+                    fontWeight: FontWeight.w500,
+                    fontStyle: theme.bodySmall.fontStyle,
+                  ),
+                  color: theme.secondaryText,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w500,
+                  fontStyle: theme.bodySmall.fontStyle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1751,8 +1651,8 @@ your goals */,
     BuildContext context, {
     required InventoryRecord record,
     Widget? badge,
-    double? width = 165,
-    double? height = 245,
+    double? width = 145,
+    double? height = 220,
   }) {
     final theme = FlutterFlowTheme.of(context);
 
@@ -1801,14 +1701,14 @@ your goals */,
             );
           },
           child: Padding(
-            padding: EdgeInsets.all(6),
+            padding: EdgeInsets.all(5),
             child: Column(
               mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ─── IMAGE BLOCK ───
                 Expanded(
-                  flex: grid ? 8 : 7,
+                  flex: 7,
                   child: Stack(
                     children: [
                       Container(
@@ -1826,7 +1726,7 @@ your goals */,
                               record.inventoryImages.firstOrNull,
                               'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxz9T3n9wAdGgBp1oXZxkQMdECuc3cuvcOw&s',
                             ),
-                            fit: BoxFit.cover,
+                            fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) {
                               return Icon(
                                 Icons.image_not_supported_outlined,

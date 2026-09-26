@@ -298,7 +298,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
                 decoration: BoxDecoration(
-                  color: isActive ? kGreen : Colors.white,
+                  color: isActive ? kGreen : kCard,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isActive ? kGreen : kBorder,
@@ -334,10 +334,10 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: 0.82,
+          crossAxisCount: 4,
+          crossAxisSpacing: 6,
+          mainAxisSpacing: 6,
+          childAspectRatio: 0.72,
         ),
         itemCount: _categories.length,
         itemBuilder: (context, index) {
@@ -360,28 +360,33 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
             },
             child: Container(
               decoration: BoxDecoration(
-                color: kCard,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: kBorder),
+                color: kBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: kBorder.withOpacity(0.5)),
               ),
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(4),
               child: Column(
                 children: [
                   Expanded(
                     child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0F2F5),
+                        color: _isDark
+                            ? const Color(0xFF2A2A2C)
+                            : const Color(0xFFF0F2F5),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(4),
                       child: Image.network(
                         _imgUrl(cat[0]),
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.category_outlined,
-                          color: kMuted,
-                          size: 28,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: kGreen.withOpacity(0.1),
+                          child: Icon(
+                            Icons.category_outlined,
+                            color: kGreen,
+                            size: 32,
+                          ),
                         ),
                       ),
                     ),
@@ -394,9 +399,9 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: kText,
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      height: 1.2,
+                      height: 1.15,
                     ),
                   ),
                 ],
@@ -453,9 +458,9 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
             padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 0.68,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 0.72,
             ),
             itemCount: items.length,
             itemBuilder: (context, i) => _productCard(
@@ -508,9 +513,11 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                 children: [
                   Container(
                     width: double.infinity,
-                    height: 130,
+                    height: 110,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0F2F5),
+                      color: _isDark
+                          ? const Color(0xFF2A2A2C)
+                          : const Color(0xFFF0F2F5),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     padding: const EdgeInsets.all(6),
