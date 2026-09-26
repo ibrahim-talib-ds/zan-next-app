@@ -420,55 +420,35 @@ class _SignUpWidgetState extends State<SignUpWidget>
                             ),
                             const SizedBox(height: 20),
 
-                            // Social buttons
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _socialButton(
-                                    context,
-                                    label: 'Google',
-                                    icon: const FaIcon(
-                                      FontAwesomeIcons.google,
-                                      size: 18,
-                                      color: Color(0xFFDB4437),
+                            // Social buttons — Google only (Apple removed)
+                            _socialButton(
+                              context,
+                              label: 'Continue with Google',
+                              icon: const FaIcon(
+                                FontAwesomeIcons.google,
+                                size: 18,
+                                color: Color(0xFFDB4437),
+                              ),
+                              onTap: () async {
+                                try {
+                                  GoRouter.of(context).prepareAuthEvent();
+                                  final user = await authManager
+                                      .signInWithGoogle(context);
+                                  if (user == null) return;
+                                  if (!context.mounted) return;
+                                  context.goNamedAuth(
+                                      HomeWidget.routeName, context.mounted);
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Google sign-in failed: $e'),
+                                      backgroundColor: const Color(0xFFDC0F0F),
+                                      behavior: SnackBarBehavior.floating,
                                     ),
-                                    onTap: () async {
-                                      GoRouter.of(context)
-                                          .prepareAuthEvent();
-                                      final user = await authManager
-                                          .signInWithGoogle(context);
-                                      if (user == null) return;
-                                      context.goNamedAuth(
-                                          HomeWidget.routeName,
-                                          context.mounted);
-                                    },
-                                  ),
-                                ),
-                                if (!isAndroid) ...[
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _socialButton(
-                                      context,
-                                      label: 'Apple',
-                                      icon: const FaIcon(
-                                        FontAwesomeIcons.apple,
-                                        size: 18,
-                                        color: Colors.black,
-                                      ),
-                                      onTap: () async {
-                                        GoRouter.of(context)
-                                            .prepareAuthEvent();
-                                        final user = await authManager
-                                            .signInWithApple(context);
-                                        if (user == null) return;
-                                        context.goNamedAuth(
-                                            HomeWidget.routeName,
-                                            context.mounted);
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ],
+                                  );
+                                }
+                              },
                             ),
                             const SizedBox(height: 24),
 

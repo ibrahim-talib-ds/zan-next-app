@@ -165,16 +165,20 @@ class _NotificationWidgetState extends State<NotificationWidget> {
     }
 
     // ── 2. ORDER ────────────────────────────────────────────
-    // Schema has no `type` field → infer from title.
-    // Seller notifications contain 'received' or 'new order'.
-    // Buyer notifications contain 'placed', 'ship', 'delivered'.
+    // Only match titles that START with order keywords.
+    // This prevents "Welcome to ZanNext!" (body has "order") from misrouting.
     final looksLikeOrder = type == 'order' ||
-        title.contains('order') ||
-        title.contains('received') ||
-        title.contains('shipment') ||
-        title.contains('shipped') ||
-        title.contains('delivered') ||
-        title.contains('delivery');
+        title.startsWith('order') ||
+        title.startsWith('new order') ||
+        title.startsWith('order placed') ||
+        title.startsWith('order received') ||
+        title.startsWith('order confirmed') ||
+        title.startsWith('order cancelled') ||
+        title.startsWith('order shipped') ||
+        title.startsWith('order delivered') ||
+        title.startsWith('order on the way') ||
+        title.contains('received your order') ||
+        title.contains('placed your order');
 
     if (looksLikeOrder) {
       final isSellerSide = title.contains('received') ||

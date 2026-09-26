@@ -1,4 +1,5 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import 'dart:ui';
@@ -8,6 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'select_ad_model.dart';
+import '/auth/firebase_auth/auth_util.dart';
+import '/admin_category/admin_category_editor.dart';
 export 'select_ad_model.dart';
 
 class SelectAdWidget extends StatefulWidget {
@@ -212,12 +215,34 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
                 ),
               ),
               Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
-                  itemCount: _categories.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    return _categoryTile(context, _categories[index]);
+                child: StreamBuilder<Map<String, Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance
+                      .collection('category_config')
+                      .snapshots()
+                      .map((snap) {
+                    final map = <String, Map<String, dynamic>>{};
+                    for (final doc in snap.docs) {
+                      map[doc.id] = doc.data();
+                    }
+                    return map;
+                  }),
+                  builder: (context, overrideSnap) {
+                    final overrides = overrideSnap.data ?? {};
+                    return ListView.separated(
+                      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
+                      itemCount: _categories.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final cat = _categories[index];
+                        final override = overrides[cat.label];
+                        return _categoryTile(
+                          context,
+                          cat,
+                          overrideImage: override?['image_url'] as String?,
+                          overrideLabel: override?['label'] as String?,
+                        );
+                      },
+                    );
                   },
                 ),
               ),
@@ -295,8 +320,15 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
     );
   }
 
-  Widget _categoryTile(BuildContext context, _Category cat) {
+  Widget _categoryTile(
+    BuildContext context,
+    _Category cat, {
+    String? overrideImage,
+    String? overrideLabel,
+  }) {
     final theme = FlutterFlowTheme.of(context);
+    final displayImage = overrideImage ?? cat.imageUrl;
+    final displayLabel = overrideLabel ?? cat.label;
 
     return InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -305,6 +337,15 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
       hoverColor: Colors.transparent,
       highlightColor: Colors.transparent,
       onTap: () async {
+        final isAdmin = valueOrDefault<bool>(
+                currentUserDocument?.isAdmin, false) ==
+            true;
+
+        if (isAdmin) {
+          await _showAdminCategoryMenu(displayLabel, displayImage, displayLabel);
+          return;
+        }
+
         logFirebaseEvent('SELECT_AD_category_ON_TAP');
         try {
           context.pushNamed(
@@ -349,7 +390,7 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
               ),
               clipBehavior: Clip.antiAlias,
               child: Image.network(
-                          cat.imageUrl,
+                          displayImage,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Icon(cat.icon, color: theme.primary, size: 26);
@@ -363,7 +404,7 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    cat.label,
+                    displayLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.bodyLarge.override(
@@ -403,6 +444,153 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
               color: theme.secondaryText,
               size: 22,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ADMIN: Category menu (Edit / Continue)
+  // ═══════════════════════════════════════════════════════════
+  Future<void> _showAdminCategoryMenu(
+    String categoryKey,
+    String currentImage,
+    String currentLabel,
+  ) async {
+    final theme = FlutterFlowTheme.of(context);
+
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: theme.secondaryBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44, height: 4,
+              decoration: BoxDecoration(
+                color: theme.alternate,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              categoryKey,
+              style: TextStyle(color: theme.primaryText, fontSize: 16, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'What do you want to do?',
+              style: TextStyle(color: theme.secondaryText, fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            _adminMenuOption(
+              ctx,
+              icon: Icons.edit_rounded,
+              label: 'Edit this category',
+              subtitle: 'Change image or name',
+              color: theme.primary,
+              value: 'edit',
+              theme: theme,
+            ),
+            const SizedBox(height: 10),
+            _adminMenuOption(
+              ctx,
+              icon: Icons.arrow_forward_rounded,
+              label: 'Continue to page',
+              subtitle: 'Open category normally',
+              color: const Color(0xFF3B82F6),
+              value: 'continue',
+              theme: theme,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+
+    if (action == 'edit') {
+      await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => AdminCategoryEditor(
+          categoryKey: categoryKey,
+          currentImage: currentImage,
+          currentLabel: currentLabel,
+          currentRoute: categoryKey,
+        ),
+      );
+    } else if (action == 'continue') {
+      // Navigate using the stored route
+      final cat = _categories.firstWhere(
+        (c) => c.label == categoryKey,
+        orElse: () => _categories.first,
+      );
+      try {
+        context.pushNamed(
+          cat.routeName,
+          extra: <String, dynamic>{
+            '__transition_info__': TransitionInfo(
+              hasTransition: true,
+              transitionType: PageTransitionType.rightToLeft,
+              duration: const Duration(milliseconds: 250),
+            ),
+          },
+        );
+      } catch (_) {}
+    }
+  }
+
+  Widget _adminMenuOption(
+    BuildContext ctx, {
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required String value,
+    required FlutterFlowTheme theme,
+  }) {
+    return GestureDetector(
+      onTap: () => Navigator.pop(ctx, value),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.3), width: 1.2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: TextStyle(color: theme.primaryText, fontSize: 14, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: TextStyle(color: theme.secondaryText, fontSize: 11.5)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: color, size: 22),
           ],
         ),
       ),

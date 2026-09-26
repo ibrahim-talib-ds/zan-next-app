@@ -137,6 +137,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
           );
         }
         if (!snapshot.hasData) {
+          // Connection waiting → brief spinner
           return const Center(
             child: SizedBox(
               width: 40,

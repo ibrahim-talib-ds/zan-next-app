@@ -1,4 +1,6 @@
 import '/auth/firebase_auth/auth_util.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '/admin_category/admin_category_editor.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
@@ -324,6 +326,28 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
   Widget _buildCategoryTab() {
     return Container(
       color: kBg,
+      child: StreamBuilder<Map<String, Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('category_config')
+            .snapshots()
+            .map((snap) {
+          final map = <String, Map<String, dynamic>>{};
+          for (final doc in snap.docs) {
+            map[doc.id] = doc.data();
+          }
+          return map;
+        }),
+        builder: (context, overrideSnap) {
+          final overrides = overrideSnap.data ?? {};
+          return _buildCategoryTabInner(overrides);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCategoryTabInner(Map<String, Map<String, dynamic>> overrides) {
+    return Container(
+      color: kBg,
       child: RefreshIndicator(
         color: kGreen,
         onRefresh: () async {
@@ -342,9 +366,23 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
         itemCount: _categories.length,
         itemBuilder: (context, index) {
           final cat = _categories[index];
+          // 🎨 Apply admin override if present
+          final key = cat[2]; // categoryValue is the key
+          final override = overrides[key];
+          final displayImage = (override?['image_url'] as String?) ?? cat[0];
+          final displayLabel = (override?['label'] as String?) ?? cat[1];
           return InkWell(
             borderRadius: BorderRadius.circular(14),
-            onTap: () {
+            onTap: () async {
+              final isAdmin = valueOrDefault<bool>(
+                      currentUserDocument?.isAdmin, false) ==
+                  true;
+
+              if (isAdmin) {
+                await _showAdminCategoryMenu(key, displayImage, displayLabel);
+                return;
+              }
+
               FFAppState().categories = cat[2];
               safeSetState(() {});
               context.pushNamed(
@@ -378,7 +416,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                       ),
                       padding: const EdgeInsets.all(4),
                       child: Image.network(
-                        _imgUrl(cat[0]),
+                        _imgUrl(displayImage),
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => Container(
                           color: kGreen.withOpacity(0.1),
@@ -393,7 +431,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    cat[1],
+                    displayLabel,
                     maxLines: 2,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
@@ -454,13 +492,21 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
           final items = snapshot.data!;
           if (items.isEmpty) return _emptyState(emptyMessage);
 
+          // Responsive: 2 cols on phone, 3 on tablet, 4 on desktop
+          final width = MediaQuery.of(context).size.width;
+          final cols = width >= 1200
+              ? 4
+              : width >= 900
+                  ? 3
+                  : 2;
+
           return GridView.builder(
-            padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 12, 24),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
-              childAspectRatio: 0.72,
+              childAspectRatio: 0.66,
             ),
             itemCount: items.length,
             itemBuilder: (context, i) => _productCard(
@@ -473,6 +519,9 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
     );
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // PREMIUM PRODUCT CARD
+  // ═══════════════════════════════════════════════════════════
   Widget _productCard({
     required InventoryRecord record,
     Widget? badge,
@@ -481,7 +530,14 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
       decoration: BoxDecoration(
         color: kCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: kBorder),
+        border: Border.all(color: kBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(_isDark ? 0.25 : 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -504,59 +560,62 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
           );
         },
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Stack(
-                alignment: AlignmentDirectional(1, -1),
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 110,
-                    decoration: BoxDecoration(
-                      color: _isDark
-                          ? const Color(0xFF2A2A2C)
-                          : const Color(0xFFF0F2F5),
+              // ─── Image block ───
+              Expanded(
+                flex: 7,
+                child: Stack(
+                  children: [
+                    ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                    ),
-                    padding: const EdgeInsets.all(6),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        _imgUrl(valueOrDefault<String>(
-                          record.inventoryImages.firstOrNull,
-                          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxz9T3n9wAdGgBp1oXZxkQMdECuc3cuvcOw&s',
-                        )),
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.image_not_supported_outlined,
-                          color: kMuted,
-                          size: 32,
+                      child: Container(
+                        width: double.infinity,
+                        color: _isDark
+                            ? const Color(0xFF2A2A2C)
+                            : const Color(0xFFF0F2F5),
+                        child: Image.network(
+                          _imgUrl(valueOrDefault<String>(
+                            record.inventoryImages.firstOrNull,
+                            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxz9T3n9wAdGgBp1oXZxkQMdECuc3cuvcOw&s',
+                          )),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Icon(
+                            Icons.image_not_supported_outlined,
+                            color: kMuted,
+                            size: 28,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (badge != null)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(0, 4, 4, 0),
-                      child: badge,
-                    ),
-                ],
+                    if (badge != null)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: badge,
+                      ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
+
+              // ─── Title ───
               Text(
                 valueOrDefault<String>(record.inventoryName, 'Product'),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: kText,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                   height: 1.25,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 4),
+
+              // ─── Price ───
               Text(
                 valueOrDefault<String>(
                   formatNumber(
@@ -571,9 +630,31 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Color(0xFFDC0F0F),
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w900,
                 ),
+              ),
+              const SizedBox(height: 2),
+
+              // ─── Trust row ───
+              Row(
+                children: [
+                  const Icon(Icons.verified_rounded,
+                      color: kGreen, size: 10),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: Text(
+                      valueOrDefault<String>(record.sellerName, 'Verified'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: kMuted,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -629,6 +710,143 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
           ),
         ),
       );
+
+  // ═══════════════════════════════════════════════════════════
+  // ADMIN: Category menu (Edit / Continue)
+  // ═══════════════════════════════════════════════════════════
+  Future<void> _showAdminCategoryMenu(
+    String categoryKey,
+    String currentImage,
+    String currentLabel,
+  ) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: kCard,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44, height: 4,
+              decoration: BoxDecoration(
+                color: kBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              categoryKey,
+              style: TextStyle(color: kText, fontSize: 16, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'What do you want to do?',
+              style: TextStyle(color: kMuted, fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            _menuOption(
+              ctx,
+              icon: Icons.edit_rounded,
+              label: 'Edit this category',
+              subtitle: 'Change image or name',
+              color: kGreen,
+              value: 'edit',
+            ),
+            const SizedBox(height: 10),
+            _menuOption(
+              ctx,
+              icon: Icons.arrow_forward_rounded,
+              label: 'Continue to page',
+              subtitle: 'Open category normally',
+              color: const Color(0xFF3B82F6),
+              value: 'continue',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+
+    if (action == 'edit') {
+      await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => AdminCategoryEditor(
+          categoryKey: categoryKey,
+          currentImage: currentImage,
+          currentLabel: currentLabel,
+          currentRoute: 'Specific_categories',
+        ),
+      );
+    } else if (action == 'continue') {
+      FFAppState().categories = categoryKey;
+      safeSetState(() {});
+      context.pushNamed(
+        SpecificCategoriesWidget.routeName,
+        extra: <String, dynamic>{
+          '__transition_info__': TransitionInfo(
+            hasTransition: true,
+            transitionType: PageTransitionType.rightToLeft,
+            duration: const Duration(milliseconds: 250),
+          ),
+        },
+      );
+    }
+  }
+
+  Widget _menuOption(
+    BuildContext ctx, {
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required String value,
+  }) {
+    return GestureDetector(
+      onTap: () => Navigator.pop(ctx, value),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.3), width: 1.2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: TextStyle(color: kText, fontSize: 14, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: TextStyle(color: kMuted, fontSize: 11.5)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: color, size: 22),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _errorState(String message) => Center(
         child: SingleChildScrollView(

@@ -1,4 +1,6 @@
 import '/auth/firebase_auth/auth_util.dart';
+import '/admin_category/admin_category_editor.dart';
+import '/admin_category/category_service.dart';
 import '/utils/responsive.dart';
 import '/backend/backend.dart';
 import '/location_modal/location_modal_widget.dart';
@@ -244,6 +246,8 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                         ),
                       ),
                     ),
+
+                                        SizedBox(height: 18),
 
                     // ============ CATEGORY GRID (2 ROWS x 4) ============
                     Padding(
@@ -1143,9 +1147,54 @@ your goals */,
     final theme = FlutterFlowTheme.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // 🔄 Load admin override for this category (if any)
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('category_config')
+          .doc(categoryValue)
+          .snapshots(),
+      builder: (context, snap) {
+        final override = snap.data?.data() as Map<String, dynamic>?;
+        final overrideImage = override?['image_url'] as String?;
+        final overrideLabel = override?['label'] as String?;
+        return _categoryTileInner(
+          context: context,
+          theme: theme,
+          isDark: isDark,
+          assetImage: overrideImage ?? assetImage,
+          label: overrideLabel ?? fallback,
+          categoryValue: categoryValue,
+          isUrl: overrideImage != null,
+        );
+      },
+    );
+  }
+
+  Widget _categoryTileInner({
+    required BuildContext context,
+    required FlutterFlowTheme theme,
+    required bool isDark,
+    required String assetImage,
+    required String label,
+    required String categoryValue,
+    required bool isUrl,
+  }) {
+
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: () async {
+        // Check if current user is admin
+        final isAdmin = valueOrDefault<bool>(
+                currentUserDocument?.isAdmin, false) ==
+            true;
+
+        if (isAdmin) {
+          // Show admin menu: Edit or Continue
+          _showAdminCategoryMenu(categoryValue, assetImage, categoryValue);
+          return;
+        }
+
+        // Normal user → navigate directly
         logFirebaseEvent('HOME_PAGE_Column_cat_ON_TAP');
         logFirebaseEvent('Column_navigate_to');
 
@@ -1187,24 +1236,36 @@ your goals */,
               ),
             ),
             padding: const EdgeInsets.all(10),
-            child: Image.asset(
-              assetImage,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(
-                  Icons.category_outlined,
-                  color: theme.primary,
-                  size: 26,
-                );
-              },
-            ),
+            child: isUrl
+                ? Image.network(
+                    _urlOf(assetImage),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.category_outlined,
+                        color: theme.primary,
+                        size: 26,
+                      );
+                    },
+                  )
+                : Image.asset(
+                    assetImage,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.category_outlined,
+                        color: theme.primary,
+                        size: 26,
+                      );
+                    },
+                  ),
           ),
           const SizedBox(height: 6),
           // Clean label — no box
           SizedBox(
             height: 24,
             child: Text(
-              fallback,
+              label,
               maxLines: 2,
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
@@ -1560,6 +1621,12 @@ your goals */,
     );
   }
 
+  String _urlOf(String url) {
+    final u = url.trim();
+    if (u.isEmpty) return u;
+    return u.startsWith('http://') ? u.replaceFirst('http://', 'https://') : u;
+  }
+
   // ============================================================
   // SEE ALL CARD — last item in horizontal scrollers
   // ============================================================
@@ -1638,6 +1705,152 @@ your goals */,
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // ADMIN: Category menu (Edit / Continue)
+  // ============================================================
+  Future<void> _showAdminCategoryMenu(
+    String categoryKey,
+    String currentImage,
+    String currentLabel,
+  ) async {
+    final theme = FlutterFlowTheme.of(context);
+    final bg = theme.secondaryBackground;
+    final text = theme.primaryText;
+    final muted = theme.secondaryText;
+
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44, height: 4,
+              decoration: BoxDecoration(
+                color: muted.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              categoryKey,
+              style: TextStyle(color: text, fontSize: 16, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'What do you want to do?',
+              style: TextStyle(color: muted, fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            _menuOption(
+              ctx,
+              icon: Icons.edit_rounded,
+              label: 'Edit this category',
+              subtitle: 'Change image, name, or route',
+              color: const Color(0xFF1B7A4E),
+              value: 'edit',
+              text: text, muted: muted,
+            ),
+            const SizedBox(height: 10),
+            _menuOption(
+              ctx,
+              icon: Icons.arrow_forward_rounded,
+              label: 'Continue to page',
+              subtitle: 'Open the category normally',
+              color: const Color(0xFF3B82F6),
+              value: 'continue',
+              text: text, muted: muted,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || action == null) return;
+
+    if (action == 'edit') {
+      await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => AdminCategoryEditor(
+          categoryKey: categoryKey,
+          currentImage: currentImage,
+          currentLabel: currentLabel,
+          currentRoute: 'Specific_categories',
+        ),
+      );
+    } else if (action == 'continue') {
+      context.pushNamed(
+        SpecificCategoriesWidget.routeName,
+        extra: <String, dynamic>{
+          '__transition_info__': TransitionInfo(
+            hasTransition: true,
+            transitionType: PageTransitionType.rightToLeft,
+            duration: const Duration(milliseconds: 250),
+          ),
+        },
+      );
+      FFAppState().categories = categoryKey;
+      safeSetState(() {});
+    }
+  }
+
+  Widget _menuOption(
+    BuildContext ctx, {
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required String value,
+    required Color text,
+    required Color muted,
+  }) {
+    return GestureDetector(
+      onTap: () => Navigator.pop(ctx, value),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.3), width: 1.2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: TextStyle(color: text, fontSize: 14, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: TextStyle(color: muted, fontSize: 11.5)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: color, size: 22),
           ],
         ),
       ),

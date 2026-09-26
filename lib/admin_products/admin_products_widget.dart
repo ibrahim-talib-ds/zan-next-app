@@ -16,6 +16,9 @@ class AdminProductsWidget extends StatefulWidget {
 
 class _AdminProductsWidgetState extends State<AdminProductsWidget> {
   late AdminProductsModel _model;
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
 
   static const Color kGreen = Color(0xFF1B7A4E);
   static const Color kGreenDeep = Color(0xFF0A3A22);
@@ -43,6 +46,7 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _model.dispose();
     super.dispose();
   }
@@ -56,6 +60,7 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
         child: Column(
           children: [
             _header(),
+            _searchBar(),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -69,7 +74,16 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
                       ),
                     );
                   }
-                  final docs = snap.data!.docs;
+                  var docs = snap.data!.docs;
+                  if (_query.isNotEmpty) {
+                    final q = _query.toLowerCase();
+                    docs = docs.where((doc) {
+                      final d = doc.data() as Map<String, dynamic>;
+                      final name = (d['inventory_name'] ?? '').toString().toLowerCase();
+                      final seller = (d['seller_name'] ?? '').toString().toLowerCase();
+                      return name.contains(q) || seller.contains(q);
+                    }).toList();
+                  }
                   if (docs.isEmpty) return _empty();
                   return RefreshIndicator(
                     color: kGreen,
@@ -117,6 +131,52 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
                 },
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _searchBar() {
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 4),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _border),
+        ),
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 0, 6, 0),
+        child: Row(
+          children: [
+            Icon(Icons.search_rounded, color: _muted, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (v) => safeSetState(() => _query = v.trim()),
+                style: TextStyle(color: _text, fontSize: 14),
+                cursorColor: kGreen,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  isDense: true,
+                  hintText: 'Search by product or seller...',
+                  hintStyle: TextStyle(color: _muted, fontSize: 13.5),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            if (_query.isNotEmpty)
+              GestureDetector(
+                onTap: () {
+                  _searchController.clear();
+                  safeSetState(() => _query = '');
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(Icons.close_rounded, color: _muted, size: 18),
+                ),
+              ),
           ],
         ),
       ),
