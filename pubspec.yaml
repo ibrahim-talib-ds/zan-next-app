@@ -148,12 +148,7 @@ dependency_overrides:
   page_transition: ^2.2.2
 
 dev_dependencies:
-  flutter_launcher_icons: 0.13.1
-  flutter_lints: 4.0.0
-  image: 4.2.0
-  lints: 4.0.0
-  flutter_test:
-    sdk: flutter
+  flutter_launcher_icons: ^0.13.1
 
 flutter_launcher_icons:
   android: true
@@ -163,10 +158,11 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: 'assets/images/app_launcher_icon.png'
-    background_color: '#1B7A4E'
+    background_color: '#0A3A22'
     theme_color: '#1B7A4E'
-  adaptive_icon_background: '#1B7A4E'
+  adaptive_icon_background: '#0A3A22'
   adaptive_icon_foreground: 'assets/images/adaptive_foreground_icon.png'
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true

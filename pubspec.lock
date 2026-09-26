@@ -471,14 +471,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.1"
-  flutter_lints:
-    dependency: "direct dev"
-    description:
-      name: flutter_lints
-      sha256: "3f41d009ba7172d5ff9be5f6e6e6abb4300e263aab8866d2a0842ed2a70f8f0c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.0"
   flutter_localizations:
     dependency: "direct main"
     description: flutter
@@ -549,7 +541,7 @@ packages:
     source: hosted
     version: "2.1.0"
   flutter_test:
-    dependency: "direct dev"
+    dependency: transitive
     description: flutter
     source: sdk
     version: "0.0.0"
@@ -727,7 +719,7 @@ packages:
     source: hosted
     version: "4.1.2"
   image:
-    dependency: "direct dev"
+    dependency: transitive
     description:
       name: image
       sha256: "2237616a36c0d69aef7549ab439b833fb7f9fb9fc861af2cc9ac3eedddd69ca8"
@@ -854,14 +846,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
-  lints:
-    dependency: "direct dev"
-    description:
-      name: lints
-      sha256: "976c774dd944a42e83e2467f4cc670daef7eed6295b10b36ae8c85bcbf828235"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.0"
   logging:
     dependency: transitive
     description:

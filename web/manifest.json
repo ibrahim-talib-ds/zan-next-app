@@ -3,7 +3,7 @@
     "short_name": "ZanNext",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#1B7A4E",
+    "background_color": "#0A3A22",
     "theme_color": "#1B7A4E",
     "description": "A new Flutter project.",
     "orientation": "any",
