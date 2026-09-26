@@ -1,4 +1,5 @@
 import '/auth/firebase_auth/auth_util.dart';
+import '/utils/responsive.dart';
 import '/backend/backend.dart';
 import '/location_modal/location_modal_widget.dart';
 import '/flutter_flow/flutter_flow_animations.dart';
@@ -132,7 +133,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                       padding: EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
                       child: Container(
                         width: double.infinity,
-                        height: 165,
+                        height: Responsive.bannerHeight(context),
                         child: Stack(
                           children: [
                             PageView(
@@ -321,12 +322,15 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
 
                     // ============ CATEGORY GRID (2 ROWS x 4) ============
                     Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                        Responsive.horizontalPad(context), 0,
+                        Responsive.horizontalPad(context), 0,
+                      ),
                       child: GridView(
                         padding: EdgeInsets.zero,
                         gridDelegate:
                             SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 5,
+                          crossAxisCount: Responsive.categoryCols(context),
                           crossAxisSpacing: 6,
                           mainAxisSpacing: 10,
                           childAspectRatio: 0.78,
@@ -622,10 +626,11 @@ your goals */,
                             padding: EdgeInsets.zero,
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                              childAspectRatio: 0.62,
+                              crossAxisCount: Responsive.productCols(context),
+                              crossAxisSpacing: Responsive.cardGap(context),
+                              mainAxisSpacing: Responsive.cardGap(context),
+                              childAspectRatio:
+                                  Responsive.cardAspectRatio(context),
                             ),
                             primary: false,
                             shrinkWrap: true,
