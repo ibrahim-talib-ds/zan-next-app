@@ -720,15 +720,28 @@ class _SigninWidgetState extends State<SigninWidget> {
                       children: [
                         FFButtonWidget(
                           onPressed: () async {
-                            GoRouter.of(context).prepareAuthEvent();
-                            final user =
-                                await authManager.signInWithGoogle(context);
-                            if (user == null) {
-                              return;
-                            }
+                            try {
+                              GoRouter.of(context).prepareAuthEvent();
+                              final user =
+                                  await authManager.signInWithGoogle(context);
 
-                            context.goNamedAuth(
-                                HomeWidget.routeName, context.mounted);
+                              // On mobile web, signInWithRedirect returns null
+                              // and the browser navigates — no action needed.
+                              if (user == null) return;
+
+                              if (!context.mounted) return;
+                              context.goNamedAuth(
+                                  HomeWidget.routeName, context.mounted);
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Google sign-in failed: $e'),
+                                  backgroundColor: const Color(0xFFDC0F0F),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
                           },
                           text: FFLocalizations.of(context).getText(
                             'vf7faqry' /* Continue with Google */,

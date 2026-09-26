@@ -1,3 +1,4 @@
+import 'auth/firebase_auth/google_auth.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
@@ -58,6 +59,17 @@ void main() async {
   if (!kIsWeb) {
     FlutterError.onError =
         FirebaseCrashlytics.instance.recordFlutterFatalError;
+  }
+
+  // 🔐 Handle Google Sign-In redirect (mobile browsers)
+  // Firebase sends the user back to the app after Google auth.
+  // We must read the result before rendering the app.
+  if (kIsWeb) {
+    try {
+      await handleGoogleRedirectResult();
+    } catch (e) {
+      debugPrint('Google redirect error: $e');
+    }
   }
 
   // 🔐 Check for password reset link in URL (web)

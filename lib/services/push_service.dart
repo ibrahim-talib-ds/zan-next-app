@@ -59,7 +59,9 @@ class PushService {
     // 6. Cold start: app launched from a push.
     final initial = await _fcm.getInitialMessage();
     if (initial != null) {
-      Future.delayed(const Duration(milliseconds: 900), () {
+      debugPrint('🔔 Cold start from push: ${initial.data}');
+      // Give the app time to fully render, then retry navigation
+      Future.delayed(const Duration(milliseconds: 1500), () {
         _handleTap(initial);
       });
     }
@@ -126,14 +128,56 @@ class PushService {
   // ═══════════════════════════════════════════════════════════
   // TAP HANDLER — routes to correct screen
   // ═══════════════════════════════════════════════════════════
-  void _handleTap(RemoteMessage msg) {
-    final data = msg.data;
-    debugPrint('🔔 Tap: $data');
+  /// Queue for cold-start navigation.
+  static RemoteMessage? _pendingMsg;
 
+  /// Called from main.dart after the app is fully ready.
+  static void flushPending() {
+    final msg = _pendingMsg;
+    _pendingMsg = null;
+    if (msg != null) {
+      PushService.instance._navigate(msg);
+    }
+  }
+
+  void _handleTap(RemoteMessage msg) {
+    debugPrint('🔔 Tap received: ${msg.data}');
+
+    // Try up to 10 times, waiting for context to be ready
+    _tryNavigate(msg, attempt: 0);
+  }
+
+  void _tryNavigate(RemoteMessage msg, {required int attempt}) {
+    final ctx = appNavigatorKey.currentContext;
+
+    // Context not ready → wait and retry (cold start)
+    if (ctx == null) {
+      if (attempt >= 10) {
+        debugPrint('🔔 Nav gave up after 10 attempts');
+        return;
+      }
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _tryNavigate(msg, attempt: attempt + 1);
+      });
+      return;
+    }
+
+    _navigate(msg);
+  }
+
+  void _navigate(RemoteMessage msg) {
+    final data = msg.data;
     final route = data['route'] as String?;
     final chatId = data['chatId'] as String?;
+
+    // Get fresh context right now
     final ctx = appNavigatorKey.currentContext;
-    if (ctx == null) return;
+    if (ctx == null) {
+      debugPrint('🔔 _navigate: context still null');
+      return;
+    }
+
+    debugPrint('🔔 Navigating: route=$route chatId=$chatId');
 
     try {
       // ── CHAT ──────────────────────────────────────────────

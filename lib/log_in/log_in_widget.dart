@@ -500,12 +500,28 @@ class _LogInWidgetState extends State<LogInWidget>
                                 fit: BoxFit.contain,
                               ),
                               onTap: () async {
-                                GoRouter.of(context).prepareAuthEvent();
-                                final user = await authManager
-                                    .signInWithGoogle(context);
-                                if (user == null) return;
-                                context.goNamedAuth(
-                                    HomeWidget.routeName, context.mounted);
+                                try {
+                                  GoRouter.of(context).prepareAuthEvent();
+                                  final user = await authManager
+                                      .signInWithGoogle(context);
+
+                                  // On mobile web, signInWithRedirect returns null
+                                  // and the browser navigates away — no action needed.
+                                  if (user == null) return;
+
+                                  if (!context.mounted) return;
+                                  context.goNamedAuth(
+                                      HomeWidget.routeName, context.mounted);
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Google sign-in failed: $e'),
+                                      backgroundColor: const Color(0xFFDC0F0F),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                }
                               },
                             ),
                             const SizedBox(height: 24),

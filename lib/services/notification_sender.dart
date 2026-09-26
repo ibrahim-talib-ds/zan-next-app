@@ -39,7 +39,9 @@ class NotificationSender {
               'token': token,
               'title': title,
               'body': body,
-              'data': data ?? {},
+              'data': (data ?? {}).map(
+                (k, v) => MapEntry(k, v.toString()),
+              ),
             }),
           )
           .timeout(const Duration(seconds: 15));
