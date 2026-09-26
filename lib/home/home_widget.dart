@@ -327,9 +327,9 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                         gridDelegate:
                             SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 5,
-                          crossAxisSpacing: 4,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 0.82,
+                          crossAxisSpacing: 6,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 0.78,
                         ),
                         primary: false,
                         shrinkWrap: true,
@@ -440,297 +440,14 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
 
                     SizedBox(height: 22),
 
-                    // ============ TRENDING PRODUCTS ============
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 4,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  color: theme.primary,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                FFLocalizations.of(context).getText(
-                                  '4n96ea24' /* Trending Products */,
-                                ),
-                                style: theme.titleMedium.override(
-                                  font: GoogleFonts.interTight(
-                                    fontWeight: FontWeight.w700,
-                                    fontStyle: theme.titleMedium.fontStyle,
-                                  ),
-                                  color: theme.primaryText,
-                                  fontSize: 17,
-                                  letterSpacing: 0.0,
-                                  fontWeight: FontWeight.w700,
-                                  fontStyle: theme.titleMedium.fontStyle,
-                                ),
-                              ),
-                            ],
-                          ),
-                          InkWell(
-                            splashColor: Colors.transparent,
-                            focusColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            onTap: () async {
-                              logFirebaseEvent(
-                                  'HOME_PAGE_Text_f472uas1_ON_TAP');
-                              logFirebaseEvent('Text_navigate_to');
+                    // ============ BOOSTED (admin-promoted, auto-hide)
+                    _buildBoostedSection(theme),
 
-                              context.pushNamed(
-                                TrendingProductWidget.routeName,
-                                extra: <String, dynamic>{
-                                  '__transition_info__': TransitionInfo(
-                                    hasTransition: true,
-                                    transitionType:
-                                        PageTransitionType.rightToLeft,
-                                    duration: Duration(milliseconds: 250),
-                                  ),
-                                },
-                              );
-                            },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  FFLocalizations.of(context).getText(
-                                    'jvt45nus' /* See All */,
-                                  ),
-                                  style: theme.bodyMedium.override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: theme.bodyMedium.fontStyle,
-                                    ),
-                                    color: theme.primary,
-                                    fontSize: 13,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: theme.bodyMedium.fontStyle,
-                                  ),
-                                ),
-                                SizedBox(width: 2),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: theme.primary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    // ============ TRENDING PRODUCTS (auto-hidden if empty)
+                    _buildTrendingSection(theme),
 
-                    SizedBox(height: 8),
-
-                    SizedBox(
-                      height: 258,
-                      child: StreamBuilder<List<InventoryRecord>>(
-                        stream: queryInventoryRecord(
-                          queryBuilder: (inventoryRecord) => inventoryRecord
-                              .where('top_selling', isEqualTo: true)
-                              .orderBy('view_count', descending: true),
-                          limit: 200,
-                        ),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return Center(
-                              child: SizedBox(
-                                width: 40,
-                                height: 40,
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    theme.primary,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-                          final items = snapshot.data!;
-
-                          if (items.isEmpty) {
-                            return _emptyState(
-                              context,
-                              'No trending products yet',
-                            );
-                          }
-
-                          return ListView.builder(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            scrollDirection: Axis.horizontal,
-                            itemCount: items.length,
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0, 6, 10, 6),
-                                child: _productCard(
-                                  context,
-                                  record: items[index],
-                                  badge: _badgeFire(context),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-
-                    SizedBox(height: 20),
-
-                    // ============ NEW ARRIVALS ============
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 4,
-                                height: 18,
-                                decoration: BoxDecoration(
-                                  color: theme.primary,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                FFLocalizations.of(context).getText(
-                                  'nysb51jq' /* New Arrivals */,
-                                ),
-                                style: theme.titleMedium.override(
-                                  font: GoogleFonts.interTight(
-                                    fontWeight: FontWeight.w700,
-                                    fontStyle: theme.titleMedium.fontStyle,
-                                  ),
-                                  color: theme.primaryText,
-                                  fontSize: 17,
-                                  letterSpacing: 0.0,
-                                  fontWeight: FontWeight.w700,
-                                  fontStyle: theme.titleMedium.fontStyle,
-                                ),
-                              ),
-                            ],
-                          ),
-                          InkWell(
-                            splashColor: Colors.transparent,
-                            focusColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            onTap: () async {
-                              logFirebaseEvent(
-                                  'HOME_PAGE_Text_qig1o0ss_ON_TAP');
-                              logFirebaseEvent('Text_navigate_to');
-
-                              context.pushNamed(
-                                NewProductsWidget.routeName,
-                                extra: <String, dynamic>{
-                                  '__transition_info__': TransitionInfo(
-                                    hasTransition: true,
-                                    transitionType:
-                                        PageTransitionType.rightToLeft,
-                                    duration: Duration(milliseconds: 250),
-                                  ),
-                                },
-                              );
-                            },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  FFLocalizations.of(context).getText(
-                                    '1s49pc9s' /* See All */,
-                                  ),
-                                  style: theme.bodyMedium.override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: theme.bodyMedium.fontStyle,
-                                    ),
-                                    color: theme.primary,
-                                    fontSize: 13,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: theme.bodyMedium.fontStyle,
-                                  ),
-                                ),
-                                SizedBox(width: 2),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: theme.primary,
-                                  size: 18,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: 8),
-
-                    SizedBox(
-                      height: 248,
-                      child: StreamBuilder<List<InventoryRecord>>(
-                        stream: queryInventoryRecord(
-                          queryBuilder: (inventoryRecord) =>
-                              inventoryRecord.where('new_in', isEqualTo: true),
-                          limit: 100,
-                        ),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return Center(
-                              child: SizedBox(
-                                width: 40,
-                                height: 40,
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    theme.primary,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-                          final items = snapshot.data!;
-
-                          if (items.isEmpty) {
-                            return _emptyState(
-                              context,
-                              'No new arrivals yet',
-                            );
-                          }
-
-                          return ListView.builder(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            scrollDirection: Axis.horizontal,
-                            itemCount: items.length,
-                            itemBuilder: (context, index) {
-                              final item = items[index];
-                              return Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0, 6, 10, 6),
-                                child: _productCard(
-                                  context,
-                                  record: item,
-                                  badge: item.newIn == true
-                                      ? _badgeNew(context)
-                                      : null,
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-
-                    SizedBox(height: 20),
+                    // ============ NEW ARRIVALS (auto-hidden if empty)
+                    _buildNewArrivalsSection(theme),
 
                     // ============ SELLER CTA BANNER ============
                     Padding(
@@ -906,9 +623,9 @@ your goals */,
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.68,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                              childAspectRatio: 0.62,
                             ),
                             primary: false,
                             shrinkWrap: true,
@@ -1702,6 +1419,327 @@ your goals */,
   }
 
   // ============================================================
+  // BOOSTED SECTION — admin-promoted products
+  // ============================================================
+  Widget _buildBoostedSection(dynamic theme) {
+    return StreamBuilder<List<InventoryRecord>>(
+      stream: queryInventoryRecord(
+        queryBuilder: (r) => r.where('boosted', isEqualTo: true),
+        limit: 20,
+      ),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final items = snap.data!;
+        if (items.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB300),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    '⭐ Boosted',
+                    style: theme.titleMedium.override(
+                      font: GoogleFonts.interTight(
+                        fontWeight: FontWeight.w700,
+                        fontStyle: theme.titleMedium.fontStyle,
+                      ),
+                      color: theme.primaryText,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      fontStyle: theme.titleMedium.fontStyle,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8),
+            SizedBox(
+              height: 258,
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                itemBuilder: (context, i) {
+                  return Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(0, 6, 10, 6),
+                    child: _productCard(
+                      context,
+                      record: items[i],
+                      badge: _badgeBoosted(context),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 20),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _badgeBoosted(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Color(0xFFFFB300),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFFFFB300).withOpacity(0.4),
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.star_rounded, color: Colors.white, size: 11),
+          SizedBox(width: 3),
+          Text(
+            'BOOSTED',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // TRENDING SECTION — auto-hidden if empty
+  // ============================================================
+  Widget _buildTrendingSection(dynamic theme) {
+    return StreamBuilder<List<InventoryRecord>>(
+      stream: queryInventoryRecord(
+        queryBuilder: (r) => r.orderBy('view_count', descending: true),
+        limit: 20,
+      ),
+      builder: (context, snap) {
+        // Hide entire section if loading or empty
+        if (!snap.hasData) return const SizedBox.shrink();
+        final items = snap.data!.where((p) => p.viewCount > 0).toList();
+        if (items.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: theme.primary,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Trending Now',
+                        style: theme.titleMedium.override(
+                          font: GoogleFonts.interTight(
+                            fontWeight: FontWeight.w700,
+                            fontStyle: theme.titleMedium.fontStyle,
+                          ),
+                          color: theme.primaryText,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          fontStyle: theme.titleMedium.fontStyle,
+                        ),
+                      ),
+                    ],
+                  ),
+                  InkWell(
+                    onTap: () => context.pushNamed(TrendingProductWidget.routeName),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'See All',
+                          style: theme.bodyMedium.override(
+                            font: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                              fontStyle: theme.bodyMedium.fontStyle,
+                            ),
+                            color: theme.primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            fontStyle: theme.bodyMedium.fontStyle,
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(Icons.chevron_right_rounded,
+                            color: theme.primary, size: 18),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8),
+            SizedBox(
+              height: 258,
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                itemBuilder: (context, i) {
+                  return Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(0, 6, 10, 6),
+                    child: _productCard(
+                      context,
+                      record: items[i],
+                      badge: _badgeFire(context),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 20),
+          ],
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // NEW ARRIVALS SECTION — auto-hidden if empty
+  // ============================================================
+  Widget _buildNewArrivalsSection(dynamic theme) {
+    return StreamBuilder<List<InventoryRecord>>(
+      stream: queryInventoryRecord(
+        queryBuilder: (r) => r.orderBy('created_at', descending: true),
+        limit: 20,
+      ),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+
+        // Filter to last 14 days
+        final cutoff = DateTime.now().subtract(const Duration(days: 14));
+        final items = snap.data!.where((p) {
+          try {
+            final data = (p as dynamic).snapshotData;
+            if (data is Map) {
+              final created = data['created_at'];
+              if (created is DateTime) return created.isAfter(cutoff);
+            }
+          } catch (_) {}
+          return true; // include if uncertain
+        }).toList();
+
+        if (items.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: theme.primary,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'New Arrivals',
+                        style: theme.titleMedium.override(
+                          font: GoogleFonts.interTight(
+                            fontWeight: FontWeight.w700,
+                            fontStyle: theme.titleMedium.fontStyle,
+                          ),
+                          color: theme.primaryText,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          fontStyle: theme.titleMedium.fontStyle,
+                        ),
+                      ),
+                    ],
+                  ),
+                  InkWell(
+                    onTap: () => context.pushNamed(NewProductsWidget.routeName),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'See All',
+                          style: theme.bodyMedium.override(
+                            font: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                              fontStyle: theme.bodyMedium.fontStyle,
+                            ),
+                            color: theme.primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            fontStyle: theme.bodyMedium.fontStyle,
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(Icons.chevron_right_rounded,
+                            color: theme.primary, size: 18),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8),
+            SizedBox(
+              height: 248,
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                itemBuilder: (context, i) {
+                  return Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(0, 6, 10, 6),
+                    child: _productCard(
+                      context,
+                      record: items[i],
+                      badge: _badgeNew(context),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 20),
+          ],
+        );
+      },
+    );
+  }
+
+  // ============================================================
   // PRODUCT CARD
   // ============================================================
   Widget _productCard(
@@ -1765,7 +1803,7 @@ your goals */,
               children: [
                 // ─── IMAGE BLOCK ───
                 Expanded(
-                  flex: grid ? 7 : 6,
+                  flex: grid ? 8 : 7,
                   child: Stack(
                     children: [
                       Container(

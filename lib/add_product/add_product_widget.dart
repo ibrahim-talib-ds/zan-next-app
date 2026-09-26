@@ -144,7 +144,38 @@ class _AddProductWidgetState extends State<AddProductWidget> {
     _model.callController ??= TextEditingController();
     _model.callFocusNode ??= FocusNode();
 
+    // 🎯 Pre-fill seller's saved contact + location
+    _loadSellerDefaults();
+
     WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+  }
+
+  /// Pre-fill last-used location + contacts from user doc.
+  Future<void> _loadSellerDefaults() async {
+    if (currentUserReference == null) return;
+    try {
+      final doc = await currentUserReference!.get();
+      final data = doc.data() as Map<String, dynamic>? ?? const {};
+      if (!mounted) return;
+
+      final savedLocation = (data['last_location'] ?? '').toString();
+      final savedWhatsApp = (data['last_whatsapp'] ?? '').toString();
+      final savedCall = (data['last_call'] ?? data['phone_number'] ?? '').toString();
+
+      safeSetState(() {
+        if (savedLocation.isNotEmpty &&
+            _model.locationController!.text.isEmpty) {
+          _model.locationController!.text = savedLocation;
+        }
+        if (savedWhatsApp.isNotEmpty &&
+            _model.whatsappController!.text.isEmpty) {
+          _model.whatsappController!.text = savedWhatsApp;
+        }
+        if (savedCall.isNotEmpty && _model.callController!.text.isEmpty) {
+          _model.callController!.text = savedCall;
+        }
+      });
+    } catch (_) {}
   }
 
   @override
@@ -376,6 +407,7 @@ class _AddProductWidgetState extends State<AddProductWidget> {
                         const SizedBox(height: 22),
 
                         _sectionTitle(context, 'Contact'),
+                        _autoFillHint(context),
                         _buildTextField(
                           context,
                           controller: _model.whatsappController!,
@@ -398,33 +430,7 @@ class _AddProductWidgetState extends State<AddProductWidget> {
                         const SizedBox(height: 22),
 
                         _sectionTitle(context, 'Visibility'),
-                        _buildSwitchRow(
-                          context,
-                          icon: Icons.trending_up_rounded,
-                          iconColor: const Color(0xFFFF5964),
-                          label: 'Trending',
-                          value: _model.trending,
-                          onChanged: (v) =>
-                              safeSetState(() => _model.trending = v),
-                        ),
-                        _buildSwitchRow(
-                          context,
-                          icon: Icons.fiber_new_rounded,
-                          iconColor: const Color(0xFF39D2C0),
-                          label: 'New Arrival',
-                          value: _model.newArrival,
-                          onChanged: (v) =>
-                              safeSetState(() => _model.newArrival = v),
-                        ),
-                        _buildSwitchRow(
-                          context,
-                          icon: Icons.grid_view_rounded,
-                          iconColor: const Color(0xFF4B39EF),
-                          label: 'Show in All Products',
-                          value: _model.showInAll,
-                          onChanged: (v) =>
-                              safeSetState(() => _model.showInAll = v),
-                        ),
+                        _visibilityInfoCard(context),
                         const SizedBox(height: 28),
 
                         _buildPostButton(context, subCategory),
@@ -826,6 +832,47 @@ class _AddProductWidgetState extends State<AddProductWidget> {
   }
 
   // ============================================================
+  // AUTO-FILL HINT
+  // ============================================================
+  Widget _autoFillHint(BuildContext context) {
+    final theme = FlutterFlowTheme.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: theme.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: theme.primary.withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.auto_awesome_rounded,
+                color: theme.primary, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'We saved your details from last time — edit if needed.',
+                style: theme.bodySmall.override(
+                  font: GoogleFonts.inter(
+                    fontWeight: FontWeight.w500,
+                    fontStyle: theme.bodySmall.fontStyle,
+                  ),
+                  color: theme.primary,
+                  fontSize: 11.5,
+                  letterSpacing: 0.0,
+                  fontWeight: FontWeight.w500,
+                  fontStyle: theme.bodySmall.fontStyle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
   // TEXT FIELD
   // ============================================================
   Widget _buildTextField(
@@ -988,6 +1035,62 @@ class _AddProductWidgetState extends State<AddProductWidget> {
   }
 
   // ============================================================
+  // VISIBILITY INFO CARD
+  // ============================================================
+  Widget _visibilityInfoCard(BuildContext context) {
+    final theme = FlutterFlowTheme.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: theme.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.primary.withOpacity(0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome_rounded,
+                    color: theme.primary, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  'Automatically managed',
+                  style: theme.bodyMedium.override(
+                    font: GoogleFonts.inter(
+                      fontWeight: FontWeight.w700,
+                      fontStyle: theme.bodyMedium.fontStyle,
+                    ),
+                    color: theme.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your product goes live instantly in the Full Catalog. '
+              'It will appear in Trending and New Arrivals automatically '
+              'based on real buyer activity — so buyers know it\'s real.',
+              style: theme.bodySmall.override(
+                font: GoogleFonts.inter(
+                  fontWeight: FontWeight.w400,
+                  fontStyle: theme.bodySmall.fontStyle,
+                ),
+                color: theme.secondaryText,
+                fontSize: 11.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
   // SWITCH ROW
   // ============================================================
   Widget _buildSwitchRow(
@@ -1136,9 +1239,11 @@ class _AddProductWidgetState extends State<AddProductWidget> {
         'seller_whatsap': _model.whatsappController!.text.trim(),
         'seller_number': _model.callController!.text.trim(),
 
-        'top_selling': _model.trending,
-        'new_in': _model.newArrival,
-        'all_products': _model.showInAll,
+        // Auto-managed — never trust seller self-flagging
+        'top_selling': false,           // computed later
+        'new_in': true,                 // always new at creation
+        'boosted': false,               // admin-controlled
+        'all_products': true,           // always in catalog
 
         'stock': stock,
         'view_count': 0,
@@ -1150,6 +1255,15 @@ class _AddProductWidgetState extends State<AddProductWidget> {
             currentUserDocument?.isOnline, false),
         'last_active': currentUserDocument?.lastActive,
       });
+
+      // 💾 Save seller's location + contacts for next time
+      try {
+        await currentUserReference!.update({
+          'last_location': _model.locationController!.text.trim(),
+          'last_whatsapp': _model.whatsappController!.text.trim(),
+          'last_call': _model.callController!.text.trim(),
+        });
+      } catch (_) {}
 
       logFirebaseEvent('ADD_PRODUCT_success');
 
