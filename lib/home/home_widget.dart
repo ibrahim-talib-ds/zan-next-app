@@ -128,7 +128,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Reserve space for the fixed header (170px tall)
-                    SizedBox(height: 150),
+                    SizedBox(height: 178),
 
                     // ============ BANNER SLIDER ============
                     Padding(
@@ -142,9 +142,10 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                               controller: _model.pageViewController ??=
                                   PageController(
                                 initialPage: 0,
-                                viewportFraction: 0.42,
+                                viewportFraction: 0.27,
                               ),
                               scrollDirection: Axis.horizontal,
+                              padEnds: false,
                               itemCount: 5,
                               itemBuilder: (context, i) {
                                 final banners = _bannerData();
@@ -171,7 +172,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                               controller: _model.pageViewController ??=
                                   PageController(
                                 initialPage: 0,
-                                viewportFraction: 0.42,
+                                viewportFraction: 0.27,
                               ),
                               scrollDirection: Axis.horizontal,
                               itemCount: _bannerData().length,

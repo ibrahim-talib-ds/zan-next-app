@@ -409,32 +409,6 @@ class _LogInWidgetState extends State<LogInWidget>
                                     ),
                                   ],
                                 ),
-                                GestureDetector(
-                                  onTap: () {
-                                    context.pushNamed(
-                                      ForgotPasswordWidget.routeName,
-                                    );
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 4, vertical: 4),
-                                    child: Text(
-                                      'Forgot password?',
-                                      style: theme.bodySmall.override(
-                                        font: GoogleFonts.inter(
-                                          fontWeight: FontWeight.w600,
-                                          fontStyle:
-                                              theme.bodySmall.fontStyle,
-                                        ),
-                                        color: theme.primary,
-                                        fontSize: 12,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.w600,
-                                        fontStyle: theme.bodySmall.fontStyle,
-                                      ),
-                                    ),
-                                  ),
-                                ),
                               ],
                             ),
                             const SizedBox(height: 24),
@@ -452,79 +426,6 @@ class _LogInWidgetState extends State<LogInWidget>
                                 ),
                             const SizedBox(height: 24),
 
-                            // Divider
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Divider(
-                                    color: theme.alternate,
-                                    height: 1,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
-                                  child: Text(
-                                    'or continue with',
-                                    style: theme.bodySmall.override(
-                                      font: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w500,
-                                        fontStyle: theme.bodySmall.fontStyle,
-                                      ),
-                                      color: theme.secondaryText,
-                                      fontSize: 12,
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w500,
-                                      fontStyle: theme.bodySmall.fontStyle,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Divider(
-                                    color: theme.alternate,
-                                    height: 1,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-
-                            // Social buttons — Google only (Apple removed)
-                            _socialButton(
-                              context,
-                              label: 'Continue with Google',
-                              icon: Image.asset(
-                                'assets/images/google_logo.png',
-                                width: 20,
-                                height: 20,
-                                fit: BoxFit.contain,
-                              ),
-                              onTap: () async {
-                                try {
-                                  GoRouter.of(context).prepareAuthEvent();
-                                  final user = await authManager
-                                      .signInWithGoogle(context);
-
-                                  // On mobile web, signInWithRedirect returns null
-                                  // and the browser navigates away — no action needed.
-                                  if (user == null) return;
-
-                                  if (!context.mounted) return;
-                                  context.goNamedAuth(
-                                      HomeWidget.routeName, context.mounted);
-                                } catch (e) {
-                                  if (!context.mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Google sign-in failed: $e'),
-                                      backgroundColor: const Color(0xFFDC0F0F),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 24),
 
                             // Sign Up link
                             Center(

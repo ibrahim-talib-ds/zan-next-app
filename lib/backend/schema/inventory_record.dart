@@ -286,7 +286,13 @@ class InventoryRecord extends FirestoreRecord {
   String get condition => _condition ?? '';
   bool hasCondition() => _condition != null;
 
+  // "available" field. (true = in stock, false = sold out)
+  bool? _available;
+  bool get available => _available ?? true;
+  bool hasAvailable() => _available != null;
+
   void _initializeFields() {
+    _available = snapshotData['available'] as bool?;
     _inventoryName = snapshotData['inventory_name'] as String?;
     _inventoryDescription = snapshotData['inventory_description'] as String?;
     _inventoryPrice = castToType<double>(snapshotData['inventory_price']);

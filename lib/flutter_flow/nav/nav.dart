@@ -168,11 +168,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           ),
         ),
         FFRoute(
-          name: EmptycartWidget.routeName,
-          path: EmptycartWidget.routePath,
-          builder: (context, params) => EmptycartWidget(),
-        ),
-        FFRoute(
           name: CartWidget.routeName,
           path: CartWidget.routePath,
           builder: (context, params) => CartWidget(),
@@ -196,16 +191,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: SplashWidget.routeName,
           path: SplashWidget.routePath,
           builder: (context, params) => SplashWidget(),
-        ),
-        FFRoute(
-          name: SigninIngiaWidget.routeName,
-          path: SigninIngiaWidget.routePath,
-          builder: (context, params) => SigninIngiaWidget(),
-        ),
-        FFRoute(
-          name: SigninContinueKaribuWidget.routeName,
-          path: SigninContinueKaribuWidget.routePath,
-          builder: (context, params) => SigninContinueKaribuWidget(),
         ),
         FFRoute(
           name: HomeWidget.routeName,
@@ -282,11 +267,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                   page: NewProductsWidget(),
                 )),
         FFRoute(
-          name: ZannextSignInWidget.routeName,
-          path: ZannextSignInWidget.routePath,
-          builder: (context, params) => ZannextSignInWidget(),
-        ),
-        FFRoute(
           name: LogInWidget.routeName,
           path: LogInWidget.routePath,
           builder: (context, params) => LogInWidget(),
@@ -341,11 +321,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: SignUpWidget.routeName,
           path: SignUpWidget.routePath,
           builder: (context, params) => SignUpWidget(),
-        ),
-        FFRoute(
-          name: SearchZWidget.routeName,
-          path: SearchZWidget.routePath,
-          builder: (context, params) => SearchZWidget(),
         ),
         FFRoute(
           name: CategorysZWidget.routeName,
@@ -509,11 +484,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => GiftCardsWidget(),
         ),
         FFRoute(
-          name: AdInformationWidget.routeName,
-          path: AdInformationWidget.routePath,
-          builder: (context, params) => AdInformationWidget(),
-        ),
-        FFRoute(
           name: MensWearWidget.routeName,
           path: MensWearWidget.routePath,
           builder: (context, params) => MensWearWidget(),
@@ -537,11 +507,6 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: MessagelistWidget.routeName,
           path: MessagelistWidget.routePath,
           builder: (context, params) => MessagelistWidget(),
-        ),
-        FFRoute(
-          name: ProCategoryWidget.routeName,
-          path: ProCategoryWidget.routePath,
-          builder: (context, params) => ProCategoryWidget(),
         ),
         FFRoute(
           name: Order1Widget.routeName,

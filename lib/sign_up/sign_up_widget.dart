@@ -396,7 +396,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12),
                                   child: Text(
-                                    'or sign up with',
+                                    '',
                                     style: theme.bodySmall.override(
                                       font: GoogleFonts.inter(
                                         fontWeight: FontWeight.w500,
@@ -420,38 +420,6 @@ class _SignUpWidgetState extends State<SignUpWidget>
                             ),
                             const SizedBox(height: 20),
 
-                            // Social buttons — Google only (Apple removed)
-                            _socialButton(
-                              context,
-                              label: 'Continue with Google',
-                              icon: Image.asset(
-                                'assets/images/google_logo.png',
-                                width: 20,
-                                height: 20,
-                                fit: BoxFit.contain,
-                              ),
-                              onTap: () async {
-                                try {
-                                  GoRouter.of(context).prepareAuthEvent();
-                                  final user = await authManager
-                                      .signInWithGoogle(context);
-                                  if (user == null) return;
-                                  if (!context.mounted) return;
-                                  context.goNamedAuth(
-                                      HomeWidget.routeName, context.mounted);
-                                } catch (e) {
-                                  if (!context.mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Google sign-in failed: $e'),
-                                      backgroundColor: const Color(0xFFDC0F0F),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 24),
 
                             // Sign In link
                             Center(

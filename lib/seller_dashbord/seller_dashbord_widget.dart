@@ -1501,9 +1501,10 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   }
 
   Widget _productCard(InventoryRecord item) {
-    final inStock = true; // placeholder — add stock field later
+    final available = item.available;
+
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       onTap: () => context.pushNamed(
         ProductDetailsWidget.routeName,
         queryParameters: {
@@ -1516,68 +1517,157 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
       child: Container(
         decoration: BoxDecoration(
           color: _card,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _border),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: available ? _border : kRed.withOpacity(0.4),
+            width: available ? 1 : 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(_isDark ? 0.25 : 0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
+            // ── Image area (large) ──
             Expanded(
-              flex: 5,
+              flex: 6,
               child: Stack(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: _soft,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(14),
-                      ),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(15),
                     ),
-                    padding: const EdgeInsets.all(8),
-                    child: Image.network(
-                      _imgUrl(valueOrDefault<String>(
-                        item.inventoryImages.firstOrNull,
-                        '',
-                      )),
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Icon(
-                        Icons.image_not_supported_outlined,
-                        color: _muted,
-                        size: 28,
-                      ),
-                    ),
-                  ),
-                  // Badge
-                  Positioned(
-                    top: 8,
-                    left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: inStock
-                            ? const Color(0xFF16A34A)
-                            : kRed,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        inStock ? 'IN STOCK' : 'OUT',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.4,
+                      width: double.infinity,
+                      color: _soft,
+                      padding: const EdgeInsets.all(10),
+                      child: Image.network(
+                        _imgUrl(valueOrDefault<String>(
+                          item.inventoryImages.firstOrNull,
+                          '',
+                        )),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.image_not_supported_outlined,
+                          color: _muted,
+                          size: 32,
                         ),
                       ),
                     ),
                   ),
+
+                  // Sold-out dim overlay
+                  if (!available)
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(15),
+                        ),
+                        child: Container(
+                          color: Colors.black.withOpacity(0.45),
+                          alignment: Alignment.center,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: kRed,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'SOLD OUT',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Owner: availability toggle badge (top-right)
+                  if (_isOwner)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: GestureDetector(
+                        onTap: () => _toggleAvailable(item),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: available
+                                ? const Color(0xFF16A34A)
+                                : kRed,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                available
+                                    ? Icons.check_circle_rounded
+                                    : Icons.cancel_rounded,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                available ? 'LIVE' : 'SOLD',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Non-owner: static badge
+                  if (!_isOwner && available)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16A34A),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'IN STOCK',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
 
-            // Info
+            // ── Info area ──
             Expanded(
               flex: 4,
               child: Padding(
@@ -1616,8 +1706,6 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-
-                    // OWNER: edit / delete row
                     if (_isOwner) ...[
                       const SizedBox(height: 8),
                       Row(
@@ -1658,6 +1746,33 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
         ),
       ),
     );
+  }
+
+  Future<void> _toggleAvailable(InventoryRecord item) async {
+    final current = item.available;
+    try {
+      await item.reference.update({
+        'available': !current,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            !current
+                ? '"${item.inventoryName}" marked as available'
+                : '"${item.inventoryName}" marked as sold out',
+          ),
+          backgroundColor: !current ? kGreen : kRed,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $e')),
+      );
+    }
   }
 
   Widget _miniAction({
