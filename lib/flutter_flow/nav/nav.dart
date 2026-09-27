@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '/seller_reviews/seller_reviews_widget.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -92,6 +93,9 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, _) =>
               appStateNotifier.loggedIn ? NavBarPage() : SplashWidget(),
         ),
+        // ⬆️ This route runs on cold start.
+        // It shows SplashWidget if not logged in, NavBarPage if logged in.
+        // Dart splash handles its own 2s delay, then routes further.
         FFRoute(
           name: ForgotPasswordWidget.routeName,
           path: ForgotPasswordWidget.routePath,
@@ -405,7 +409,9 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
         FFRoute(
           name: SupportChatWidget.routeName,
           path: SupportChatWidget.routePath,
-          builder: (context, params) => const SupportChatWidget(),
+          builder: (context, params) => SupportChatWidget(
+            threadId: params.getParam('threadId', ParamType.String),
+          ),
         ),
         FFRoute(
           name: ReviewsWidget.routeName,
@@ -688,6 +694,18 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: NecklacesPendantWidget.routeName,
           path: NecklacesPendantWidget.routePath,
           builder: (context, params) => NecklacesPendantWidget(),
+        ),
+        FFRoute(
+          name: SellerReviewsWidget.routeName,
+          path: SellerReviewsWidget.routePath,
+          builder: (context, params) => SellerReviewsWidget(
+            sellerRef: params.getParam(
+              'sellerRef',
+              ParamType.DocumentReference,
+              isList: false,
+              collectionNamePath: ['users'],
+            ),
+          ),
         ),
         FFRoute(
             name: SellerDashbordWidget.routeName,

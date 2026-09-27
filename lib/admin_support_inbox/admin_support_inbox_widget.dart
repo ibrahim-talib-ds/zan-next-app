@@ -171,7 +171,38 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
                       const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
                   itemCount: docs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) => _chatTile(docs[i]),
+                  itemBuilder: (context, i) {
+                    final doc = docs[i];
+                    return Dismissible(
+                      key: ValueKey(doc.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        decoration: BoxDecoration(
+                          color: kRed,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 24),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.delete_rounded,
+                                color: Colors.white, size: 22),
+                            SizedBox(width: 6),
+                            Text('Delete',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                )),
+                          ],
+                        ),
+                      ),
+                      confirmDismiss: (_) => _confirmDeleteThread(),
+                      onDismissed: (_) => _deleteThread(doc),
+                      child: _chatTile(doc),
+                    );
+                  },
                 ),
               ),
             ),
@@ -232,6 +263,81 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
         ],
       ),
     );
+  }
+
+  Future<bool> _confirmDeleteThread() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _card,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Delete this chat?',
+              style: TextStyle(
+                  color: _text,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16),
+            ),
+            content: Text(
+              'The entire conversation and all messages will be permanently removed.',
+              style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Cancel',
+                    style: TextStyle(
+                        color: _muted, fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete',
+                    style: TextStyle(
+                        color: Color(0xFFDC0F0F),
+                        fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _deleteThread(DocumentSnapshot doc) async {
+    try {
+      // Delete all messages in the subcollection first (batch)
+      final messagesSnap =
+          await doc.reference.collection('messages').get();
+      if (messagesSnap.docs.isNotEmpty) {
+        final batch = FirebaseFirestore.instance.batch();
+        for (final m in messagesSnap.docs) {
+          batch.delete(m.reference);
+        }
+        await batch.commit();
+      }
+
+      // Then delete the parent thread
+      await doc.reference.delete();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Chat deleted'),
+          backgroundColor: kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      safeSetState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete: $e'),
+          backgroundColor: kRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _chatTile(DocumentSnapshot doc) {

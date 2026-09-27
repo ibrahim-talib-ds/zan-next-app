@@ -1,10 +1,10 @@
 import '/components/buy_now_sheet_widget.dart';
+import '/components/write_review_sheet.dart';
 import '/components/report_sheet_widget.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import 'dart:math';
 import '/flutter_flow/custom_functions.dart' as functions;
 import '/index.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart'
@@ -1063,19 +1063,27 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
         _buildSectionHeader(
           'Reviews',
           trailing: GestureDetector(
-            onTap: () => context.pushNamed(ReviewsWidget.routeName),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('See all',
-                    style: TextStyle(
-                      color: kGreen,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                    )),
-                Icon(Icons.chevron_right_rounded,
-                    color: kGreen, size: 18),
-              ],
+            onTap: () => _openWriteReview(p),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: kGreen.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: kGreen.withOpacity(0.35)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.edit_rounded, color: kGreen, size: 14),
+                  SizedBox(width: 6),
+                  Text('Write Review',
+                      style: TextStyle(
+                        color: kGreen,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      )),
+                ],
+              ),
             ),
           ),
         ),
@@ -1083,8 +1091,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
           StreamBuilder<List<ReviewsRecord>>(
             stream: queryReviewsRecord(
               queryBuilder: (r) =>
-                  r.where('seller', isEqualTo: p.sellersRef),
-              limit: 3,
+                  r.where('product_ref', isEqualTo: p.reference),
+              limit: 20,
             ),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
@@ -1123,6 +1131,12 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                           Text('No reviews yet',
                               style: TextStyle(
                                   color: _muted, fontSize: 13)),
+                          const SizedBox(height: 4),
+                          Text('Be the first to review!',
+                              style: TextStyle(
+                                  color: kGreen,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700)),
                         ],
                       ),
                     ),
@@ -1132,7 +1146,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
-                  children: items.map(_reviewCard).toList(),
+                  children: items.map((r) => _reviewCard(r, p)).toList(),
                 ),
               );
             },
@@ -1141,13 +1155,143 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     );
   }
 
-  Widget _reviewCard(ReviewsRecord r) {
+  Future<void> _openWriteReview(InventoryRecord p) async {
+    if (currentUserReference == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to write a review'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Check if user already has a review
+    ReviewsRecord? myReview;
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('reviews')
+          .where('product_ref', isEqualTo: p.reference)
+          .where('reviewer_ref', isEqualTo: currentUserReference)
+          .limit(1)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        myReview = ReviewsRecord.fromSnapshot(snap.docs.first);
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => WriteReviewSheet(
+        product: p,
+        existingReview: myReview,
+      ),
+    );
+
+    if (result == true) {
+      safeSetState(() {});
+    }
+  }
+
+  Future<bool> _confirmDeleteReview(ReviewsRecord r) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _card,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Text('Delete review?',
+                style: TextStyle(
+                    color: _text,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
+            content: Text(
+              'This review will be permanently removed.',
+              style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Cancel',
+                    style: TextStyle(
+                        color: _muted, fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete',
+                    style: TextStyle(
+                        color: Color(0xFFDC0F0F),
+                        fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _deleteReview(ReviewsRecord r, InventoryRecord p) async {
+    try {
+      await r.reference.delete();
+
+      // Recalc product rating
+      final snap = await FirebaseFirestore.instance
+          .collection('reviews')
+          .where('product_ref', isEqualTo: p.reference)
+          .get();
+      if (snap.docs.isEmpty) {
+        await p.reference.update({'rating': 0.0, 'reviews': 0});
+      } else {
+        double total = 0;
+        for (final d in snap.docs) {
+          final rating = d.data()['rating'];
+          if (rating is num) total += rating.toDouble();
+        }
+        await p.reference.update({
+          'rating': total / snap.docs.length,
+          'reviews': snap.docs.length,
+        });
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Review deleted'),
+          backgroundColor: kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      safeSetState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete: $e'),
+          backgroundColor: const Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Widget _reviewCard(ReviewsRecord r, InventoryRecord p) {
+    final isMine = r.reviewerRef == currentUserReference;
+    final isAdmin = valueOrDefault<bool>(
+            currentUserDocument?.isAdmin, false) ==
+        true;
+    final canDelete = isMine || isAdmin;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: _card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _border),
+        border: Border.all(
+          color: isMine ? kGreen.withOpacity(0.35) : _border,
+          width: isMine ? 1.3 : 1,
+        ),
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -1177,15 +1321,45 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(r.reviewersName,
-                        style: TextStyle(
-                          color: _text,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                        )),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            isMine
+                                ? '${r.reviewersName} (You)'
+                                : r.reviewersName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _text,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (isAdmin && !isMine) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: kAmber.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text('ADMIN VIEW',
+                                style: TextStyle(
+                                  color: kAmber,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.4,
+                                )),
+                          ),
+                        ],
+                      ],
+                    ),
                     const SizedBox(height: 3),
                     RatingBarIndicator(
-                      rating: r.rating?.toDouble() ?? 0,
+                      rating: r.rating.toDouble(),
                       itemSize: 13,
                       itemCount: 5,
                       itemBuilder: (_, __) => const Icon(
@@ -1197,9 +1371,32 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                 ),
               ),
               if (r.date != null)
-                Text(
-                  _timeAgo(r.date!),
-                  style: TextStyle(color: _muted, fontSize: 11),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(
+                    _timeAgo(r.date!),
+                    style: TextStyle(color: _muted, fontSize: 11),
+                  ),
+                ),
+              if (canDelete)
+                GestureDetector(
+                  onTap: () async {
+                    final ok = await _confirmDeleteReview(r);
+                    if (ok) await _deleteReview(r, p);
+                  },
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDC0F0F).withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Color(0xFFDC0F0F),
+                      size: 16,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -1208,7 +1405,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             Text(
               r.reviewsMessage,
               style: TextStyle(
-                color: _text.withOpacity(0.8),
+                color: _text.withOpacity(0.85),
                 fontSize: 13,
                 height: 1.5,
               ),
@@ -1413,44 +1610,6 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     );
   }
 
-  Widget _barBtn({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool primary = false,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: primary ? kGreen : kGreen.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon,
-                color: primary ? Colors.white : kGreen, size: 18),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: primary ? Colors.white : kGreen,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ═══════════════════════════════════════════════════════════
   // BOTTOM BAR — compact icon button

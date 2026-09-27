@@ -424,10 +424,11 @@ class _SignUpWidgetState extends State<SignUpWidget>
                             _socialButton(
                               context,
                               label: 'Continue with Google',
-                              icon: const FaIcon(
-                                FontAwesomeIcons.google,
-                                size: 18,
-                                color: Color(0xFFDB4437),
+                              icon: Image.asset(
+                                'assets/images/google_logo.png',
+                                width: 20,
+                                height: 20,
+                                fit: BoxFit.contain,
                               ),
                               onTap: () async {
                                 try {

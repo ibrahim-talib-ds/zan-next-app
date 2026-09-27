@@ -33,7 +33,11 @@ class _AdminCategoryEditorState extends State<AdminCategoryEditor> {
   @override
   void initState() {
     super.initState();
-    _imageController = TextEditingController(text: widget.currentImage);
+    // ⚠️ Only pre-fill with real URLs (http...), never local asset paths
+    final img = widget.currentImage.trim();
+    _imageController = TextEditingController(
+      text: img.startsWith('http') ? img : '',
+    );
     _labelController = TextEditingController(text: widget.currentLabel);
     _routeController = TextEditingController(text: widget.currentRoute);
   }
@@ -47,11 +51,25 @@ class _AdminCategoryEditorState extends State<AdminCategoryEditor> {
   }
 
   Future<void> _save() async {
+    final imageUrl = _imageController.text.trim();
+
+    // ⚠️ Validate: must be a real URL, not an asset path
+    if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Image URL must start with http:// or https://'),
+          backgroundColor: kRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       await CategoryService.saveCategory(
         widget.categoryKey,
-        imageUrl: _imageController.text.trim(),
+        imageUrl: imageUrl.isEmpty ? null : imageUrl,
         label: _labelController.text.trim(),
         routeName: _routeController.text.trim(),
       );

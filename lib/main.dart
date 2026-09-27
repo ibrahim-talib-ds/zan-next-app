@@ -1,4 +1,5 @@
 import 'auth/firebase_auth/google_auth.dart';
+import '/services/local_notifications.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
@@ -46,6 +47,7 @@ void main() async {
   await initFirebase();
 
   // ─── Push notifications ───────────────────────────────
+  await LocalNotifications.init();
   unawaited(PushService.instance.init());
 
   await FlutterFlowTheme.initialize();

@@ -1,18 +1,16 @@
 import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_drop_down.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/form_field_controller.dart';
-import 'dart:ui';
 import '/index.dart';
-import 'package:flutter/gestures.dart';
+import '/auth/firebase_auth/auth_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-import 'package:provider/provider.dart';
 
 import 'reviews_model.dart';
 export 'reviews_model.dart';
@@ -32,1042 +30,608 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  static const Color kGreen = Color(0xFF1B7A4E);
+  static const Color kAmber = Color(0xFFFFB300);
+  static const Color kRed = Color(0xFFDC0F0F);
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _bg =>
+      _isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF5F7F8);
+  Color get _card => _isDark ? const Color(0xFF1C1C1E) : Colors.white;
+  Color get _soft =>
+      _isDark ? const Color(0xFF2A2A2C) : const Color(0xFFF0F2F5);
+  Color get _text => _isDark ? Colors.white : const Color(0xFF111827);
+  Color get _muted =>
+      _isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+  Color get _border =>
+      _isDark ? const Color(0xFF2A2A2C) : const Color(0xFFE5E7EB);
+
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => ReviewsModel());
-
-    logFirebaseEvent('screen_view', parameters: {'screen_name': 'Reviews'});
     _model.textController ??= TextEditingController();
     _model.textFieldFocusNode ??= FocusNode();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
   }
 
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
   }
 
+  // ════════════════════════════════════════════════════════
+  // BUILD
+  // ════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<InventoryRecord>>(
-      stream: queryInventoryRecord(
-        singleRecord: true,
+    return Scaffold(
+      key: scaffoldKey,
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: _bg,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: FlutterFlowIconButton(
+          borderColor: Colors.transparent,
+          borderRadius: 30,
+          borderWidth: 1,
+          buttonSize: 55,
+          icon: Icon(Icons.arrow_back_rounded, color: _text, size: 24),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Reviews',
+          style: TextStyle(
+            color: _text,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        centerTitle: true,
       ),
-      builder: (context, snapshot) {
-        // Customize what your widget looks like when it's loading.
-        if (!snapshot.hasData) {
-          return Scaffold(
-            backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-            body: Center(
-              child: SizedBox(
-                width: 50,
-                height: 50,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    FlutterFlowTheme.of(context).primary,
+      body: RefreshIndicator(
+        color: kGreen,
+        onRefresh: () async {
+          safeSetState(() {});
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: StreamBuilder<List<ReviewsRecord>>(
+          stream: queryReviewsRecord(
+            queryBuilder: (r) => r.orderBy('date', descending: true),
+            limit: 100,
+          ),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return Center(
+                child: SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(kGreen),
+                    strokeWidth: 3,
                   ),
                 ),
-              ),
-            ),
-          );
-        }
-        List<InventoryRecord> reviewsInventoryRecordList = snapshot.data!;
-        // Return an empty Container when the item does not exist.
-        if (snapshot.data!.isEmpty) {
-          return Container();
-        }
-        final reviewsInventoryRecord = reviewsInventoryRecordList.isNotEmpty
-            ? reviewsInventoryRecordList.first
-            : null;
+              );
+            }
 
-        return Scaffold(
-          key: scaffoldKey,
-          backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-          appBar: responsiveVisibility(
-            context: context,
-            tabletLandscape: false,
-            desktop: false,
-          )
-              ? PreferredSize(
-                  preferredSize: Size.fromHeight(50),
-                  child: AppBar(
-                    backgroundColor:
-                        FlutterFlowTheme.of(context).primaryBackground,
-                    automaticallyImplyLeading: false,
-                    leading: FlutterFlowIconButton(
-                      borderColor: Colors.transparent,
-                      borderRadius: 30,
-                      borderWidth: 1,
-                      buttonSize: 55,
-                      icon: Icon(
-                        Icons.arrow_back_rounded,
-                        color: FlutterFlowTheme.of(context).secondaryText,
-                        size: 25,
-                      ),
-                      onPressed: () async {
-                        logFirebaseEvent(
-                            'REVIEWS_arrow_back_rounded_ICN_ON_TAP');
-                        logFirebaseEvent('IconButton_navigate_back');
-                        context.pop();
-                      },
-                    ),
-                    actions: [],
-                    flexibleSpace: FlexibleSpaceBar(
-                      title: Text(
-                        FFLocalizations.of(context).getText(
-                          '031oasgo' /* Reviews */,
-                        ),
-                        style: FlutterFlowTheme.of(context)
-                            .headlineSmall
-                            .override(
-                              font: GoogleFonts.interTight(
-                                fontWeight: FlutterFlowTheme.of(context)
-                                    .headlineSmall
-                                    .fontWeight,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .headlineSmall
-                                    .fontStyle,
-                              ),
-                              color: FlutterFlowTheme.of(context).primaryText,
-                              fontSize: 20,
-                              letterSpacing: 0.0,
-                              fontWeight: FlutterFlowTheme.of(context)
-                                  .headlineSmall
-                                  .fontWeight,
-                              fontStyle: FlutterFlowTheme.of(context)
-                                  .headlineSmall
-                                  .fontStyle,
-                            ),
-                      ),
-                      centerTitle: true,
-                      expandedTitleScale: 1.0,
-                    ),
-                    elevation: 2,
-                  ),
-                )
-              : null,
-          body: SafeArea(
-            top: true,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Flexible(
-                    child: Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(0, 5, 0, 0),
-                      child: Container(
-                        width: double.infinity,
+            final allReviews = snapshot.data!;
+            final filtered = _filterReviews(allReviews);
+
+            return ListView(
+              padding: const EdgeInsets.only(bottom: 32),
+              children: [
+                _buildSummaryCard(allReviews),
+                const SizedBox(height: 16),
+                _buildSearchBar(),
+                const SizedBox(height: 16),
+                _buildHeaderRow(allReviews.length),
+                const SizedBox(height: 8),
+                if (filtered.isEmpty)
+                  _buildEmptyState()
+                else
+                  ...filtered.map((r) {
+                    final isAdmin = valueOrDefault<bool>(
+                            currentUserDocument?.isAdmin, false) ==
+                        true;
+                    if (!isAdmin) return _reviewRow(r);
+
+                    return Dismissible(
+                      key: ValueKey(r.reference.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                         decoration: BoxDecoration(
-                          color:
-                              FlutterFlowTheme.of(context).secondaryBackground,
-                          boxShadow: [
-                            BoxShadow(
-                              blurRadius: 3,
-                              color: Color(0x39000000),
-                              offset: Offset(
-                                0.0,
-                                1,
-                              ),
-                            )
-                          ],
+                          color: const Color(0xFFDC0F0F),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            children: [
-                              Padding(
-                                padding:
-                                    EdgeInsetsDirectional.fromSTEB(8, 0, 8, 0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    RichText(
-                                      textScaler:
-                                          MediaQuery.of(context).textScaler,
-                                      text: TextSpan(
-                                        children: [
-                                          TextSpan(
-                                            text: valueOrDefault<String>(
-                                              reviewsInventoryRecord?.rating
-                                                  ?.toString(),
-                                              '4.5',
-                                            ),
-                                            style: GoogleFonts.baiJamjuree(
-                                              color:
-                                                  FlutterFlowTheme.of(context)
-                                                      .primaryText,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 28,
-                                            ),
-                                          )
-                                        ],
-                                        style: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .override(
-                                              font: GoogleFonts.baiJamjuree(
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                              letterSpacing: 0.0,
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                      ),
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        RatingBar.builder(
-                                          onRatingUpdate: (newValue) =>
-                                              safeSetState(() => _model
-                                                  .ratingBarValue1 = newValue),
-                                          itemBuilder: (context, index) => Icon(
-                                            Icons.star_rounded,
-                                            color: FlutterFlowTheme.of(context)
-                                                .warning,
-                                          ),
-                                          direction: Axis.horizontal,
-                                          initialRating:
-                                              _model.ratingBarValue1 ??=
-                                                  valueOrDefault<double>(
-                                            reviewsInventoryRecord?.rating,
-                                            3.0,
-                                          ),
-                                          unratedColor:
-                                              FlutterFlowTheme.of(context)
-                                                  .secondaryText,
-                                          itemCount: 5,
-                                          itemSize: 24,
-                                          glowColor:
-                                              FlutterFlowTheme.of(context)
-                                                  .warning,
-                                        ),
-                                        Text(
-                                          FFLocalizations.of(context).getText(
-                                            'o4qtemvk' /* Based on 216 Reviews */,
-                                          ),
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                fontSize: 12,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                      ].divide(SizedBox(height: 6)),
-                                    ),
-                                  ].divide(SizedBox(height: 14)),
-                                ),
-                              ),
-                              SizedBox(
-                                height: 90,
-                                child: VerticalDivider(
-                                  width: 40,
-                                  thickness: 1,
-                                  color: FlutterFlowTheme.of(context).alternate,
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Text(
-                                          FFLocalizations.of(context).getText(
-                                            'y522guh8' /* 5 Star */,
-                                          ),
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                fontSize: 12,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                        Expanded(
-                                          child: LinearPercentIndicator(
-                                            percent: 0.8,
-                                            lineHeight: 10,
-                                            animation: true,
-                                            animateFromLastPercent: true,
-                                            progressColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .primary,
-                                            backgroundColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .alternate,
-                                            barRadius: Radius.circular(6),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                        ),
-                                      ].divide(SizedBox(width: 8)),
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Text(
-                                          FFLocalizations.of(context).getText(
-                                            'sln4oa1y' /* 4 Star */,
-                                          ),
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                fontSize: 12,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                        Expanded(
-                                          child: LinearPercentIndicator(
-                                            percent: 0.4,
-                                            lineHeight: 10,
-                                            animation: true,
-                                            animateFromLastPercent: true,
-                                            progressColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .primary,
-                                            backgroundColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .alternate,
-                                            barRadius: Radius.circular(6),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                        ),
-                                      ].divide(SizedBox(width: 8)),
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Text(
-                                          FFLocalizations.of(context).getText(
-                                            'x5bo05ry' /* 3 Star */,
-                                          ),
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                fontSize: 12,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                        Expanded(
-                                          child: LinearPercentIndicator(
-                                            percent: 0.7,
-                                            lineHeight: 10,
-                                            animation: true,
-                                            animateFromLastPercent: true,
-                                            progressColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .primary,
-                                            backgroundColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .alternate,
-                                            barRadius: Radius.circular(6),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                        ),
-                                      ].divide(SizedBox(width: 8)),
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Text(
-                                          FFLocalizations.of(context).getText(
-                                            'ep1hlpzg' /* 2 Star */,
-                                          ),
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                fontSize: 12,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                        Expanded(
-                                          child: LinearPercentIndicator(
-                                            percent: 0.2,
-                                            lineHeight: 10,
-                                            animation: true,
-                                            animateFromLastPercent: true,
-                                            progressColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .primary,
-                                            backgroundColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .alternate,
-                                            barRadius: Radius.circular(6),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                        ),
-                                      ].divide(SizedBox(width: 8)),
-                                    ),
-                                    Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Text(
-                                          FFLocalizations.of(context).getText(
-                                            'dnunn9ij' /* 1  Star */,
-                                          ),
-                                          style: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                fontSize: 12,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                        ),
-                                        Expanded(
-                                          child: LinearPercentIndicator(
-                                            percent: 0.1,
-                                            lineHeight: 10,
-                                            animation: true,
-                                            animateFromLastPercent: true,
-                                            progressColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .primary,
-                                            backgroundColor:
-                                                FlutterFlowTheme.of(context)
-                                                    .alternate,
-                                            barRadius: Radius.circular(6),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                        ),
-                                      ].divide(SizedBox(width: 8)),
-                                    ),
-                                  ].divide(SizedBox(height: 10)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding:
-                                EdgeInsetsDirectional.fromSTEB(16, 32, 16, 0),
-                            child: Container(
-                              width: double.infinity,
-                              child: TextFormField(
-                                controller: _model.textController,
-                                focusNode: _model.textFieldFocusNode,
-                                onFieldSubmitted: (_) async {
-                                  logFirebaseEvent(
-                                      'REVIEWS_TextField_cagj6cmm_ON_TEXTFIELD_');
-                                  logFirebaseEvent('TextField_navigate_to');
-
-                                  context.pushNamed(
-                                    SearchWidget.routeName,
-                                    extra: <String, dynamic>{
-                                      '__transition_info__': TransitionInfo(
-                                        hasTransition: true,
-                                        transitionType:
-                                            PageTransitionType.rightToLeft,
-                                        duration: Duration(milliseconds: 250),
-                                      ),
-                                    },
-                                  );
-                                },
-                                autofocus: false,
-                                obscureText: false,
-                                decoration: InputDecoration(
-                                  isDense: true,
-                                  labelStyle: FlutterFlowTheme.of(context)
-                                      .labelMedium
-                                      .override(
-                                        font: GoogleFonts.inter(
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .labelMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .labelMedium
-                                                  .fontStyle,
-                                        ),
-                                        letterSpacing: 0.0,
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .labelMedium
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .labelMedium
-                                            .fontStyle,
-                                      ),
-                                  hintText: FFLocalizations.of(context).getText(
-                                    'zxh0sbpj' /* Search in reviews */,
-                                  ),
-                                  hintStyle: FlutterFlowTheme.of(context)
-                                      .labelMedium
-                                      .override(
-                                        font: GoogleFonts.inter(
-                                          fontWeight: FontWeight.normal,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .labelMedium
-                                                  .fontStyle,
-                                        ),
-                                        fontSize: 14,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.normal,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .labelMedium
-                                            .fontStyle,
-                                      ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: FlutterFlowTheme.of(context)
-                                          .secondaryText,
-                                      width: 1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Color(0x00000000),
-                                      width: 1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: FlutterFlowTheme.of(context).error,
-                                      width: 1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: FlutterFlowTheme.of(context).error,
-                                      width: 1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  filled: true,
-                                  fillColor: FlutterFlowTheme.of(context)
-                                      .secondaryBackground,
-                                  contentPadding:
-                                      EdgeInsetsDirectional.fromSTEB(
-                                          12, 19, 6, 19),
-                                  prefixIcon: Icon(
-                                    Icons.circle_outlined,
-                                    color: FlutterFlowTheme.of(context)
-                                        .secondaryText,
-                                    size: 20,
-                                  ),
-                                ),
-                                style: FlutterFlowTheme.of(context)
-                                    .bodyMedium
-                                    .override(
-                                      font: GoogleFonts.inter(
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                cursorColor:
-                                    FlutterFlowTheme.of(context).primaryText,
-                                validator: _model.textControllerValidator
-                                    .asValidator(context),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.max,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Expanded(
-                              child: Text(
-                                FFLocalizations.of(context).getText(
-                                  '48gug1xi' /* User reviews */,
-                                ),
-                                style: FlutterFlowTheme.of(context)
-                                    .bodyMedium
-                                    .override(
-                                      font: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w600,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                      fontSize: 16,
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                              ),
-                            ),
+                            Icon(Icons.delete_rounded,
+                                color: Colors.white, size: 22),
+                            SizedBox(width: 6),
+                            Text('Delete',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                )),
                           ],
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
-                        child: FlutterFlowDropDown<String>(
-                          controller: _model.dropDownValueController ??=
-                              FormFieldController<String>(
-                            _model.dropDownValue ??=
-                                FFLocalizations.of(context).getText(
-                              'dr3q2nsi' /* Most useful */,
-                            ),
-                          ),
-                          options: [
-                            FFLocalizations.of(context).getText(
-                              'iieuuavm' /* Recent */,
-                            ),
-                            FFLocalizations.of(context).getText(
-                              '3e9bv5ni' /* Most useful */,
-                            )
-                          ],
-                          onChanged: (val) =>
-                              safeSetState(() => _model.dropDownValue = val),
-                          height: 28,
-                          textStyle:
-                              FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FontWeight.w500,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                    fontSize: 12,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.w500,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontStyle,
-                                  ),
-                          hintText: FFLocalizations.of(context).getText(
-                            'qmcc45ru' /* Select... */,
-                          ),
-                          icon: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: FlutterFlowTheme.of(context).secondaryText,
-                            size: 24,
-                          ),
-                          fillColor:
-                              FlutterFlowTheme.of(context).secondaryBackground,
-                          elevation: 2,
-                          borderColor: Colors.transparent,
-                          borderWidth: 0,
-                          borderRadius: 6,
-                          margin: EdgeInsetsDirectional.fromSTEB(12, 0, 8, 0),
-                          hidesUnderline: true,
-                          isOverButton: false,
-                          isSearchable: false,
-                          isMultiSelect: false,
+                      confirmDismiss: (_) => _confirmDelete(),
+                      onDismissed: (_) => _deleteReview(r),
+                      child: _reviewRow(r),
+                    );
+                  }),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════
+  // FILTER
+  // ════════════════════════════════════════════════════════
+  List<ReviewsRecord> _filterReviews(List<ReviewsRecord> src) {
+    final q = (_model.textController?.text ?? '').trim().toLowerCase();
+    var out = src;
+    if (q.isNotEmpty) {
+      out = out.where((r) {
+        final name = r.reviewersName.toLowerCase();
+        final msg = r.reviewsMessage.toLowerCase();
+        return name.contains(q) || msg.contains(q);
+      }).toList();
+    }
+    return out;
+  }
+
+  // ════════════════════════════════════════════════════════
+  // SUMMARY CARD (real numbers, no fakes)
+  // ════════════════════════════════════════════════════════
+  Widget _buildSummaryCard(List<ReviewsRecord> reviews) {
+    final total = reviews.length;
+    double avg = 0;
+    if (total > 0) {
+      double sum = 0;
+      for (final r in reviews) {
+        sum += r.rating.toDouble();
+      }
+      avg = sum / total;
+    }
+
+    // Count per star
+    final counts = <int, int>{5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
+    for (final r in reviews) {
+      final s = r.rating.clamp(1, 5);
+      counts[s] = (counts[s] ?? 0) + 1;
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _border),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          // Left: big number
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                avg.toStringAsFixed(1),
+                style: TextStyle(
+                  color: _text,
+                  fontSize: 40,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(height: 6),
+              RatingBar.builder(
+                ignoreGestures: true,
+                initialRating: avg,
+                itemCount: 5,
+                itemSize: 15,
+                itemBuilder: (_, __) =>
+                    const Icon(Icons.star_rounded, color: kAmber),
+                onRatingUpdate: (_) {},
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$total review${total == 1 ? '' : 's'}',
+                style: TextStyle(color: _muted, fontSize: 11),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Container(width: 1, color: _border),
+          const SizedBox(width: 16),
+          // Right: bars
+          Expanded(
+            child: Column(
+              children: [5, 4, 3, 2, 1].map((star) {
+                final c = counts[star] ?? 0;
+                final pct = total == 0 ? 0.0 : c / total;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 12,
+                        child: Text(
+                          '$star',
+                          style:
+                              TextStyle(color: _muted, fontSize: 11),
+                        ),
+                      ),
+                      const Icon(Icons.star_rounded,
+                          color: kAmber, size: 11),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: LinearPercentIndicator(
+                          percent: pct.clamp(0.0, 1.0),
+                          lineHeight: 7,
+                          animation: false,
+                          progressColor: kGreen,
+                          backgroundColor: _border,
+                          barRadius: const Radius.circular(4),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 24,
+                        child: Text(
+                          '$c',
+                          textAlign: TextAlign.right,
+                          style:
+                              TextStyle(color: _muted, fontSize: 11),
                         ),
                       ),
                     ],
                   ),
-                  Flexible(
-                    child: StreamBuilder<List<ReviewsRecord>>(
-                      stream: queryReviewsRecord(
-                        queryBuilder: (reviewsRecord) =>
-                            reviewsRecord.orderBy('date', descending: true),
-                      ),
-                      builder: (context, snapshot) {
-                        // Customize what your widget looks like when it's loading.
-                        if (!snapshot.hasData) {
-                          return Center(
-                            child: SizedBox(
-                              width: 50,
-                              height: 50,
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  FlutterFlowTheme.of(context).primary,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                        List<ReviewsRecord> listViewReviewsRecordList =
-                            snapshot.data!;
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                        return ListView.builder(
-                          padding: EdgeInsets.zero,
-                          primary: false,
-                          shrinkWrap: true,
-                          scrollDirection: Axis.vertical,
-                          itemCount: listViewReviewsRecordList.length,
-                          itemBuilder: (context, listViewIndex) {
-                            final listViewReviewsRecord =
-                                listViewReviewsRecordList[listViewIndex];
-                            return Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: FlutterFlowTheme.of(context)
-                                    .secondaryBackground,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.all(14),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.max,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          width: 40,
-                                          height: 40,
-                                          clipBehavior: Clip.antiAlias,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Image.network(
-                          
-                                              listViewReviewsRecord
-                                                  .reviewersImage,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.max,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Column(
-                                                mainAxisSize: MainAxisSize.max,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    listViewReviewsRecord
-                                                        .reviewersName,
-                                                    style: FlutterFlowTheme.of(
-                                                            context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          font:
-                                                              GoogleFonts.inter(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            fontStyle:
-                                                                FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .bodyMedium
-                                                                    .fontStyle,
-                                                          ),
-                                                          fontSize: 16,
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontStyle,
-                                                        ),
-                                                  ),
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.max,
-                                                    children: [
-                                                      RatingBarIndicator(
-                                                        itemBuilder:
-                                                            (context, index) =>
-                                                                Icon(
-                                                          Icons.star_rounded,
-                                                          color:
-                                                              Color(0xFFFFD700),
-                                                        ),
-                                                        direction:
-                                                            Axis.horizontal,
-                                                        rating: valueOrDefault<
-                                                            double>(
-                                                          listViewReviewsRecord
-                                                              .rating
-                                                              .toDouble(),
-                                                          2.0,
-                                                        ),
-                                                        unratedColor:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .secondaryText,
-                                                        itemCount: 5,
-                                                        itemSize: 16,
-                                                      ),
-                                                    ].divide(
-                                                        SizedBox(width: 8)),
-                                                  ),
-                                                ].divide(SizedBox(height: 6)),
-                                              ),
-                                              Text(
-                                                dateTimeFormat(
-                                                  "relative",
-                                                  listViewReviewsRecord.date!,
-                                                  locale: FFLocalizations.of(
-                                                          context)
-                                                      .languageCode,
-                                                ),
-                                                style: FlutterFlowTheme.of(
-                                                        context)
-                                                    .bodyMedium
-                                                    .override(
-                                                      font: GoogleFonts.inter(
-                                                        fontWeight:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontWeight,
-                                                        fontStyle:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontStyle,
-                                                      ),
-                                                      color:
-                                                          FlutterFlowTheme.of(
-                                                                  context)
-                                                              .primaryText,
-                                                      fontSize: 12,
-                                                      letterSpacing: 0.0,
-                                                      fontWeight:
-                                                          FlutterFlowTheme.of(
-                                                                  context)
-                                                              .bodyMedium
-                                                              .fontWeight,
-                                                      fontStyle:
-                                                          FlutterFlowTheme.of(
-                                                                  context)
-                                                              .bodyMedium
-                                                              .fontStyle,
-                                                    ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ].divide(SizedBox(width: 12)),
-                                    ),
-                                    Text(
-                                      valueOrDefault<String>(
-                                        listViewReviewsRecord.reviewsMessage,
-                                        'These require complex math (Cloud Functions) to update every time someone leaves a review. Removing them makes your database much faster.',
-                                      ),
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w500,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: FlutterFlowTheme.of(context)
-                                                .secondaryText,
-                                            fontSize: 12,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                            lineHeight: 1.4,
-                                          ),
-                                    ),
-                                  ].divide(SizedBox(height: 14)),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
+  // ════════════════════════════════════════════════════════
+  // SEARCH BAR
+  // ════════════════════════════════════════════════════════
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _soft,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _border),
+        ),
+        child: TextField(
+          controller: _model.textController,
+          focusNode: _model.textFieldFocusNode,
+          onChanged: (_) => safeSetState(() {}),
+          style: TextStyle(color: _text, fontSize: 14),
+          cursorColor: kGreen,
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            isDense: true,
+            hintText: 'Search reviews...',
+            hintStyle: TextStyle(color: _muted, fontSize: 13.5),
+            prefixIcon:
+                Icon(Icons.search_rounded, color: _muted, size: 20),
+            contentPadding:
+                const EdgeInsetsDirectional.fromSTEB(0, 14, 12, 14),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════
+  // HEADER ROW (count + sort dropdown)
+  // ════════════════════════════════════════════════════════
+  Widget _buildHeaderRow(int total) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'All reviews',
+            style: TextStyle(
+              color: _text,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            '$total',
+            style: TextStyle(
+              color: _muted,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════
+  // EMPTY STATE
+  // ════════════════════════════════════════════════════════
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.reviews_outlined, color: _muted, size: 40),
+            const SizedBox(height: 10),
+            Text('No reviews yet',
+                style: TextStyle(color: _muted, fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════
+  // REVIEW ROW
+  // ════════════════════════════════════════════════════════
+  Future<bool> _confirmDelete() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _card,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Text('Delete review?',
+                style: TextStyle(
+                    color: _text,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
+            content: Text(
+              'This review will be permanently removed. Product rating will be recalculated.',
+              style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Cancel',
+                    style: TextStyle(
+                        color: _muted, fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete',
+                    style: TextStyle(
+                        color: Color(0xFFDC0F0F),
+                        fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _deleteReview(ReviewsRecord r) async {
+    try {
+      await r.reference.delete();
+
+      // Recalc product rating if product_ref exists
+      final prodRef = r.productRef;
+      if (prodRef != null) {
+        final snap = await FirebaseFirestore.instance
+            .collection('reviews')
+            .where('product_ref', isEqualTo: prodRef)
+            .get();
+        if (snap.docs.isEmpty) {
+          await prodRef.update({'rating': 0.0, 'reviews': 0});
+        } else {
+          double total = 0;
+          for (final d in snap.docs) {
+            final rating = d.data()['rating'];
+            if (rating is num) total += rating.toDouble();
+          }
+          await prodRef.update({
+            'rating': total / snap.docs.length,
+            'reviews': snap.docs.length,
+          });
+        }
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Review deleted'),
+          backgroundColor: Color(0xFF1B7A4E),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      safeSetState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete: $e'),
+          backgroundColor: const Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Widget _reviewRow(ReviewsRecord r) {
+    final isMine = r.reviewerRef == currentUserReference;
+    final hasReply = (r.sellerReply ?? '').isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      decoration: BoxDecoration(
+        color: _card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isMine ? kGreen.withOpacity(0.35) : _border,
+          width: isMine ? 1.3 : 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration:
+                    BoxDecoration(color: _soft, shape: BoxShape.circle),
+                clipBehavior: Clip.antiAlias,
+                child: r.reviewersImage.isEmpty
+                    ? Icon(Icons.person_rounded, color: _muted, size: 22)
+                    : Image.network(
+                        r.reviewersImage,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Icon(
+                            Icons.person_rounded,
+                            color: _muted,
+                            size: 22),
+                      ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isMine
+                          ? '${r.reviewersName} (You)'
+                          : r.reviewersName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _text,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        RatingBarIndicator(
+                          rating: r.rating.toDouble(),
+                          itemSize: 14,
+                          itemCount: 5,
+                          itemBuilder: (_, __) => const Icon(
+                            Icons.star_rounded,
+                            color: kAmber,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (r.date != null)
+                          Text(
+                            _timeAgo(r.date!),
+                            style: TextStyle(
+                                color: _muted, fontSize: 11),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (r.reviewsMessage.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              r.reviewsMessage,
+              style: TextStyle(
+                color: _text.withOpacity(0.85),
+                fontSize: 13.5,
+                height: 1.45,
+              ),
+            ),
+          ],
+          if (hasReply) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: kGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border(
+                  left: BorderSide(color: kGreen, width: 3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.storefront_rounded,
+                          color: kGreen, size: 14),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Seller replied',
+                        style: TextStyle(
+                          color: kGreen,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      if (r.sellerReplyDate != null) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          _timeAgo(r.sellerReplyDate!),
+                          style: TextStyle(
+                              color: _muted, fontSize: 10.5),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    r.sellerReply ?? '',
+                    style: TextStyle(
+                      color: _text.withOpacity(0.85),
+                      fontSize: 12.5,
+                      height: 1.4,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        );
-      },
+          ],
+        ],
+      ),
     );
+  }
+
+  // ════════════════════════════════════════════════════════
+  // TIME AGO
+  // ════════════════════════════════════════════════════════
+  String _timeAgo(DateTime when) {
+    final d = DateTime.now().difference(when);
+    if (d.inSeconds < 60) return 'Just now';
+    if (d.inMinutes < 60) return '${d.inMinutes}m ago';
+    if (d.inHours < 24) return '${d.inHours}h ago';
+    if (d.inDays < 7) return '${d.inDays}d ago';
+    return '${when.day}/${when.month}/${when.year}';
   }
 }

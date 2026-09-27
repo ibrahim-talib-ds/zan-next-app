@@ -337,20 +337,129 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _statCountCard(
-                  icon: Icons.support_agent_outlined,
-                  color: kPurple,
-                  label: 'Support Chats',
+                child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('support_chats')
+                      .where('unread_for_admin', isGreaterThan: 0)
                       .snapshots(),
-                  onTap: () => context.pushNamed(AdminSupportInboxWidget.routeName),
+                  builder: (context, snap) {
+                    final unread = snap.data?.docs.length ?? 0;
+                    return _statCountCard(
+                      icon: Icons.support_agent_outlined,
+                      color: unread > 0 ? kRed : kPurple,
+                      label: unread > 0
+                          ? 'Support ($unread new)'
+                          : 'Support Chats',
+                      stream: FirebaseFirestore.instance
+                          .collection('support_chats')
+                          .snapshots(),
+                      onTap: () => context
+                          .pushNamed(AdminSupportInboxWidget.routeName),
+                    );
+                  },
                 ),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _unreadSupportCard() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('support_chats')
+          .snapshots(),
+      builder: (context, snap) {
+        final docs = snap.data?.docs ?? [];
+        final totalThreads = docs.length;
+        int unreadThreads = 0;
+        for (final d in docs) {
+          final data = d.data() as Map<String, dynamic>;
+          final u = (data['unread_for_admin'] as num?)?.toInt() ?? 0;
+          if (u > 0) unreadThreads++;
+        }
+        final hasUnread = unreadThreads > 0;
+
+        return GestureDetector(
+          onTap: () =>
+              context.pushNamed(AdminSupportInboxWidget.routeName),
+          child: Container(
+            decoration: BoxDecoration(
+              color: _card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: hasUnread ? kRed : _border,
+                width: hasUnread ? 1.5 : 1,
+              ),
+            ),
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: (hasUnread ? kRed : kPurple).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Icon(
+                        Icons.support_agent_outlined,
+                        color: hasUnread ? kRed : kPurple,
+                        size: 17,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Support Chats',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _muted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (hasUnread)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: kRed,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$unreadThreads NEW',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  snap.hasData ? '$totalThreads' : '—',
+                  style: TextStyle(
+                    color: hasUnread ? kRed : _text,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -56,6 +56,21 @@ class ReviewsRecord extends FirestoreRecord {
   DocumentReference? get productRef => _productRef;
   bool hasProductRef() => _productRef != null;
 
+  // "reviewer_ref" field.
+  DocumentReference? _reviewerRef;
+  DocumentReference? get reviewerRef => _reviewerRef;
+  bool hasReviewerRef() => _reviewerRef != null;
+
+  // "seller_reply" field.
+  String? _sellerReply;
+  String get sellerReply => _sellerReply ?? '';
+  bool hasSellerReply() => _sellerReply != null;
+
+  // "seller_reply_date" field.
+  DateTime? _sellerReplyDate;
+  DateTime? get sellerReplyDate => _sellerReplyDate;
+  bool hasSellerReplyDate() => _sellerReplyDate != null;
+
   // "quick_tags" field.
   List<String>? _quickTags;
   List<String> get quickTags => _quickTags ?? const [];
@@ -68,8 +83,11 @@ class ReviewsRecord extends FirestoreRecord {
     _reviewersImage = snapshotData['reviewers_image'] as String?;
     _reviewersName = snapshotData['reviewers_name'] as String?;
     _rating = castToType<int>(snapshotData['rating']);
-    _reviewsMessage = snapshotData['Reviews_message'] as String?;
+    _reviewsMessage = snapshotData['reviews_message'] as String?;
     _productRef = snapshotData['product_ref'] as DocumentReference?;
+    _reviewerRef = snapshotData['reviewer_ref'] as DocumentReference?;
+    _sellerReply = snapshotData['seller_reply'] as String?;
+    _sellerReplyDate = snapshotData['seller_reply_date'] as DateTime?;
     _quickTags = getDataList(snapshotData['quick_tags']);
   }
 
@@ -116,6 +134,9 @@ Map<String, dynamic> createReviewsRecordData({
   int? rating,
   String? reviewsMessage,
   DocumentReference? productRef,
+  DocumentReference? reviewerRef,
+  String? sellerReply,
+  DateTime? sellerReplyDate,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
@@ -127,6 +148,9 @@ Map<String, dynamic> createReviewsRecordData({
       'rating': rating,
       'Reviews_message': reviewsMessage,
       'product_ref': productRef,
+      'reviewer_ref': reviewerRef,
+      'seller_reply': sellerReply,
+      'seller_reply_date': sellerReplyDate,
     }.withoutNulls,
   );
 
@@ -147,6 +171,9 @@ class ReviewsRecordDocumentEquality implements Equality<ReviewsRecord> {
         e1?.rating == e2?.rating &&
         e1?.reviewsMessage == e2?.reviewsMessage &&
         e1?.productRef == e2?.productRef &&
+        e1?.reviewerRef == e2?.reviewerRef &&
+        e1?.sellerReply == e2?.sellerReply &&
+        e1?.sellerReplyDate == e2?.sellerReplyDate &&
         listEquality.equals(e1?.quickTags, e2?.quickTags);
   }
 
@@ -160,6 +187,9 @@ class ReviewsRecordDocumentEquality implements Equality<ReviewsRecord> {
         e?.rating,
         e?.reviewsMessage,
         e?.productRef,
+        e?.reviewerRef,
+        e?.sellerReply,
+        e?.sellerReplyDate,
         e?.quickTags
       ]);
 

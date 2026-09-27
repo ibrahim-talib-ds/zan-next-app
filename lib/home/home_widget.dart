@@ -128,87 +128,68 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Reserve space for the fixed header (170px tall)
-                    SizedBox(height: 140),
+                    SizedBox(height: 150),
 
                     // ============ BANNER SLIDER ============
                     Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
+                      padding: EdgeInsetsDirectional.fromSTEB(12, 6, 0, 0),
                       child: Container(
                         width: double.infinity,
-                        height: Responsive.bannerHeight(context),
+                        height: 140,
                         child: Stack(
                           children: [
-                            PageView(
+                            PageView.builder(
                               controller: _model.pageViewController ??=
-                                  PageController(initialPage: 0),
+                                  PageController(
+                                initialPage: 0,
+                                viewportFraction: 0.42,
+                              ),
                               scrollDirection: Axis.horizontal,
-                              children: [
-                                _bannerSlide(
-                                  context,
-                                  title: 'Welcome to ZanNext!',
-                                  subtitle: 'Get 20% OFF your first order',
-                                  buttonLabel: 'Claim Offer',
-                                  heroIcon: Icons.redeem_rounded,
-                                  gradientColors: [
-                                    Color(0xFF1B7A4E),
-                                    Color(0xFF053020),
-                                  ],
-                                  accentColor: Color(0xFF1B7A4E),
-                                  routeName: CategorysZWidget.routeName,
-                                ),
-                                _bannerSlide(
-                                  context,
-                                  title: 'Fresh Today',
-                                  subtitle: 'Shop the latest trends in town',
-                                  buttonLabel: 'Shop Newest',
-                                  heroIcon: Icons.local_fire_department_rounded,
-                                  gradientColors: [
-                                    Color(0xFFDC0F0F),
-                                    Color(0xFF7A0808),
-                                  ],
-                                  accentColor: Color(0xFFDC0F0F),
-                                  routeName: NewProductsWidget.routeName,
-                                ),
-                                _bannerSlide(
-                                  context,
-                                  title: 'Fast & Secure Delivery',
-                                  subtitle: 'From our store to your door',
-                                  buttonLabel: 'Order Now',
-                                  heroIcon: Icons.delivery_dining_rounded,
-                                  gradientColors: [
-                                    Color(0xFF0D6EFD),
-                                    Color(0xFF082A5C),
-                                  ],
-                                  accentColor: Color(0xFF0D6EFD),
-                                  routeName: TrendingProductWidget.routeName,
-                                ),
-                                _bannerSlide(
-                                  context,
-                                  title: 'Quality You Can Trust',
-                                  subtitle: 'Premium products, best prices',
-                                  buttonLabel: 'Shop Quality',
-                                  heroIcon: Icons.verified_rounded,
-                                  gradientColors: [
-                                    Color(0xFF7B1FA2),
-                                    Color(0xFF3A0B4D),
-                                  ],
-                                  accentColor: Color(0xFF7B1FA2),
-                                  routeName: CategorysZWidget.routeName,
-                                ),
-                                _bannerSlide(
-                                  context,
-                                  title: 'We\'re Here for You',
-                                  subtitle: '24/7 Dedicated Customer Support',
-                                  buttonLabel: 'Chat With Us',
-                                  heroIcon: Icons.support_agent_rounded,
-                                  gradientColors: [
-                                    Color(0xFFFF6F00),
-                                    Color(0xFF7A3500),
-                                  ],
-                                  accentColor: Color(0xFFFF6F00),
-                                  routeName: SupportChatWidget.routeName,
-                                ),
-                              ],
+                              itemCount: 5,
+                              itemBuilder: (context, i) {
+                                final banners = _bannerData();
+                                if (i >= banners.length) {
+                                  return const SizedBox.shrink();
+                                }
+                                final b = banners[i];
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4),
+                                  child: _bannerCard(
+                                    context: context,
+                                    title: b.title,
+                                    imageUrl: b.imageUrl,
+                                    gradientColors: b.gradientColors,
+                                    routeName: b.routeName,
+                                  ),
+                                );
+                              },
+                            ),
+                            // old PageView kept as dead code below:
+                            if (false)
+                            PageView.builder(
+                              controller: _model.pageViewController ??=
+                                  PageController(
+                                initialPage: 0,
+                                viewportFraction: 0.42,
+                              ),
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _bannerData().length,
+                              itemBuilder: (context, i) {
+                                final b = _bannerData()[i];
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4),
+                                  child: _bannerCard(
+                                    context: context,
+                                    title: b.title,
+                                    
+                                    imageUrl: b.imageUrl,
+                                    gradientColors: b.gradientColors,
+                                    routeName: b.routeName,
+                                  ),
+                                );
+                              },
                             ),
                             Align(
                               alignment: AlignmentDirectional(0, 1),
@@ -219,7 +200,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                     smooth_page_indicator.SmoothPageIndicator(
                                   controller: _model.pageViewController ??=
                                       PageController(initialPage: 0),
-                                  count: 5,
+                                  count: _bannerData().length,
                                   axisDirection: Axis.horizontal,
                                   onDotClicked: (i) async {
                                     await _model.pageViewController!
@@ -247,7 +228,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                       ),
                     ),
 
-                                        SizedBox(height: 18),
+                    SizedBox(height: 14),
 
                     // ============ CATEGORY GRID (2 ROWS x 4) ============
                     Padding(
@@ -939,6 +920,90 @@ your goals */,
     );
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // BANNER DATA — 5 slides with images
+  // ═══════════════════════════════════════════════════════════
+  List<_BannerItem> _bannerData() {
+    return const [
+      _BannerItem(
+        title: '',
+        imageUrl: 'assets/images/banner1.jpg',
+        gradientColors: [Color(0xFF1B7A4E), Color(0xFF053020)],
+        routeName: 'CategorysZ',
+      ),
+      _BannerItem(
+        title: '',
+        imageUrl: 'assets/images/banner2.jpg',
+        gradientColors: [Color(0xFFDC0F0F), Color(0xFF7A0808)],
+        routeName: 'New_Products',
+      ),
+      _BannerItem(
+        title: '',
+        imageUrl: 'assets/images/banner3.jpg',
+        gradientColors: [Color(0xFF0D6EFD), Color(0xFF082A5C)],
+        routeName: 'TrendingProduct',
+      ),
+      _BannerItem(
+        title: '',
+        imageUrl: 'assets/images/banner4.jpg',
+        gradientColors: [Color(0xFF7B1FA2), Color(0xFF3A0B4D)],
+        routeName: 'CategorysZ',
+      ),
+      _BannerItem(
+        title: '',
+        imageUrl: 'assets/images/banner5.jpg',
+        gradientColors: [Color(0xFFFF6F00), Color(0xFF7A3500)],
+        routeName: 'SupportChat',
+      ),
+    ];
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // BANNER CARD — compact peek card with image + text overlay
+  // ═══════════════════════════════════════════════════════════
+  Widget _bannerCard({
+    required BuildContext context,
+    required String title,
+    required String imageUrl,
+    required List<Color> gradientColors,
+    required String routeName,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        try {
+          context.pushNamed(routeName);
+        } catch (_) {}
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // ─── Image from assets (you control it) ───
+            Image.asset(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: gradientColors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.image_rounded,
+                  color: Colors.white24,
+                  size: 40,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ============================================================
   // BANNER SLIDE
   // ============================================================
@@ -1020,14 +1085,14 @@ your goals */,
                 angle: -0.18,
                 child: Icon(
                   heroIcon,
-                  size: 170,
+                  size: 120,
                   color: Colors.white.withOpacity(0.14),
                 ),
               ),
             ),
             // ─── Content ───
             Padding(
-              padding: EdgeInsets.all(18),
+              padding: EdgeInsets.all(14),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1038,7 +1103,7 @@ your goals */,
                       // Small badge chip
                       Container(
                         padding: EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                            horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.18),
                           borderRadius: BorderRadius.circular(20),
@@ -1047,7 +1112,7 @@ your goals */,
                           'LIMITED OFFER',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 9.5,
+                            fontSize: 8.5,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
                           ),
@@ -1061,7 +1126,7 @@ your goals */,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 22,
+                          fontSize: 18,
                           height: 1.15,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.3,
@@ -1081,8 +1146,8 @@ your goals */,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
-                          fontSize: 12.5,
-                          height: 1.35,
+                          fontSize: 11,
+                          height: 1.3,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1091,7 +1156,7 @@ your goals */,
                   // CTA button
                   Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                        horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(22),
@@ -1236,29 +1301,12 @@ your goals */,
               ),
             ),
             padding: const EdgeInsets.all(10),
-            child: isUrl
-                ? Image.network(
-                    _urlOf(assetImage),
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.category_outlined,
-                        color: theme.primary,
-                        size: 26,
-                      );
-                    },
-                  )
-                : Image.asset(
-                    assetImage,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.category_outlined,
-                        color: theme.primary,
-                        size: 26,
-                      );
-                    },
-                  ),
+            child: _buildCategoryImage(
+              context: context,
+              theme: theme,
+              path: assetImage,
+              isUrl: isUrl,
+            ),
           ),
           const SizedBox(height: 6),
           // Clean label — no box
@@ -1287,6 +1335,36 @@ your goals */,
       ),
     );
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // CATEGORY IMAGE — network with asset fallback
+  // ═══════════════════════════════════════════════════════════
+  Widget _buildCategoryImage({
+    required BuildContext context,
+    required FlutterFlowTheme theme,
+    required String path,
+    required bool isUrl,
+  }) {
+    final fallbackIcon = Icon(
+      Icons.category_outlined,
+      color: theme.primary,
+      size: 26,
+    );
+
+    if (isUrl) {
+      return Image.network(
+        _urlOf(path),
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) => fallbackIcon,
+      );
+    }
+    return Image.asset(
+      path,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => fallbackIcon,
+    );
+  }
+
 
   // ═══════════════════════════════════════════════════════════
   // ICON-BASED CATEGORY TILE (for categories without images)
@@ -1758,7 +1836,6 @@ your goals */,
               ctx,
               icon: Icons.edit_rounded,
               label: 'Edit this category',
-              subtitle: 'Change image, name, or route',
               color: const Color(0xFF1B7A4E),
               value: 'edit',
               text: text, muted: muted,
@@ -1768,7 +1845,6 @@ your goals */,
               ctx,
               icon: Icons.arrow_forward_rounded,
               label: 'Continue to page',
-              subtitle: 'Open the category normally',
               color: const Color(0xFF3B82F6),
               value: 'continue',
               text: text, muted: muted,
@@ -1812,7 +1888,6 @@ your goals */,
     BuildContext ctx, {
     required IconData icon,
     required String label,
-    required String subtitle,
     required Color color,
     required String value,
     required Color text,
@@ -1844,9 +1919,6 @@ your goals */,
                 children: [
                   Text(label,
                       style: TextStyle(color: text, fontSize: 14, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 2),
-                  Text(subtitle,
-                      style: TextStyle(color: muted, fontSize: 11.5)),
                 ],
               ),
             ),
@@ -2134,4 +2206,17 @@ your goals */,
       ),
     );
   }
+}
+
+class _BannerItem {
+  final String title;
+  final String imageUrl;
+  final List<Color> gradientColors;
+  final String routeName;
+  const _BannerItem({
+    required this.title,
+    required this.imageUrl,
+    required this.gradientColors,
+    required this.routeName,
+  });
 }

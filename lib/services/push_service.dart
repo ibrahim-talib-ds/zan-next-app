@@ -10,6 +10,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/nav/nav.dart';
 import '/index.dart';
+import '/services/local_notifications.dart';
 
 /// ─── Background handler (top-level, required by FCM) ───────────
 @pragma('vm:entry-point')
@@ -93,17 +94,26 @@ class PushService {
   // ═══════════════════════════════════════════════════════════
   void _foregroundMessage(RemoteMessage msg) {
     final n = msg.notification;
-    if (n == null) return;
+    final title = n?.title ?? (msg.data['title'] ?? 'ZanNext');
+    final body = n?.body ?? (msg.data['body'] ?? '');
+
+    // (1) Post a real OS notification — shows as phone banner
+    LocalNotifications.show(
+      title: title,
+      body: body,
+      payload: msg.data['route'],
+    );
+
+    // (2) Also show the in-app top banner (WhatsApp-style) when app is open
     final ctx = appNavigatorKey.currentContext;
     if (ctx == null) return;
-
     final overlay = Overlay.maybeOf(ctx);
     if (overlay == null) return;
 
     final entry = OverlayEntry(
       builder: (context) => _TopBanner(
-        title: n.title ?? 'Notification',
-        body: n.body ?? '',
+        title: title,
+        body: body,
         onTap: () {
           _removeBanner();
           _handleTap(msg);

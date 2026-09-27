@@ -14,3 +14,4 @@ flutter_native_splash:
   ios: true
   web: false
   fullscreen: true
+  branding: "assets/images/zannext_logo.png"

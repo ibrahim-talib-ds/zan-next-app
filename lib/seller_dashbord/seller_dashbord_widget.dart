@@ -4,6 +4,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/seller_reviews/seller_reviews_widget.dart';
 import '/index.dart';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -177,6 +178,10 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                       ],
                       const SizedBox(height: 12),
                       _buildProductGrid(_isOwner ? products : _filteredProducts(products)),
+                      if (_isOwner) ...[
+                        const SizedBox(height: 28),
+                        _buildReviewsToReplySection(seller),
+                      ],
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -1238,6 +1243,130 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   // ═══════════════════════════════════════════════════════════
   // SECTION HEADER
   // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // REVIEWS TO REPLY (owner-only section)
+  // Shows a count + preview, taps into SellerReviewsWidget
+  // ═══════════════════════════════════════════════════════════
+  Widget _buildReviewsToReplySection(UsersRecord? seller) {
+    if (seller == null) return const SizedBox.shrink();
+
+    return StreamBuilder<List<ReviewsRecord>>(
+      stream: queryReviewsRecord(
+        queryBuilder: (r) => r
+            .where('seller', isEqualTo: seller.reference)
+            .orderBy('date', descending: true),
+        limit: 200,
+      ),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+
+        final all = snap.data!;
+        final unreplied =
+            all.where((r) => r.sellerReply.isEmpty).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(
+              'Customer Reviews',
+              trailing: '${all.length}',
+            ),
+            const SizedBox(height: 4),
+            GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  SellerReviewsWidget.routeName,
+                  queryParameters: {
+                    'sellerRef': serializeParam(
+                      seller.reference,
+                      ParamType.DocumentReference,
+                    ),
+                  }.withoutNulls,
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: _card,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: unreplied.isNotEmpty
+                        ? kAmber.withOpacity(0.5)
+                        : _border,
+                    width: unreplied.isNotEmpty ? 1.5 : 1,
+                  ),
+                ),
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: (unreplied.isNotEmpty ? kAmber : kGreen)
+                            .withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        unreplied.isNotEmpty
+                            ? Icons.mark_chat_unread_rounded
+                            : Icons.check_circle_rounded,
+                        color: unreplied.isNotEmpty ? kAmber : kGreen,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            unreplied.isEmpty
+                                ? 'All reviews answered'
+                                : '${unreplied.length} review${unreplied.length == 1 ? '' : 's'} need a reply',
+                            style: TextStyle(
+                              color: _text,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            unreplied.isEmpty
+                                ? 'Keep it up — customers love responses'
+                                : 'Tap to reply and boost your seller score',
+                            style: TextStyle(
+                              color: _muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: _muted,
+                      size: 22,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Total reviews: ${all.length}  ·  '
+                'Unreplied: ${unreplied.length}',
+                style: TextStyle(color: _muted, fontSize: 11.5),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildSectionHeader(String title, {String? trailing}) {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 12),

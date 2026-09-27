@@ -167,8 +167,9 @@ class _NotificationWidgetState extends State<NotificationWidget> {
     // ── 2. ORDER ────────────────────────────────────────────
     // Only match titles that START with order keywords.
     // This prevents "Welcome to ZanNext!" (body has "order") from misrouting.
+    // 🎯 STRICT order match — must START with exact order phrase.
+    // Prevents "Welcome to ZanNext! (Save 20% on your first order)" misroute.
     final looksLikeOrder = type == 'order' ||
-        title.startsWith('order') ||
         title.startsWith('new order') ||
         title.startsWith('order placed') ||
         title.startsWith('order received') ||
@@ -177,8 +178,8 @@ class _NotificationWidgetState extends State<NotificationWidget> {
         title.startsWith('order shipped') ||
         title.startsWith('order delivered') ||
         title.startsWith('order on the way') ||
-        title.contains('received your order') ||
-        title.contains('placed your order');
+        title.startsWith('your order') ||
+        title == 'order';
 
     if (looksLikeOrder) {
       final isSellerSide = title.contains('received') ||
@@ -919,15 +920,22 @@ class _NotificationWidgetState extends State<NotificationWidget> {
           return;
 
         case NotifyFilter.system:
-          // Check if this is really an order notification
-          final t = record.title.toLowerCase();
-          final b = record.notificationText.toLowerCase();
-          final isOrder =
-              t.contains('order') || b.contains('order') ||
-              t.contains('received') || b.contains('received');
+          // STRICT order check — title must START with an order phrase.
+          // (Prevents "Welcome to ZanNext! ... first order" from misrouting)
+          final t = record.title.toLowerCase().trim();
+          final isOrder = t.startsWith('new order') ||
+              t.startsWith('order placed') ||
+              t.startsWith('order received') ||
+              t.startsWith('order confirmed') ||
+              t.startsWith('order cancelled') ||
+              t.startsWith('order shipped') ||
+              t.startsWith('order delivered') ||
+              t.startsWith('order on the way') ||
+              t.startsWith('your order') ||
+              t == 'order';
           if (isOrder) {
-            final isSellerSide = t.contains('received') ||
-                t.contains('new order');
+            final isSellerSide =
+                t.contains('received') || t.contains('new order');
             context.pushNamed(
               OrderDetailsWidget.routeName,
               queryParameters: {
@@ -937,6 +945,7 @@ class _NotificationWidgetState extends State<NotificationWidget> {
             );
             return;
           }
+          // Anything else → full notification detail page
           await _openNotification(record);
           return;
 

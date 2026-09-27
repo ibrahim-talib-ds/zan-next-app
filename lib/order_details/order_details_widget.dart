@@ -162,17 +162,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
         }).toList();
 
         if (orders.isEmpty) {
-          return _stateMessage(
-            icon: isBuyerTab
-                ? Icons.shopping_bag_outlined
-                : Icons.storefront_outlined,
-            title: isBuyerTab
-                ? 'No orders yet'
-                : 'No incoming orders yet',
-            subtitle: isBuyerTab
-                ? 'Your purchases will appear here.'
-                : 'When buyers order your products, they will show up here.',
-          );
+          return _emptyOrdersState(isBuyerTab);
         }
 
         return RefreshIndicator(
@@ -1049,6 +1039,120 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   // ═══════════════════════════════════════════════════════════
   // STATE MESSAGE
   // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════
+  // EMPTY ORDERS STATE — friendly with CTA button
+  // ═══════════════════════════════════════════════════════════
+  Widget _emptyOrdersState(bool isBuyerTab) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    kGreen.withOpacity(0.15),
+                    kGreen.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isBuyerTab
+                    ? Icons.shopping_bag_outlined
+                    : Icons.storefront_outlined,
+                color: kGreen,
+                size: 48,
+              ),
+            ),
+            const SizedBox(height: 22),
+            Text(
+              isBuyerTab ? 'No orders yet' : 'No incoming orders yet',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _text,
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isBuyerTab
+                  ? "Start your first order — browse products\nand shop with trusted sellers."
+                  : "When buyers order your products,\nthey will show up here.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _muted,
+                fontSize: 13.5,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 26),
+            GestureDetector(
+              onTap: () {
+                try {
+                  context.pushNamed(
+                    isBuyerTab
+                        ? HomeWidget.routeName
+                        : SelectAdWidget.routeName,
+                  );
+                } catch (_) {}
+              },
+              child: Container(
+                height: 52,
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [kGreen, kGreenDeep],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: kGreen.withOpacity(0.35),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isBuyerTab
+                          ? Icons.storefront_rounded
+                          : Icons.add_circle_outline_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      isBuyerTab ? 'Start Shopping' : 'Add a Product',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
   Widget _stateMessage({
     required IconData icon,
     required String title,

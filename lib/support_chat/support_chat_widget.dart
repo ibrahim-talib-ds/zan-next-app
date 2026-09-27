@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '/auth/firebase_auth/auth_util.dart';
+import '/services/notification_sender.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
@@ -722,6 +723,55 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
   // ═══════════════════════════════════════════════════════════
   // SEND
   // ═══════════════════════════════════════════════════════════
+  Future<void> _sendSupportPush({
+    required DocumentReference ref,
+    required String senderType,
+    required String text,
+    required String userName,
+  }) async {
+    try {
+      final preview = text.length > 60 ? '${text.substring(0, 60)}…' : text;
+
+      if (senderType == 'user') {
+        // Notify every admin
+        final admins = await FirebaseFirestore.instance
+            .collection('users')
+            .where('isAdmin', isEqualTo: true)
+            .get();
+
+        for (final admin in admins.docs) {
+          await NotificationSender.sendToUser(
+            userRef: admin.reference,
+            title: 'New Support Message',
+            body: '$userName: $preview',
+            data: {
+              'route': 'SupportChat',
+              'threadId': ref.id,
+            },
+          );
+        }
+      } else {
+        // Admin replied → notify the user who owns the thread
+        final snap = await ref.get();
+        final data = snap.data() as Map<String, dynamic>?;
+        final userRef = data?['user_ref'] as DocumentReference?;
+        if (userRef != null) {
+          await NotificationSender.sendToUser(
+            userRef: userRef,
+            title: 'ZanNext Support',
+            body: preview,
+            data: {
+              'route': 'SupportChat',
+              'threadId': ref.id,
+            },
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('🔔 Support push failed: $e');
+    }
+  }
+
   Future<void> _send() async {
     final ref = _threadRef;
     if (ref == null) return;
@@ -772,6 +822,14 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
         'created_at': FieldValue.serverTimestamp(),
         'seen_by_admin': _isAdminView,
       });
+
+      // 🔔 Push notification
+      _sendSupportPush(
+        ref: ref,
+        senderType: senderType,
+        text: text,
+        userName: currentUserDisplayName,
+      );
 
       _model.textController?.clear();
       if (mounted) safeSetState(() {});
