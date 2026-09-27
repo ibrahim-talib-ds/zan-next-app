@@ -5,6 +5,8 @@ import '/components/dark_light_switch_small_widget.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/components/language_modal_widget.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/index.dart';
 import 'dart:math';
@@ -89,47 +91,55 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                       const SizedBox(height: 16),
                       _buildDeliveryStatus(),
                       const SizedBox(height: 24),
-                      _buildSection('General', [
+                      _buildSection(
+                        FFLocalizations.of(context).getText('profile_section_general'),
+                        [
                         _tile(
                           icon: Icons.person_outline_rounded,
-                          title: 'Edit Profile',
+                          title: FFLocalizations.of(context).getText('profile_edit_profile'),
                           onTap: () => context.pushNamed(ProfileEditWidget.routeName),
                         ),
                         _tile(
                           icon: Icons.luggage_rounded,
-                          title: 'My Orders',
+                          title: FFLocalizations.of(context).getText('profile_my_orders'),
                           onTap: () => context.pushNamed(OrderDetailsWidget.routeName),
                         ),
                         _tile(
                           icon: Icons.favorite_border_rounded,
-                          title: 'My Favorites',
+                          title: FFLocalizations.of(context).getText('profile_my_favorites'),
                           onTap: () => context.pushNamed(WishlistWidget.routeName),
                         ),
                       ]),
                       const SizedBox(height: 24),
-                      _buildSection('Account Settings', [
+                      _buildSection(
+                        FFLocalizations.of(context).getText('profile_section_account'),
+                        [
                         _tile(
                           icon: Icons.location_on_outlined,
-                          title: 'Addresses',
+                          title: FFLocalizations.of(context).getText('profile_addresses'),
                           onTap: () => context.pushNamed(MyAdressWidget.routeName),
                         ),
                         _tile(
                           icon: Icons.notifications_outlined,
-                          title: 'Notifications',
+                          title: FFLocalizations.of(context).getText('profile_notifications'),
                           onTap: () => context.pushNamed(NotificationWidget.routeName),
                         ),
                         _tile(
                           icon: Icons.language_outlined,
-                          title: 'Language',
-                          trailing: 'Swahili',
+                          title: FFLocalizations.of(context).getText('profile_language'),
+                          trailing: FFLocalizations.of(context).languageCode == 'sw'
+                              ? FFLocalizations.of(context).getText('profile_language_kiswahili')
+                              : FFLocalizations.of(context).getText('profile_language_english'),
                           onTap: () => _showLanguageSheet(),
                         ),
                       ]),
                       const SizedBox(height: 24),
-                      _buildSection('Other', [
+                      _buildSection(
+                        FFLocalizations.of(context).getText('profile_section_other'),
+                        [
                         _tile(
                           icon: Icons.star_rate_outlined,
-                          title: 'Rate the App',
+                          title: FFLocalizations.of(context).getText('profile_rate_app'),
                           onTap: () => context.pushNamed(
                             RatePageWidget.routeName,
                             queryParameters: {
@@ -139,7 +149,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                         ),
                         _tile(
                           icon: Icons.person_add_outlined,
-                          title: 'Invite Friends',
+                          title: FFLocalizations.of(context).getText('profile_invite_friends'),
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Share coming soon')),
@@ -148,15 +158,17 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                         ),
                       ]),
                       const SizedBox(height: 24),
-                      _buildSection('App & Legal', [
+                      _buildSection(
+                        FFLocalizations.of(context).getText('profile_section_app_legal'),
+                        [
                         _tile(
                           icon: Icons.live_help_outlined,
-                          title: 'Help Center',
+                          title: FFLocalizations.of(context).getText('profile_help_center'),
                           onTap: () => context.pushNamed(HelpCenterWidget.routeName),
                         ),
                         _tile(
                           icon: Icons.info_outlined,
-                          title: 'About the App',
+                          title: FFLocalizations.of(context).getText('profile_about_app'),
                           trailing: '1.02.135',
                           onTap: () => context.pushNamed(AboutAppWidget.routeName),
                         ),
@@ -175,19 +187,21 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildSection('Admin Tools', [
+                              _buildSection(
+                                FFLocalizations.of(context).getText('profile_section_admin'),
+                                [
                                 _tile(
                                   icon: Icons.support_agent_rounded,
-                                  title: 'Support Inbox',
-                                  trailing: 'Admin',
+                                  title: FFLocalizations.of(context).getText('profile_support_inbox'),
+                                  trailing: FFLocalizations.of(context).getText('profile_admin_badge'),
                                   onTap: () => context.pushNamed(
                                     AdminSupportInboxWidget.routeName,
                                   ),
                                 ),
                                 _tile(
                                   icon: Icons.dashboard_customize_outlined,
-                                  title: 'Admin Dashboard',
-                                  trailing: 'Admin',
+                                  title: FFLocalizations.of(context).getText('profile_admin_dashboard'),
+                                  trailing: FFLocalizations.of(context).getText('profile_admin_badge'),
                                   onTap: () => context.pushNamed(
                                     AdminDashboardWidget.routeName,
                                   ),
@@ -240,9 +254,9 @@ class _ProfileWidgetState extends State<ProfileWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Text(
-            'Profile',
-            style: TextStyle(
+          Text(
+            FFLocalizations.of(context).getText('profile_title'),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -321,7 +335,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   AuthUserStreamWidget(
                     builder: (context) => Text(
                       currentUserDisplayName.isEmpty
-                          ? 'User'
+                          ? FFLocalizations.of(context).getText('profile_user_fallback')
                           : currentUserDisplayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -334,7 +348,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    valueOrDefault<String>(currentUserEmail, 'no email'),
+                    valueOrDefault<String>(currentUserEmail, FFLocalizations.of(context).getText('profile_no_email')),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: _muted, fontSize: 12.5),
@@ -381,7 +395,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
               icon: Icons.add_circle_outline_rounded,
               iconBg: const Color(0xFFE8F5EE),
               iconColor: const Color(0xFF1A6B4A),
-              label: 'Add Product',
+              label: FFLocalizations.of(context).getText('profile_quick_add_product'),
               onTap: () => context.pushNamed(SelectAdWidget.routeName),
             ),
           ),
@@ -391,7 +405,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
               icon: Icons.list_alt_rounded,
               iconBg: const Color(0xFFE8F0FF),
               iconColor: const Color(0xFF3D5AFE),
-              label: 'My Products',
+              label: FFLocalizations.of(context).getText('profile_quick_my_products'),
               onTap: () => context.pushNamed(SellerDashbordWidget.routeName),
             ),
           ),
@@ -401,7 +415,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
               icon: Icons.local_shipping_outlined,
               iconBg: const Color(0xFFFFF3E0),
               iconColor: const Color(0xFFFF8F00),
-              label: 'Orders',
+              label: FFLocalizations.of(context).getText('profile_quick_orders'),
               onTap: () => context.pushNamed(OrderDetailsWidget.routeName),
             ),
           ),
@@ -502,7 +516,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'No active orders',
+                          FFLocalizations.of(context).getText('profile_no_active_orders'),
                           style: TextStyle(
                             color: _text,
                             fontSize: 14,
@@ -511,7 +525,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Your orders will appear here',
+                          FFLocalizations.of(context).getText('profile_orders_appear_here'),
                           style: TextStyle(color: _muted, fontSize: 12),
                         ),
                       ],
@@ -597,7 +611,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          order.productName ?? 'Order',
+                          order.productName ?? FFLocalizations.of(context).getText('profile_order_fallback'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -817,39 +831,26 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // LANGUAGE SHEET (placeholder)
+  // LANGUAGE SHEET — same widget as login page
   // ═══════════════════════════════════════════════════════════
-  void _showLanguageSheet() {
-    showModalBottomSheet(
+  Future<void> _showLanguageSheet() async {
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       context: context,
-      backgroundColor: _card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Language',
-                style: TextStyle(
-                  color: _text,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                )),
-            const SizedBox(height: 12),
-            ListTile(
-              title: Text('Swahili', style: TextStyle(color: _text)),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              title: Text('English', style: TextStyle(color: _text)),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      ),
-    );
+      builder: (context) {
+        return GestureDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus();
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
+          child: Padding(
+            padding: MediaQuery.viewInsetsOf(context),
+            child: const LanguageModalWidget(),
+          ),
+        );
+      },
+    ).then((value) => safeSetState(() {}));
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -876,7 +877,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
             ),
           ).then((value) => safeSetState(() {}));
         },
-        text: 'Logout',
+        text: FFLocalizations.of(context).getText('profile_logout'),
         icon: const Icon(Icons.logout_rounded, size: 20),
         options: FFButtonOptions(
           width: double.infinity,

@@ -1,6 +1,7 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
@@ -150,7 +151,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                   Column(
                     children: [
                       Text(
-                        'Create Account',
+                        FFLocalizations.of(context).getText('signup_title'),
                         textAlign: TextAlign.center,
                         style: theme.headlineMedium.override(
                           font: GoogleFonts.interTight(
@@ -166,7 +167,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Join ZanNext in a few seconds',
+                        FFLocalizations.of(context).getText('signup_subtitle'),
                         textAlign: TextAlign.center,
                         style: theme.bodyMedium.override(
                           font: GoogleFonts.inter(
@@ -215,13 +216,13 @@ class _SignUpWidgetState extends State<SignUpWidget>
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // Name
-                            _fieldLabel(context, 'Full name'),
+                            _fieldLabel(context, FFLocalizations.of(context).getText('signup_label_full_name')),
                             const SizedBox(height: 8),
                             _textField(
                               context,
                               controller: _model.txtnameTextController!,
                               focusNode: _model.txtnameFocusNode!,
-                              hint: 'Your name',
+                              hint: FFLocalizations.of(context).getText('signup_hint_name'),
                               icon: Icons.person_outline_rounded,
                               textCapitalization: TextCapitalization.words,
                               validator: _model
@@ -231,13 +232,13 @@ class _SignUpWidgetState extends State<SignUpWidget>
                             const SizedBox(height: 16),
 
                             // Phone
-                            _fieldLabel(context, 'Phone'),
+                            _fieldLabel(context, FFLocalizations.of(context).getText('signup_label_phone')),
                             const SizedBox(height: 8),
                             _textField(
                               context,
                               controller: _model.txtphoneTextController!,
                               focusNode: _model.txtphoneFocusNode!,
-                              hint: '+255 ...',
+                              hint: FFLocalizations.of(context).getText('signup_hint_phone'),
                               icon: Icons.phone_outlined,
                               keyboardType: TextInputType.phone,
                               autofillHints: const [
@@ -250,13 +251,13 @@ class _SignUpWidgetState extends State<SignUpWidget>
                             const SizedBox(height: 16),
 
                             // Email
-                            _fieldLabel(context, 'Email'),
+                            _fieldLabel(context, FFLocalizations.of(context).getText('signup_label_email')),
                             const SizedBox(height: 8),
                             _textField(
                               context,
                               controller: _model.txtemailTextController!,
                               focusNode: _model.txtemailFocusNode!,
-                              hint: 'you@example.com',
+                              hint: FFLocalizations.of(context).getText('signup_hint_email'),
                               icon: Icons.alternate_email_rounded,
                               keyboardType: TextInputType.emailAddress,
                               autofillHints: const [AutofillHints.email],
@@ -267,7 +268,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                             const SizedBox(height: 16),
 
                             // Password
-                            _fieldLabel(context, 'Password'),
+                            _fieldLabel(context, FFLocalizations.of(context).getText('signup_label_password')),
                             const SizedBox(height: 8),
                             _passwordField(context),
                             const SizedBox(height: 16),
@@ -304,7 +305,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                                     text: TextSpan(
                                       children: [
                                         TextSpan(
-                                          text: 'I agree to the ',
+                                          text: FFLocalizations.of(context).getText('signup_agree_prefix'),
                                           style: theme.bodySmall.override(
                                             font: GoogleFonts.inter(
                                               fontWeight: FontWeight.w400,
@@ -321,7 +322,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                                           ),
                                         ),
                                         TextSpan(
-                                          text: 'Terms of Service',
+                                          text: FFLocalizations.of(context).getText('signup_terms'),
                                           style: theme.bodySmall.override(
                                             font: GoogleFonts.inter(
                                               fontWeight: FontWeight.w600,
@@ -338,7 +339,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                                           ),
                                         ),
                                         TextSpan(
-                                          text: ' and ',
+                                          text: FFLocalizations.of(context).getText('signup_and'),
                                           style: theme.bodySmall.override(
                                             font: GoogleFonts.inter(
                                               fontWeight: FontWeight.w400,
@@ -355,7 +356,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                                           ),
                                         ),
                                         TextSpan(
-                                          text: 'Privacy Policy',
+                                          text: FFLocalizations.of(context).getText('signup_privacy'),
                                           style: theme.bodySmall.override(
                                             font: GoogleFonts.inter(
                                               fontWeight: FontWeight.w600,
@@ -434,7 +435,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                                   text: TextSpan(
                                     children: [
                                       TextSpan(
-                                        text: 'Already have an account?  ',
+                                        text: FFLocalizations.of(context).getText('signup_have_account'),
                                         style: theme.bodyMedium.override(
                                           font: GoogleFonts.inter(
                                             fontWeight: FontWeight.w400,
@@ -450,7 +451,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
                                         ),
                                       ),
                                       TextSpan(
-                                        text: 'Sign In',
+                                        text: FFLocalizations.of(context).getText('signup_sign_in_link'),
                                         style: theme.bodyMedium.override(
                                           font: GoogleFonts.inter(
                                             fontWeight: FontWeight.w700,
@@ -696,7 +697,7 @@ class _SignUpWidgetState extends State<SignUpWidget>
 
               context.goNamedAuth(HomeWidget.routeName, context.mounted);
             },
-      text: 'Create Account',
+      text: FFLocalizations.of(context).getText('signup_button'),
       options: FFButtonOptions(
         width: double.infinity,
         height: 52,

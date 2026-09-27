@@ -1,5 +1,6 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
@@ -95,7 +96,7 @@ class _LogoutWidgetState extends State<LogoutWidget> {
 
               // ---------- Title ----------
               Text(
-                'Log out?',
+                FFLocalizations.of(context).getText('logout_title'),
                 textAlign: TextAlign.center,
                 style: theme.headlineSmall.override(
                   font: GoogleFonts.interTight(
@@ -115,7 +116,7 @@ class _LogoutWidgetState extends State<LogoutWidget> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Are you sure you want to log out of your account?',
+                  FFLocalizations.of(context).getText('logout_body'),
                   textAlign: TextAlign.center,
                   style: theme.bodyMedium.override(
                     font: GoogleFonts.inter(
@@ -140,7 +141,7 @@ class _LogoutWidgetState extends State<LogoutWidget> {
                   Expanded(
                     child: FFButtonWidget(
                       onPressed: () => Navigator.pop(context),
-                      text: 'Cancel',
+                      text: FFLocalizations.of(context).getText('logout_cancel'),
                       options: FFButtonOptions(
                         width: double.infinity,
                         height: 48,
@@ -185,7 +186,7 @@ class _LogoutWidgetState extends State<LogoutWidget> {
                           context.mounted,
                         );
                       },
-                      text: 'Log out',
+                      text: FFLocalizations.of(context).getText('logout_confirm'),
                       options: FFButtonOptions(
                         width: double.infinity,
                         height: 48,

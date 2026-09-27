@@ -2,6 +2,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import 'package:flutter/material.dart';
 
 import 'add_newadress_model.dart';
@@ -94,11 +95,11 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
     if (_model.isSaving) return;
     if (!(_model.formKey.currentState?.validate() ?? false)) return;
     if (_model.selectedLabel == null) {
-      _snack('Chagua aina ya anwani', error: true);
+      _snack(FFLocalizations.of(context).getText('ana_error_pick_type'), error: true);
       return;
     }
     if (_model.selectedCity == null) {
-      _snack('Chagua mji / mkoa', error: true);
+      _snack(FFLocalizations.of(context).getText('ana_error_pick_city'), error: true);
       return;
     }
 
@@ -117,14 +118,14 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
             notes: _model.notesTextController!.text.trim(),
           ));
       if (!mounted) return;
-      _snack('Anwani imehifadhiwa kikamilifu!');
+      _snack(FFLocalizations.of(context).getText('ana_saved'));
       await Future.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
       context.safePop();
     } catch (e) {
       if (!mounted) return;
       safeSetState(() => _model.isSaving = false);
-      _snack('Imeshindwa kuhifadhi: $e', error: true);
+      _snack('${FFLocalizations.of(context).getText('ana_save_failed')}$e', error: true);
     }
   }
 
@@ -159,19 +160,19 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
                       children: [
                         _buildLabelPicker(),
                         const SizedBox(height: 24),
-                        _buildSectionTitle('Location'),
+                        _buildSectionTitle(FFLocalizations.of(context).getText('ana_section_location')),
                         const SizedBox(height: 10),
                         _buildCityPicker(),
                         const SizedBox(height: 16),
                         _buildDistrictField(),
                         const SizedBox(height: 24),
-                        _buildSectionTitle('Address Details'),
+                        _buildSectionTitle(FFLocalizations.of(context).getText('ana_section_details')),
                         const SizedBox(height: 10),
                         _buildStreetField(),
                         const SizedBox(height: 16),
                         _buildLandmarkField(),
                         const SizedBox(height: 24),
-                        _buildSectionTitle('Contact & Building'),
+                        _buildSectionTitle(FFLocalizations.of(context).getText('ana_section_contact')),
                         const SizedBox(height: 10),
                         Row(
                           children: [
@@ -181,7 +182,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
                           ],
                         ),
                         const SizedBox(height: 24),
-                        _buildSectionTitle('Delivery Instructions'),
+                        _buildSectionTitle(FFLocalizations.of(context).getText('ana_section_instructions')),
                         const SizedBox(height: 10),
                         _buildNotesField(),
                         const SizedBox(height: 32),
@@ -229,18 +230,18 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Add New Address',
-                  style: TextStyle(
+              Text(FFLocalizations.of(context).getText('ana_header_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   )),
-              SizedBox(height: 2),
-              Text('Where should we deliver?',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('ana_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -282,9 +283,9 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
   // ═══════════════════════════════════════════════════════════
   Widget _buildLabelPicker() {
     final options = [
-      ('Home', Icons.home_rounded),
-      ('Office', Icons.work_outline_rounded),
-      ('Other', Icons.location_on_outlined),
+      (FFLocalizations.of(context).getText('ana_label_home'), Icons.home_rounded),
+      (FFLocalizations.of(context).getText('ana_label_office'), Icons.work_outline_rounded),
+      (FFLocalizations.of(context).getText('ana_label_other'), Icons.location_on_outlined),
     ];
 
     return Column(
@@ -302,7 +303,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Address Type',
+              FFLocalizations.of(context).getText('ana_label_type'),
               style: TextStyle(
                 color: _text,
                 fontSize: 14,
@@ -385,7 +386,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
             children: [
               Icon(Icons.location_city_outlined, size: 18, color: _muted),
               const SizedBox(width: 10),
-              Text('Select city or region',
+              Text(FFLocalizations.of(context).getText('ana_select_city'),
                   style: TextStyle(color: _muted, fontSize: 14)),
             ],
           ),
@@ -413,7 +414,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
   Widget _buildDistrictField() => _buildTextField(
         controller: _model.districtTextController!,
         focusNode: _model.districtFocusNode!,
-        hint: 'Wilaya au Kata',
+        hint: FFLocalizations.of(context).getText('ana_hint_district'),
         icon: Icons.map_outlined,
         validator: _model.districtTextControllerValidator,
       );
@@ -421,7 +422,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
   Widget _buildStreetField() => _buildTextField(
         controller: _model.streetTextController!,
         focusNode: _model.streetFocusNode!,
-        hint: 'Jina la mtaa',
+        hint: FFLocalizations.of(context).getText('ana_hint_street'),
         icon: Icons.signpost_outlined,
         validator: _model.streetTextControllerValidator,
       );
@@ -429,7 +430,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
   Widget _buildLandmarkField() => _buildTextField(
         controller: _model.landmarkTextController!,
         focusNode: _model.landmarkFocusNode!,
-        hint: 'Sehemu maarufu iliyo karibu',
+        hint: FFLocalizations.of(context).getText('ana_hint_landmark'),
         icon: Icons.place_outlined,
         validator: _model.landmarkTextControllerValidator,
       );
@@ -437,7 +438,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
   Widget _buildPhoneField() => _buildTextField(
         controller: _model.phoneTextController!,
         focusNode: _model.phoneFocusNode!,
-        hint: 'Namba ya simu',
+        hint: FFLocalizations.of(context).getText('ana_hint_phone'),
         icon: Icons.phone_outlined,
         keyboardType: TextInputType.phone,
         validator: _model.phoneTextControllerValidator,
@@ -446,7 +447,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
   Widget _buildHouseNoField() => _buildTextField(
         controller: _model.houseNoTextController!,
         focusNode: _model.houseNoFocusNode!,
-        hint: 'Namba ya nyumba',
+        hint: FFLocalizations.of(context).getText('ana_hint_house'),
         icon: Icons.home_outlined,
         validator: _model.houseNoTextControllerValidator,
       );
@@ -454,7 +455,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
   Widget _buildNotesField() => _buildTextField(
         controller: _model.notesTextController!,
         focusNode: _model.notesFocusNode!,
-        hint: 'Maelekezo zaidi ya kufika (mfano: nyumba ya rangi ya bluu)',
+        hint: FFLocalizations.of(context).getText('ana_hint_notes'),
         icon: Icons.notes_rounded,
         maxLines: 5,
         minLines: 4,
@@ -553,15 +554,15 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
                           AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Row(
+                : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_rounded,
+                      const Icon(Icons.check_rounded,
                           color: Colors.white, size: 18),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'Save Address',
-                        style: TextStyle(
+                        FFLocalizations.of(context).getText('ana_save'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,

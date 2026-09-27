@@ -2,6 +2,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -100,18 +101,18 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Reports',
-                  style: TextStyle(
+              Text(FFLocalizations.of(context).getText('ar_header_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   )),
-              SizedBox(height: 2),
-              Text('Moderation queue',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('ar_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -131,7 +132,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
                   color: kRed.withOpacity(0.85),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text('$n pending',
+                child: Text('$n${FFLocalizations.of(context).getText('ar_pending_suffix')}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10.5,
@@ -150,10 +151,10 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
   // ═══════════════════════════════════════════════════════════
   Widget _buildFilterTabs() {
     final tabs = [
-      ('pending', 'Pending', kAmber),
-      ('resolved', 'Resolved', kGreen),
-      ('dismissed', 'Dismissed', kMuted),
-      ('all', 'All', kBlue),
+      ('pending', FFLocalizations.of(context).getText('ar_tab_pending'), kAmber),
+      ('resolved', FFLocalizations.of(context).getText('ar_tab_resolved'), kGreen),
+      ('dismissed', FFLocalizations.of(context).getText('ar_tab_dismissed'), kMuted),
+      ('all', FFLocalizations.of(context).getText('ar_tab_all'), kBlue),
     ];
 
     return Padding(
@@ -216,7 +217,8 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _state(Icons.error_outline_rounded,
-              'Could not load reports', '${snapshot.error}', kRed);
+              FFLocalizations.of(context).getText('ar_could_not_load'),
+              '${snapshot.error}', kRed);
         }
         if (!snapshot.hasData) {
           return const Center(
@@ -236,11 +238,11 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
           return _state(
             Icons.check_circle_outline_rounded,
             _model.activeFilter == 'pending'
-                ? 'No pending reports'
-                : 'Nothing here',
+                ? FFLocalizations.of(context).getText('ar_empty_pending_title')
+                : FFLocalizations.of(context).getText('ar_empty_other_title'),
             _model.activeFilter == 'pending'
-                ? 'All caught up! Great job.'
-                : 'Try a different filter above.',
+                ? FFLocalizations.of(context).getText('ar_empty_pending_sub')
+                : FFLocalizations.of(context).getText('ar_empty_other_sub'),
             kGreen,
           );
         }
@@ -266,11 +268,11 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
     final data = doc.data() as Map<String, dynamic>;
     final priority = (data['priority'] ?? 'low').toString();
     final status = (data['status'] ?? 'pending').toString();
-    final reasonLabel = (data['reason_label'] ?? 'Unknown').toString();
+    final reasonLabel = (data['reason_label'] ?? FFLocalizations.of(context).getText('ar_unknown')).toString();
     final reasonId = (data['reason_id'] ?? 'other').toString();
     final notes = (data['notes'] ?? '').toString();
-    final reporterName = (data['reporter_name'] ?? 'Anonymous').toString();
-    final targetLabel = (data['target_label'] ?? 'Unknown').toString();
+    final reporterName = (data['reporter_name'] ?? FFLocalizations.of(context).getText('ar_anonymous')).toString();
+    final targetLabel = (data['target_label'] ?? FFLocalizations.of(context).getText('ar_unknown')).toString();
     final targetType = (data['target_type'] ?? 'product').toString();
     final createdAt = (data['created_at'] as Timestamp?)?.toDate();
 
@@ -305,7 +307,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
           Row(
             children: [
               _pill(
-                '${reasonId == 'fake' ? 'FAKE' : priority.toUpperCase()} · $status',
+                '${reasonId == 'fake' ? FFLocalizations.of(context).getText('ar_badge_fake') : priority.toUpperCase()} · $status',
                 statusColor,
               ),
               const Spacer(),
@@ -355,7 +357,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Target: $targetLabel',
+                      '${FFLocalizations.of(context).getText('ar_target_prefix')}$targetLabel',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: _muted, fontSize: 12),
@@ -368,7 +370,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
                         const SizedBox(width: 3),
                         Flexible(
                           child: Text(
-                            'Reported by $reporterName',
+                            '${FFLocalizations.of(context).getText('ar_reported_by_prefix')}$reporterName',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -414,7 +416,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
                 Expanded(
                   child: _actionBtn(
                     icon: Icons.check_circle_outline_rounded,
-                    label: 'Resolve',
+                    label: FFLocalizations.of(context).getText('ar_action_resolve'),
                     color: kGreen,
                     onTap: () => _resolve(doc, 'resolved'),
                   ),
@@ -423,7 +425,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
                 Expanded(
                   child: _actionBtn(
                     icon: Icons.close_rounded,
-                    label: 'Dismiss',
+                    label: FFLocalizations.of(context).getText('ar_action_dismiss'),
                     color: kMuted,
                     onTap: () => _resolve(doc, 'dismissed'),
                   ),
@@ -444,7 +446,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
                     color: statusColor, size: 14),
                 const SizedBox(width: 5),
                 Text(
-                  'Marked as $status',
+                  '${FFLocalizations.of(context).getText('ar_marked_prefix')}$status',
                   style: TextStyle(
                     color: statusColor,
                     fontSize: 12,
@@ -472,11 +474,11 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
       });
       if (!mounted) return;
       _snack(newStatus == 'resolved'
-          ? 'Report resolved'
-          : 'Report dismissed');
+          ? FFLocalizations.of(context).getText('ar_resolved')
+          : FFLocalizations.of(context).getText('ar_dismissed'));
     } catch (e) {
       if (!mounted) return;
-      _snack('Failed: $e', error: true);
+      _snack('${FFLocalizations.of(context).getText('ar_failed')}$e', error: true);
     }
   }
 
@@ -486,7 +488,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
     final targetType = (data['target_type'] ?? 'product').toString();
 
     if (targetRef == null) {
-      _snack('Target reference missing', error: true);
+      _snack(FFLocalizations.of(context).getText('ar_target_missing'), error: true);
       return;
     }
 
@@ -494,13 +496,13 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: _card,
-        title: Text('Delete $targetType?',
+        title: Text('${FFLocalizations.of(context).getText('ar_delete_title_prefix')}$targetType${FFLocalizations.of(context).getText('ar_delete_title_suffix')}',
             style: TextStyle(
               color: _text,
               fontWeight: FontWeight.w700,
             )),
         content: Text(
-          'This will permanently remove the $targetType from the app. The reporter will be notified.',
+          '${FFLocalizations.of(context).getText('ar_delete_body_prefix')}$targetType${FFLocalizations.of(context).getText('ar_delete_body_suffix')}',
           style: TextStyle(color: _muted, fontSize: 13.5),
         ),
         shape: RoundedRectangleBorder(
@@ -509,12 +511,12 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('Cancel', style: TextStyle(color: _muted)),
+            child: Text(FFLocalizations.of(context).getText('ar_cancel'), style: TextStyle(color: _muted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text(
-              'Delete',
+            child: Text(
+              FFLocalizations.of(context).getText('ar_delete'),
               style: TextStyle(
                 color: kRed,
                 fontWeight: FontWeight.w700,
@@ -536,7 +538,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
         'action_taken': 'deleted',
       });
       if (!mounted) return;
-      _snack('$targetType deleted and report resolved');
+      _snack('$targetType${FFLocalizations.of(context).getText('ar_deleted_suffix')}');
     } catch (e) {
       if (!mounted) return;
       _snack('Failed: $e', error: true);
@@ -623,7 +625,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
 
   String _timeAgo(DateTime when) {
     final d = DateTime.now().difference(when);
-    if (d.inSeconds < 60) return 'now';
+    if (d.inSeconds < 60) return FFLocalizations.of(context).getText('ar_time_now');
     if (d.inMinutes < 60) return '${d.inMinutes}m';
     if (d.inHours < 24) return '${d.inHours}h';
     if (d.inDays < 7) return '${d.inDays}d';

@@ -3,6 +3,7 @@ import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/services/tz_locations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -112,7 +113,7 @@ class _LocationModalWidgetState extends State<LocationModalWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Location set to $displayCity'),
+          content: Text('${FFLocalizations.of(context).getText('loc_saved_prefix')}$displayCity'),
           backgroundColor: kGreen,
         ),
       );
@@ -122,7 +123,7 @@ class _LocationModalWidgetState extends State<LocationModalWidget> {
       safeSetState(() => _model.saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Save failed: $e'),
+          content: Text('${FFLocalizations.of(context).getText('loc_save_failed')}$e'),
           backgroundColor: FlutterFlowTheme.of(context).error,
         ),
       );
@@ -154,9 +155,9 @@ class _LocationModalWidgetState extends State<LocationModalWidget> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _sectionLabel('Region'),
+                      _sectionLabel(FFLocalizations.of(context).getText('loc_section_region')),
                       _dropdown(
-                        hint: 'Select region',
+                        hint: FFLocalizations.of(context).getText('loc_hint_select_region'),
                         value: _model.selectedRegion,
                         items: kTanzaniaLocations.keys.toList(),
                         onChanged: (v) => safeSetState(() {
@@ -166,7 +167,7 @@ class _LocationModalWidgetState extends State<LocationModalWidget> {
                         }),
                       ),
                       const SizedBox(height: 14),
-                      _sectionLabel('District'),
+                      _sectionLabel(FFLocalizations.of(context).getText('loc_section_district')),
                       _dropdown(
                         hint: _model.selectedRegion == null
                             ? 'Select region first'
@@ -180,11 +181,11 @@ class _LocationModalWidgetState extends State<LocationModalWidget> {
                         }),
                       ),
                       const SizedBox(height: 14),
-                      _sectionLabel('Ward / Area'),
+                      _sectionLabel(FFLocalizations.of(context).getText('loc_section_ward')),
                       _dropdown(
                         hint: _model.selectedDistrict == null
-                            ? 'Select district first'
-                            : 'Select ward',
+                            ? FFLocalizations.of(context).getText('loc_hint_select_district_first')
+                            : FFLocalizations.of(context).getText('loc_hint_select_ward'),
                         value: _model.selectedWard,
                         items: _wards,
                         enabled: _model.selectedDistrict != null,
@@ -223,14 +224,14 @@ class _LocationModalWidgetState extends State<LocationModalWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Deliver to',
+                  Text(FFLocalizations.of(context).getText('loc_header_title'),
                       style: TextStyle(
                         color: _text,
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                       )),
                   const SizedBox(height: 4),
-                  Text('Pick your region, district and ward',
+                  Text(FFLocalizations.of(context).getText('loc_header_sub'),
                       style: TextStyle(color: _muted, fontSize: 13)),
                 ],
               ),
@@ -325,8 +326,8 @@ class _LocationModalWidgetState extends State<LocationModalWidget> {
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
-              : const Text('Save Location',
-                  style: TextStyle(
+              : Text(FFLocalizations.of(context).getText('loc_save_button'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,

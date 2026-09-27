@@ -1,6 +1,7 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/components/language_modal_widget.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
@@ -195,9 +196,7 @@ class _LogInWidgetState extends State<LogInWidget>
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  FFLocalizations.of(context).getText(
-                                    '06953fwp' /* Language */,
-                                  ),
+                                  FFLocalizations.of(context).getText('login_language'),
                                   style: theme.bodySmall.override(
                                     font: GoogleFonts.inter(
                                       fontWeight: FontWeight.w600,
@@ -250,7 +249,7 @@ class _LogInWidgetState extends State<LogInWidget>
                           .scale(begin: const Offset(0.7, 0.7)),
                       const SizedBox(height: 20),
                       Text(
-                        'Welcome back',
+                        FFLocalizations.of(context).getText('login_welcome_back'),
                         textAlign: TextAlign.center,
                         style: theme.headlineMedium.override(
                           font: GoogleFonts.interTight(
@@ -266,7 +265,7 @@ class _LogInWidgetState extends State<LogInWidget>
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Sign in to continue to ZanNext',
+                        FFLocalizations.of(context).getText('login_subtitle'),
                         textAlign: TextAlign.center,
                         style: theme.bodyMedium.override(
                           font: GoogleFonts.inter(
@@ -318,14 +317,14 @@ class _LogInWidgetState extends State<LogInWidget>
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                _fieldLabel(context, 'Email'),
+                                _fieldLabel(context, FFLocalizations.of(context).getText('login_label_email')),
                                 const SizedBox(height: 8),
                                 _textField(
                                   context,
                                   controller:
                                       _model.emailAddressTextController!,
                                   focusNode: _model.emailAddressFocusNode!,
-                                  hint: 'you@example.com',
+                                  hint: FFLocalizations.of(context).getText('login_hint_email'),
                                   icon: Icons.alternate_email_rounded,
                                   keyboardType: TextInputType.emailAddress,
                                   autofillHints: const [AutofillHints.email],
@@ -350,7 +349,7 @@ class _LogInWidgetState extends State<LogInWidget>
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                _fieldLabel(context, 'Password'),
+                                _fieldLabel(context, FFLocalizations.of(context).getText('login_label_password')),
                                 const SizedBox(height: 8),
                                 _passwordField(context),
                               ],
@@ -393,7 +392,7 @@ class _LogInWidgetState extends State<LogInWidget>
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Remember me',
+                                      FFLocalizations.of(context).getText('login_remember_me'),
                                       style: theme.bodySmall.override(
                                         font: GoogleFonts.inter(
                                           fontWeight: FontWeight.w500,
@@ -440,7 +439,7 @@ class _LogInWidgetState extends State<LogInWidget>
                                   text: TextSpan(
                                     children: [
                                       TextSpan(
-                                        text: "Don't have an account?  ",
+                                        text: FFLocalizations.of(context).getText('login_no_account'),
                                         style: theme.bodyMedium.override(
                                           font: GoogleFonts.inter(
                                             fontWeight: FontWeight.w400,
@@ -456,7 +455,7 @@ class _LogInWidgetState extends State<LogInWidget>
                                         ),
                                       ),
                                       TextSpan(
-                                        text: 'Sign Up',
+                                        text: FFLocalizations.of(context).getText('login_sign_up_link'),
                                         style: theme.bodyMedium.override(
                                           font: GoogleFonts.inter(
                                             fontWeight: FontWeight.w700,
@@ -687,7 +686,7 @@ class _LogInWidgetState extends State<LogInWidget>
 
         context.goNamedAuth(HomeWidget.routeName, context.mounted);
       },
-      text: 'Sign In',
+      text: FFLocalizations.of(context).getText('login_button'),
       options: FFButtonOptions(
         width: double.infinity,
         height: 52,

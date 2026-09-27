@@ -1,5 +1,6 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -104,18 +105,18 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Sellers',
-                  style: TextStyle(
+              Text(FFLocalizations.of(context).getText('as_header_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   )),
-              SizedBox(height: 2),
-              Text('Verify & manage',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('as_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -146,7 +147,7 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
           cursorColor: kGreen,
           decoration: InputDecoration(
             isDense: true,
-            hintText: 'Search by name or email',
+            hintText: FFLocalizations.of(context).getText('as_search_hint'),
             hintStyle: TextStyle(color: _muted, fontSize: 14),
             prefixIcon: Icon(Icons.search_rounded,
                 color: _muted, size: 20),
@@ -180,7 +181,8 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _state(Icons.error_outline_rounded,
-              'Could not load sellers', '${snapshot.error}', kRed);
+              FFLocalizations.of(context).getText('as_could_not_load'),
+              '${snapshot.error}', kRed);
         }
         if (!snapshot.hasData) {
           return const Center(
@@ -221,8 +223,8 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
         if (sellers.isEmpty) {
           return _state(
             Icons.storefront_outlined,
-            'No sellers yet',
-            'When users list products, they will appear here.',
+            FFLocalizations.of(context).getText('as_empty_title'),
+            FFLocalizations.of(context).getText('as_empty_sub'),
             kGreen,
           );
         }
@@ -267,7 +269,7 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
                 const Icon(Icons.storefront_outlined,
                     size: 13, color: kGreen),
                 const SizedBox(width: 5),
-                Text('$count sellers',
+                Text('$count${FFLocalizations.of(context).getText('as_count_suffix')}',
                     style: const TextStyle(
                       color: kGreen,
                       fontSize: 12,
@@ -283,7 +285,7 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
 
   Widget _sellerTile(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    final name = (data['display_name'] ?? 'User').toString();
+    final name = (data['display_name'] ?? FFLocalizations.of(context).getText('as_user_fallback')).toString();
     final email = (data['email'] ?? '').toString();
     final photo = _imgUrl((data['photo_url'] ?? '').toString());
     final isVerified = (data['isVerified'] as bool?) ?? false;
@@ -353,7 +355,7 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
                         ),
                         if (isAdmin) ...[
                           const SizedBox(width: 6),
-                          _pill('ADMIN', kBlue),
+                          _pill(FFLocalizations.of(context).getText('as_pill_admin'), kBlue),
                         ],
                       ],
                     ),
@@ -384,10 +386,10 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  if (isVerified) _pill('VERIFIED', kGreen),
+                  if (isVerified) _pill(FFLocalizations.of(context).getText('as_pill_verified'), kGreen),
                   if (isSuspended) ...[
                     const SizedBox(height: 4),
-                    _pill('SUSPENDED', kRed),
+                    _pill(FFLocalizations.of(context).getText('as_pill_suspended'), kRed),
                   ],
                 ],
               ),
@@ -403,7 +405,9 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
                   icon: isVerified
                       ? Icons.verified_rounded
                       : Icons.verified_outlined,
-                  label: isVerified ? 'Verified' : 'Verify',
+                  label: isVerified
+                      ? FFLocalizations.of(context).getText('as_btn_verified')
+                      : FFLocalizations.of(context).getText('as_btn_verify'),
                   color: kGreen,
                   active: isVerified,
                   onTap: () => _toggleVerified(doc, !isVerified),
@@ -415,7 +419,9 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
                   icon: isSuspended
                       ? Icons.lock_open_rounded
                       : Icons.block_rounded,
-                  label: isSuspended ? 'Unsuspend' : 'Suspend',
+                  label: isSuspended
+                      ? FFLocalizations.of(context).getText('as_btn_unsuspend')
+                      : FFLocalizations.of(context).getText('as_btn_suspend'),
                   color: kRed,
                   active: isSuspended,
                   onTap: () => _toggleSuspended(doc, !isSuspended),
@@ -530,10 +536,12 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
     try {
       await doc.reference.update({'isVerified': value});
       if (!mounted) return;
-      _snack(value ? 'Seller verified' : 'Verification removed');
+      _snack(value
+          ? FFLocalizations.of(context).getText('as_snack_verified')
+          : FFLocalizations.of(context).getText('as_snack_verify_removed'));
     } catch (e) {
       if (!mounted) return;
-      _snack('Failed: $e', error: true);
+      _snack('${FFLocalizations.of(context).getText('as_failed')}$e', error: true);
     }
   }
 
@@ -544,13 +552,13 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           backgroundColor: _card,
-          title: Text('Suspend seller?',
+          title: Text(FFLocalizations.of(context).getText('as_suspend_title'),
               style: TextStyle(
                 color: _text,
                 fontWeight: FontWeight.w700,
               )),
           content: Text(
-            'This seller will no longer be able to list new products.',
+            FFLocalizations.of(context).getText('as_suspend_body'),
             style: TextStyle(color: _muted, fontSize: 13.5),
           ),
           shape: RoundedRectangleBorder(
@@ -559,13 +567,13 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: Text('Cancel', style: TextStyle(color: _muted)),
+              child: Text(FFLocalizations.of(context).getText('as_cancel'), style: TextStyle(color: _muted)),
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text(
-                'Suspend',
-                style: TextStyle(
+              child: Text(
+                FFLocalizations.of(context).getText('as_suspend'),
+                style: const TextStyle(
                   color: kRed,
                   fontWeight: FontWeight.w700,
                 ),
@@ -580,10 +588,12 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
     try {
       await doc.reference.update({'isSuspended': value});
       if (!mounted) return;
-      _snack(value ? 'Seller suspended' : 'Seller unsuspended');
+      _snack(value
+          ? FFLocalizations.of(context).getText('as_snack_suspended')
+          : FFLocalizations.of(context).getText('as_snack_unsuspended'));
     } catch (e) {
       if (!mounted) return;
-      _snack('Failed: $e', error: true);
+      _snack('${FFLocalizations.of(context).getText('as_failed')}$e', error: true);
     }
   }
 

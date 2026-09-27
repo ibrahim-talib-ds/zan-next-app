@@ -4,6 +4,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/services/notification_sender.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -42,24 +43,24 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
   static const Color kAmber = Color(0xFFFFB300);
   static const String kSupportName = 'ZanNext Support';
 
-  /// User's quick replies
-  static const List<String> _userQuickReplies = [
-    'I need help with my order',
-    'When will my product arrive?',
-    'How do I become a seller?',
-    'How do I request a refund?',
-    'Payment issue',
+  /// User's quick replies (translated at call time)
+  List<String> get _userQuickReplies => [
+    FFLocalizations.of(context).getText('sc_qr_user_help'),
+    FFLocalizations.of(context).getText('sc_qr_user_arrive'),
+    FFLocalizations.of(context).getText('sc_qr_user_seller'),
+    FFLocalizations.of(context).getText('sc_qr_user_refund'),
+    FFLocalizations.of(context).getText('sc_qr_user_payment'),
   ];
 
-  /// Admin's quick replies
-  static const List<String> _adminQuickReplies = [
-    'Hello! How can I help you today?',
-    'Your order is on the way. ETA: 1-2 days.',
-    'Please share your order number.',
-    'Let me check that for you.',
-    'Sorry for the inconvenience.',
-    'Thanks for reaching out!',
-    'Your issue has been resolved. ✅',
+  /// Admin's quick replies (translated at call time)
+  List<String> get _adminQuickReplies => [
+    FFLocalizations.of(context).getText('sc_qr_admin_hello'),
+    FFLocalizations.of(context).getText('sc_qr_admin_eta'),
+    FFLocalizations.of(context).getText('sc_qr_admin_ordernum'),
+    FFLocalizations.of(context).getText('sc_qr_admin_check'),
+    FFLocalizations.of(context).getText('sc_qr_admin_sorry'),
+    FFLocalizations.of(context).getText('sc_qr_admin_thanks'),
+    FFLocalizations.of(context).getText('sc_qr_admin_resolved'),
   ];
 
   bool get _isAdminView => widget.threadId != null;
@@ -106,7 +107,7 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
     if (currentUserReference == null) {
       return Scaffold(
         backgroundColor: _bg,
-        body: const Center(child: Text('Please sign in first')),
+        body: Center(child: Text(FFLocalizations.of(context).getText('sc_sign_in_first'))),
       );
     }
 
@@ -149,12 +150,12 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
 
         if (_isAdminView) {
           final data = (snap.data?.data() as Map<String, dynamic>?) ?? {};
-          title = (data['user_name'] ?? 'User').toString();
-          subtitle = (data['user_email'] ?? 'Admin view').toString();
+          title = (data['user_name'] ?? FFLocalizations.of(context).getText('sc_user_fallback')).toString();
+          subtitle = (data['user_email'] ?? FFLocalizations.of(context).getText('sc_admin_view_sub')).toString();
           photoUrl = _imgUrl((data['user_photo'] ?? '').toString());
         } else {
-          title = kSupportName;
-          subtitle = 'Usually replies in minutes';
+          title = FFLocalizations.of(context).getText('sc_support_name');
+          subtitle = FFLocalizations.of(context).getText('sc_replies_minutes');
           photoUrl = '';
         }
 
@@ -241,9 +242,9 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
                                 color: Colors.white.withOpacity(0.25),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Text(
-                                'ADMIN',
-                                style: TextStyle(
+                              child: Text(
+                                FFLocalizations.of(context).getText('sc_admin_badge'),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 9,
                                   fontWeight: FontWeight.w900,
@@ -290,14 +291,14 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
                       color: Colors.white, size: 22),
                   onSelected: (v) => _handleMenu(v),
                   itemBuilder: (_) => _isAdminView
-                      ? const [
+                      ? [
                           PopupMenuItem(
                             value: 'user_profile',
                             child: Row(
                               children: [
-                                Icon(Icons.person_outline_rounded, size: 18),
-                                SizedBox(width: 8),
-                                Text('View user profile'),
+                                const Icon(Icons.person_outline_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(FFLocalizations.of(context).getText('sc_menu_view_profile')),
                               ],
                             ),
                           ),
@@ -305,22 +306,22 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
                             value: 'resolve',
                             child: Row(
                               children: [
-                                Icon(Icons.check_circle_outline_rounded,
+                                const Icon(Icons.check_circle_outline_rounded,
                                     size: 18),
-                                SizedBox(width: 8),
-                                Text('Mark resolved'),
+                                const SizedBox(width: 8),
+                                Text(FFLocalizations.of(context).getText('sc_menu_mark_resolved')),
                               ],
                             ),
                           ),
                         ]
-                      : const [
+                      : [
                           PopupMenuItem(
                             value: 'refresh',
                             child: Row(
                               children: [
-                                Icon(Icons.refresh_rounded, size: 18),
-                                SizedBox(width: 8),
-                                Text('Refresh'),
+                                const Icon(Icons.refresh_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(FFLocalizations.of(context).getText('sc_menu_refresh')),
                               ],
                             ),
                           ),
@@ -344,8 +345,8 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
           await ref.update({'status': 'resolved'});
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Marked as resolved'),
+            SnackBar(
+              content: Text(FFLocalizations.of(context).getText('sc_marked_resolved')),
               backgroundColor: kGreen,
             ),
           );
@@ -353,7 +354,7 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
         break;
       case 'user_profile':
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User profile coming soon')),
+          SnackBar(content: Text(FFLocalizations.of(context).getText('sc_profile_soon'))),
         );
         break;
       case 'refresh':
@@ -381,7 +382,7 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                'Could not load messages\n${snapshot.error}',
+                '${FFLocalizations.of(context).getText('sc_could_not_load')}\n${snapshot.error}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: kRed, fontSize: 13),
               ),
@@ -457,8 +458,8 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
             const SizedBox(height: 16),
             Text(
               _isAdminView
-                  ? 'No messages yet'
-                  : 'How can we help you?',
+                  ? FFLocalizations.of(context).getText('sc_no_messages_admin')
+                  : FFLocalizations.of(context).getText('sc_no_messages_user'),
               style: TextStyle(
                 color: _text,
                 fontSize: 16,
@@ -468,8 +469,8 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
             const SizedBox(height: 6),
             Text(
               _isAdminView
-                  ? 'The user hasn\'t sent any messages yet.'
-                  : 'Pick a topic below or type your own message.',
+                  ? FFLocalizations.of(context).getText('sc_no_messages_admin_sub')
+                  : FFLocalizations.of(context).getText('sc_no_messages_user_sub'),
               textAlign: TextAlign.center,
               style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
             ),
@@ -674,8 +675,8 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: _isAdminView
-                      ? 'Reply as Support...'
-                      : 'Type your message...',
+                      ? FFLocalizations.of(context).getText('sc_input_admin')
+                      : FFLocalizations.of(context).getText('sc_input_user'),
                   hintStyle: TextStyle(color: _muted, fontSize: 14),
                   border: InputBorder.none,
                   contentPadding:
@@ -742,7 +743,7 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
         for (final admin in admins.docs) {
           await NotificationSender.sendToUser(
             userRef: admin.reference,
-            title: 'New Support Message',
+            title: FFLocalizations.of(context).getText('sc_push_new_message'),
             body: '$userName: $preview',
             data: {
               'route': 'SupportChat',
@@ -758,7 +759,7 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
         if (userRef != null) {
           await NotificationSender.sendToUser(
             userRef: userRef,
-            title: 'ZanNext Support',
+            title: FFLocalizations.of(context).getText('sc_support_name'),
             body: preview,
             data: {
               'route': 'SupportChat',
@@ -845,7 +846,7 @@ class _SupportChatWidgetState extends State<SupportChatWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Send failed: $e'),
+          content: Text('${FFLocalizations.of(context).getText('sc_send_failed')}$e'),
           backgroundColor: kRed,
         ),
       );

@@ -1,6 +1,7 @@
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -33,29 +34,29 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
       'type': 'promo',
       'icon': Icons.local_offer_rounded,
       'color': kAmber,
-      'title': '🔥 Flash Sale — 30% OFF',
-      'body': 'For the next 24 hours, enjoy 30% off on all electronics. Shop now before it ends!',
+      'title': 'ab_tpl_promo_title',
+      'body': 'ab_tpl_promo_body',
     },
     {
       'type': 'info',
       'icon': Icons.info_outline_rounded,
       'color': kBlue,
-      'title': 'New Feature Available',
-      'body': 'You can now save multiple delivery addresses. Update yours from your profile!',
+      'title': 'ab_tpl_info_title',
+      'body': 'ab_tpl_info_body',
     },
     {
       'type': 'alert',
       'icon': Icons.warning_amber_rounded,
       'color': kRed,
-      'title': 'Scheduled Maintenance',
-      'body': 'The app will be under maintenance tonight from 2–3 AM. Thanks for your patience.',
+      'title': 'ab_tpl_alert_title',
+      'body': 'ab_tpl_alert_body',
     },
     {
       'type': 'info',
       'icon': Icons.celebration_rounded,
       'color': kGreen,
-      'title': 'Welcome to ZanNext!',
-      'body': 'Get 20% off your first order. Use code WELCOME20 at checkout.',
+      'title': 'ab_tpl_welcome_title',
+      'body': 'ab_tpl_welcome_body',
     },
   ];
 
@@ -106,19 +107,19 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle('Quick Templates'),
+                      _buildSectionTitle(FFLocalizations.of(context).getText('ab_section_templates')),
                       const SizedBox(height: 10),
                       _buildTemplates(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('Notification Type'),
+                      _buildSectionTitle(FFLocalizations.of(context).getText('ab_section_type')),
                       const SizedBox(height: 10),
                       _buildTypeChips(),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('Title'),
+                      _buildSectionTitle(FFLocalizations.of(context).getText('ab_section_title')),
                       const SizedBox(height: 8),
                       _buildTitleField(),
                       const SizedBox(height: 20),
-                      _buildSectionTitle('Message'),
+                      _buildSectionTitle(FFLocalizations.of(context).getText('ab_section_message')),
                       const SizedBox(height: 8),
                       _buildBodyField(),
                       const SizedBox(height: 24),
@@ -167,18 +168,18 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Broadcast',
-                  style: TextStyle(
+              Text(FFLocalizations.of(context).getText('ab_header_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   )),
-              SizedBox(height: 2),
-              Text('Send to all users',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('ab_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -189,13 +190,13 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
               color: Colors.white.withOpacity(0.18),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.campaign_outlined, color: Colors.white, size: 12),
-                SizedBox(width: 4),
-                Text('ALL',
-                    style: TextStyle(
+                const Icon(Icons.campaign_outlined, color: Colors.white, size: 12),
+                const SizedBox(width: 4),
+                Text(FFLocalizations.of(context).getText('ab_badge_all'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
@@ -248,8 +249,10 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
           final color = t['color'] as Color;
           return GestureDetector(
             onTap: () {
-              _model.titleController?.text = t['title'] as String;
-              _model.bodyController?.text = t['body'] as String;
+              _model.titleController?.text =
+                  FFLocalizations.of(context).getText(t['title'] as String);
+              _model.bodyController?.text =
+                  FFLocalizations.of(context).getText(t['body'] as String);
               _model.selectedType = t['type'] as String;
               safeSetState(() {});
             },
@@ -279,7 +282,11 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
                   ),
                   const Spacer(),
                   Text(
-                    (t['title'] as String).split('—').first.trim(),
+                    FFLocalizations.of(context)
+                        .getText(t['title'] as String)
+                        .split('—')
+                        .first
+                        .trim(),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -303,9 +310,9 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
   // ═══════════════════════════════════════════════════════════
   Widget _buildTypeChips() {
     final types = [
-      ('info', 'Info', kBlue, Icons.info_outline_rounded),
-      ('promo', 'Promo', kAmber, Icons.local_offer_rounded),
-      ('alert', 'Alert', kRed, Icons.warning_amber_rounded),
+      ('info', FFLocalizations.of(context).getText('ab_type_info'), kBlue, Icons.info_outline_rounded),
+      ('promo', FFLocalizations.of(context).getText('ab_type_promo'), kAmber, Icons.local_offer_rounded),
+      ('alert', FFLocalizations.of(context).getText('ab_type_alert'), kRed, Icons.warning_amber_rounded),
     ];
 
     return Row(
@@ -376,7 +383,7 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
         cursorColor: kGreen,
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'e.g. New arrivals this week',
+          hintText: FFLocalizations.of(context).getText('ab_title_hint'),
           hintStyle: TextStyle(color: _muted, fontSize: 14),
           border: InputBorder.none,
           contentPadding:
@@ -404,7 +411,7 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
         cursorColor: kGreen,
         decoration: InputDecoration(
           isDense: true,
-          hintText: 'Type the message users will receive...',
+          hintText: FFLocalizations.of(context).getText('ab_body_hint'),
           hintStyle: TextStyle(color: _muted, fontSize: 14),
           border: InputBorder.none,
           contentPadding:
@@ -438,7 +445,7 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Preview'),
+        _buildSectionTitle(FFLocalizations.of(context).getText('ab_section_preview')),
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
@@ -465,7 +472,9 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title.isEmpty ? '(No title)' : title,
+                      title.isEmpty
+                          ? FFLocalizations.of(context).getText('ab_preview_no_title')
+                          : title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -489,7 +498,7 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
                     ],
                     const SizedBox(height: 6),
                     Text(
-                      'Just now · ZanNext',
+                      FFLocalizations.of(context).getText('ab_preview_just_now'),
                       style: TextStyle(color: _muted, fontSize: 11),
                     ),
                   ],
@@ -541,15 +550,15 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
                           AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Row(
+                : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.send_rounded,
+                      const Icon(Icons.send_rounded,
                           color: Colors.white, size: 18),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'Send to All Users',
-                        style: TextStyle(
+                        FFLocalizations.of(context).getText('ab_send_all'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -571,11 +580,11 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
     final body = _model.bodyController?.text.trim() ?? '';
 
     if (title.isEmpty) {
-      _snack('Please enter a title', error: true);
+      _snack(FFLocalizations.of(context).getText('ab_error_title'), error: true);
       return;
     }
     if (body.isEmpty) {
-      _snack('Please enter a message', error: true);
+      _snack(FFLocalizations.of(context).getText('ab_error_body'), error: true);
       return;
     }
 
@@ -585,11 +594,11 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: _card,
         title: Text(
-          'Send to all users?',
+          FFLocalizations.of(context).getText('ab_confirm_title'),
           style: TextStyle(color: _text, fontWeight: FontWeight.w700),
         ),
         content: Text(
-          'This will send a notification to every user in the app. Continue?',
+          FFLocalizations.of(context).getText('ab_confirm_body'),
           style: TextStyle(color: _muted, fontSize: 13.5),
         ),
         shape: RoundedRectangleBorder(
@@ -598,12 +607,12 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('Cancel', style: TextStyle(color: _muted)),
+            child: Text(FFLocalizations.of(context).getText('ab_confirm_cancel'), style: TextStyle(color: _muted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text(
-              'Send',
+            child: Text(
+              FFLocalizations.of(context).getText('ab_confirm_send'),
               style: TextStyle(
                 color: kGreen,
                 fontWeight: FontWeight.w700,
@@ -627,7 +636,7 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
 
       if (usersSnap.docs.isEmpty) {
         if (!mounted) return;
-        _snack('No users found', error: true);
+        _snack(FFLocalizations.of(context).getText('ab_no_users'), error: true);
         safeSetState(() => _model.isSending = false);
         return;
       }
@@ -659,7 +668,7 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
       if (!mounted) return;
       safeSetState(() => _model.isSending = false);
 
-      _snack('Broadcast sent to ${usersSnap.docs.length} users!');
+      _snack('${FFLocalizations.of(context).getText('ab_sent_prefix')}${usersSnap.docs.length}${FFLocalizations.of(context).getText('ab_sent_suffix')}');
 
       // Clear form
       await Future.delayed(const Duration(milliseconds: 800));
@@ -668,7 +677,7 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
     } catch (e) {
       if (!mounted) return;
       safeSetState(() => _model.isSending = false);
-      _snack('Failed: $e', error: true);
+      _snack('${FFLocalizations.of(context).getText('ab_failed')}$e', error: true);
     }
   }
 

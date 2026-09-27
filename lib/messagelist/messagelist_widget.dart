@@ -2,6 +2,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -57,7 +58,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
     if (currentUserReference == null) {
       return _scaffoldWithHeader(
         body: Center(
-          child: Text('Please sign in', style: TextStyle(color: _muted)),
+          child: Text(FFLocalizations.of(context).getText('msg_please_sign_in'), style: TextStyle(color: _muted)),
         ),
       );
     }
@@ -109,14 +110,14 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
                       color: const Color(0xFFDC0F0F),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.delete_outline_rounded,
+                        const Icon(Icons.delete_outline_rounded,
                             color: Colors.white, size: 22),
-                        SizedBox(width: 6),
-                        Text('Delete',
-                            style: TextStyle(
+                        const SizedBox(width: 6),
+                        Text(FFLocalizations.of(context).getText('msg_delete'),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
@@ -183,18 +184,18 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Messages',
-                  style: TextStyle(
+              Text(FFLocalizations.of(context).getText('msg_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   )),
-              SizedBox(height: 2),
-              Text('Chat with buyers & sellers',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('msg_subtitle'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -204,16 +205,16 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
             onSelected: (v) {
               if (v == 'clear_all') _confirmClearAllChats();
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'clear_all',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_sweep_rounded,
+                    const Icon(Icons.delete_sweep_rounded,
                         size: 18, color: Color(0xFFDC0F0F)),
-                    SizedBox(width: 10),
-                    Text('Clear all',
-                        style: TextStyle(color: Color(0xFFDC0F0F))),
+                    const SizedBox(width: 10),
+                    Text(FFLocalizations.of(context).getText('msg_clear_all'),
+                        style: const TextStyle(color: Color(0xFFDC0F0F))),
                   ],
                 ),
               ),
@@ -243,26 +244,26 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
             backgroundColor: _card,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16)),
-            title: Text('Delete conversation?',
+            title: Text(FFLocalizations.of(context).getText('msg_delete_title'),
                 style: TextStyle(
                     color: _text,
                     fontWeight: FontWeight.w800,
                     fontSize: 16)),
             content: Text(
-              'Chat with $otherName and all its messages will be removed permanently.',
+              '${FFLocalizations.of(context).getText('msg_delete_body_prefix')}$otherName${FFLocalizations.of(context).getText('msg_delete_body_suffix')}',
               style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text('Cancel',
+                child: Text(FFLocalizations.of(context).getText('msg_cancel'),
                     style: TextStyle(
                         color: _muted, fontWeight: FontWeight.w600)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete',
-                    style: TextStyle(
+                child: Text(FFLocalizations.of(context).getText('msg_delete'),
+                    style: const TextStyle(
                         color: Color(0xFFDC0F0F),
                         fontWeight: FontWeight.w800)),
               ),
@@ -293,8 +294,8 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Conversation deleted'),
+        SnackBar(
+          content: Text(FFLocalizations.of(context).getText('msg_deleted_success')),
           backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -304,7 +305,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not delete: $e'),
+          content: Text('${FFLocalizations.of(context).getText('msg_delete_failed')}$e'),
           backgroundColor: const Color(0xFFDC0F0F),
           behavior: SnackBarBehavior.floating,
         ),
@@ -318,11 +319,11 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Clear all conversations?',
+        title: Text(FFLocalizations.of(context).getText('msg_clear_all_title'),
             style: TextStyle(
                 color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
         content: Text(
-          'Every chat and its messages will be permanently deleted.',
+          FFLocalizations.of(context).getText('msg_clear_all_body'),
           style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
         ),
         actions: [
@@ -356,7 +357,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
       if (chats.docs.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No conversations to clear')),
+          SnackBar(content: Text(FFLocalizations.of(context).getText('msg_no_conversations'))),
         );
         return;
       }
@@ -379,7 +380,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Cleared ${chats.docs.length} conversation(s)'),
+          content: Text('${FFLocalizations.of(context).getText('msg_cleared_prefix')}${chats.docs.length}${FFLocalizations.of(context).getText('msg_cleared_suffix')}'),
           backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -389,7 +390,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not clear: $e'),
+          content: Text('${FFLocalizations.of(context).getText('msg_clear_failed')}$e'),
           backgroundColor: const Color(0xFFDC0F0F),
           behavior: SnackBarBehavior.floating,
         ),
@@ -405,7 +406,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
     // My index tells us which name to show (the other party).
     final names = chat.userName;
     final isMeBuyer = chat.buyerRef == currentUserReference;
-    String otherName = 'Chat';
+    String otherName = FFLocalizations.of(context).getText('msg_chat_fallback');
     if (names.length >= 2) {
       otherName = isMeBuyer ? names[1] : names[0];
     } else if (names.isNotEmpty) {
@@ -481,7 +482,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    valueOrDefault<String>(chat.productName, 'Product'),
+                    valueOrDefault<String>(chat.productName, FFLocalizations.of(context).getText('msg_product_fallback')),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: kGreen, fontSize: 11.5),
@@ -506,7 +507,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
 
   String _timeAgo(DateTime when) {
     final d = DateTime.now().difference(when);
-    if (d.inSeconds < 60) return 'Just now';
+    if (d.inSeconds < 60) return FFLocalizations.of(context).getText('msg_time_just_now');
     if (d.inMinutes < 60) return '${d.inMinutes}m';
     if (d.inHours < 24) return '${d.inHours}h';
     if (d.inDays < 7) return '${d.inDays}d';
@@ -533,7 +534,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
                     color: kGreen, size: 36),
               ),
               const SizedBox(height: 16),
-              Text('No messages yet',
+              Text(FFLocalizations.of(context).getText('msg_empty_title'),
                   style: TextStyle(
                     color: _text,
                     fontSize: 16,
@@ -541,7 +542,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
                   )),
               const SizedBox(height: 6),
               Text(
-                'Chats with buyers and sellers will appear here.',
+                FFLocalizations.of(context).getText('msg_empty_subtitle'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
               ),
@@ -559,7 +560,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
               const Icon(Icons.error_outline_rounded,
                   color: Color(0xFFDC0F0F), size: 48),
               const SizedBox(height: 12),
-              Text('Could not load messages',
+              Text(FFLocalizations.of(context).getText('msg_error_title'),
                   style: TextStyle(
                     color: _text,
                     fontSize: 14,

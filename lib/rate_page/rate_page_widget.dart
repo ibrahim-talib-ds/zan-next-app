@@ -4,6 +4,7 @@ import '/flutter_flow/flutter_flow_choice_chips.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/form_field_controller.dart';
 import 'dart:ui';
@@ -99,7 +100,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                           children: [
                             Text(
                               FFLocalizations.of(context).getText(
-                                'fbepfn06' /* Rate your experience */,
+                                'rate_title',
                               ),
                               style: FlutterFlowTheme.of(context)
                                   .headlineSmall
@@ -123,7 +124,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                   0.0, 4.0, 0.0, 0.0),
                               child: Text(
                                 FFLocalizations.of(context).getText(
-                                  'uqdj7yj8' /* Your feedback helps us improve */,
+                                  'rate_subtitle',
                                 ),
                                 style: FlutterFlowTheme.of(context)
                                     .bodySmall
@@ -186,7 +187,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                       children: [
                         Text(
                           FFLocalizations.of(context).getText(
-                            'i5l1y95s' /* How would you rate us? */,
+                            'rate_how_rate',
                           ),
                           textAlign: TextAlign.center,
                           style:
@@ -242,7 +243,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                             children: [
                               Text(
                                 FFLocalizations.of(context).getText(
-                                  'fx898h7m' /* Terrible */,
+                                  'rate_terrible',
                                 ),
                                 style: FlutterFlowTheme.of(context)
                                     .labelSmall
@@ -267,7 +268,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                               ),
                               Text(
                                 FFLocalizations.of(context).getText(
-                                  'c3vmj98h' /* Amazing */,
+                                  'rate_amazing',
                                 ),
                                 style: FlutterFlowTheme.of(context)
                                     .labelSmall
@@ -329,7 +330,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                   '${valueOrDefault<String>(
                                     _model.ratingBarValue?.toString(),
                                     '3',
-                                  )} out of 5',
+                                  )}${FFLocalizations.of(context).getText('rate_out_of_5')}',
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(
@@ -352,7 +353,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                             ),
                             Text(
                               FFLocalizations.of(context).getText(
-                                '55bdpn6x' /* Good */,
+                                'rate_good',
                               ),
                               style: FlutterFlowTheme.of(context)
                                   .labelSmall
@@ -389,7 +390,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                       children: [
                         Text(
                           FFLocalizations.of(context).getText(
-                            'cw8kdgy3' /* Write a review */,
+                            'rate_write_review',
                           ),
                           style:
                               FlutterFlowTheme.of(context).labelLarge.override(
@@ -418,7 +419,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                             obscureText: false,
                             decoration: InputDecoration(
                               hintText: FFLocalizations.of(context).getText(
-                                'qjrqy0w5' /* Tell us what you think... (opt... */,
+                                'rate_review_hint',
                               ),
                               hintStyle: FlutterFlowTheme.of(context)
                                   .bodySmall
@@ -530,7 +531,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                 0.0, 0.0, 0.0, 8.0),
                             child: Text(
                               FFLocalizations.of(context).getText(
-                                '0ezkrqmc' /* Quick tags */,
+                                'rate_quick_tags',
                               ),
                               style: FlutterFlowTheme.of(context)
                                   .labelMedium
@@ -557,19 +558,19 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                           FlutterFlowChoiceChips(
                             options: [
                               ChipData(FFLocalizations.of(context).getText(
-                                'hdgfsci0' /* Easy to use */,
+                                'rate_tag_easy',
                               )),
                               ChipData(FFLocalizations.of(context).getText(
-                                'rixzzn9p' /* Great design */,
+                                'rate_tag_design',
                               )),
                               ChipData(FFLocalizations.of(context).getText(
-                                'lgdgurzb' /* Fast & reliable */,
+                                'rate_tag_fast',
                               )),
                               ChipData(FFLocalizations.of(context).getText(
-                                'rw2jdeuw' /* Needs work */,
+                                'rate_tag_needs_work',
                               )),
                               ChipData(FFLocalizations.of(context).getText(
-                                'w58nseuj' /* Love it! */,
+                                'rate_tag_love',
                               ))
                             ],
                             onChanged: (val) => safeSetState(
@@ -677,7 +678,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                 ),
                                 Text(
                                   FFLocalizations.of(context).getText(
-                                    'fgjh87ip' /* Review details */,
+                                    'rate_review_details',
                                   ),
                                   style: FlutterFlowTheme.of(context)
                                       .labelSmall
@@ -714,7 +715,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                 children: [
                                   Text(
                                     FFLocalizations.of(context).getText(
-                                      'vk1n6b58' /* App version */,
+                                      'rate_app_version',
                                     ),
                                     style: FlutterFlowTheme.of(context)
                                         .labelSmall
@@ -743,7 +744,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                   ),
                                   Text(
                                     FFLocalizations.of(context).getText(
-                                      '9jxorn4o' /* v2.4.1 */,
+                                      'rate_app_version',
                                     ),
                                     style: FlutterFlowTheme.of(context)
                                         .labelSmall
@@ -783,7 +784,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                 children: [
                                   Text(
                                     FFLocalizations.of(context).getText(
-                                      '5atk64vj' /* Source */,
+                                      'rate_source',
                                     ),
                                     style: FlutterFlowTheme.of(context)
                                         .labelSmall
@@ -812,7 +813,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                   ),
                                   Text(
                                     FFLocalizations.of(context).getText(
-                                      'uvv18r2d' /* Post-purchase */,
+                                      'rate_post_purchase',
                                     ),
                                     style: FlutterFlowTheme.of(context)
                                         .labelSmall
@@ -852,7 +853,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                 children: [
                                   Text(
                                     FFLocalizations.of(context).getText(
-                                      '2xh7lsry' /* Submitted */,
+                                      'rate_submitted',
                                     ),
                                     style: FlutterFlowTheme.of(context)
                                         .labelSmall
@@ -881,7 +882,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                                   ),
                                   Text(
                                     FFLocalizations.of(context).getText(
-                                      'kk4fu9nn' /* Today */,
+                                      'rate_today',
                                     ),
                                     style: FlutterFlowTheme.of(context)
                                         .labelSmall
@@ -940,7 +941,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Asante! Your review has been submitted successfully',
+                              FFLocalizations.of(context).getText('rate_thanks'),
                               style: TextStyle(
                                 color: FlutterFlowTheme.of(context).primaryText,
                               ),
@@ -953,7 +954,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                         context.safePop();
                       },
                       text: FFLocalizations.of(context).getText(
-                        '53y2thsx' /* Submit Review */,
+                        'rate_submit',
                       ),
                       options: FFButtonOptions(
                         width: double.infinity,
@@ -1003,7 +1004,7 @@ class _RatePageWidgetState extends State<RatePageWidget> {
                               6.0, 0.0, 6.0, 0.0),
                           child: Text(
                             FFLocalizations.of(context).getText(
-                              '7yfvum0m' /* Your review is private and sec... */,
+                              'rate_private',
                             ),
                             style: FlutterFlowTheme.of(context)
                                 .labelSmall

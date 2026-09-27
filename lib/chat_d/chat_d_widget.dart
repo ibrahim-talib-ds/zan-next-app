@@ -2,6 +2,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -67,7 +68,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
   Widget build(BuildContext context) {
     if (widget.receiveChats == null) {
       return _scaffoldSimple(
-        const Center(child: Text('Chat not found')),
+        Center(child: Text(FFLocalizations.of(context).getText('cd_chat_not_found'))),
       );
     }
 
@@ -167,7 +168,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
               future: _getUserRecord(otherRef),
               builder: (context, snap) {
                 final user = snap.data;
-                final name = user?.displayName ?? 'Chat';
+                final name = user?.displayName ?? FFLocalizations.of(context).getText('cd_chat_fallback');
                 final photo = user?.photoUrl ?? '';
                 final city = user?.city ?? '';
 
@@ -237,7 +238,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  city.isEmpty ? 'Online' : city,
+                                  city.isEmpty ? FFLocalizations.of(context).getText('cd_online') : city,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
@@ -301,7 +302,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'DISCUSSING',
+                  FFLocalizations.of(context).getText('cd_discussing'),
                   style: TextStyle(
                     color: _muted,
                     fontSize: 9,
@@ -311,7 +312,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  valueOrDefault<String>(chat.productName, 'Product'),
+                  valueOrDefault<String>(chat.productName, FFLocalizations.of(context).getText('cd_product_fallback')),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -391,7 +392,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
                         color: kGreen, size: 36),
                   ),
                   const SizedBox(height: 16),
-                  Text('Say hi 👋',
+                  Text(FFLocalizations.of(context).getText('cd_say_hi'),
                       style: TextStyle(
                         color: _text,
                         fontSize: 16,
@@ -399,7 +400,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
                       )),
                   const SizedBox(height: 4),
                   Text(
-                    'Start the conversation about this product',
+                    FFLocalizations.of(context).getText('cd_start_conversation'),
                     textAlign: TextAlign.center,
                     style: TextStyle(color: _muted, fontSize: 13),
                   ),
@@ -525,7 +526,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
                   onFieldSubmitted: (_) => _send(chat),
                   decoration: InputDecoration(
                     isDense: true,
-                    hintText: 'Type a message...',
+                    hintText: FFLocalizations.of(context).getText('cd_type_message'),
                     hintStyle: TextStyle(color: _muted, fontSize: 14),
                     border: InputBorder.none,
                     contentPadding:
@@ -629,7 +630,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Send failed: $e'),
+          content: Text('${FFLocalizations.of(context).getText('cd_send_failed')}$e'),
           backgroundColor: const Color(0xFFDC0F0F),
         ),
       );
@@ -659,7 +660,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
               const Icon(Icons.error_outline_rounded,
                   color: Color(0xFFDC0F0F), size: 48),
               const SizedBox(height: 12),
-              Text('Could not load chat',
+              Text(FFLocalizations.of(context).getText('cd_could_not_load'),
                   style: TextStyle(
                     color: _text,
                     fontSize: 14,

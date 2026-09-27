@@ -5,6 +5,7 @@ import '/components/deletepromt_widget.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
 import '/index.dart';
@@ -86,9 +87,7 @@ class _CartWidgetState extends State<CartWidget> {
                   actions: [],
                   flexibleSpace: FlexibleSpaceBar(
                     title: Text(
-                      FFLocalizations.of(context).getText(
-                        'vuec2yj9' /* cart */,
-                      ),
+                      FFLocalizations.of(context).getText('cart_title'),
                       style:
                           FlutterFlowTheme.of(context).headlineSmall.override(
                                 font: GoogleFonts.interTight(
@@ -153,9 +152,7 @@ class _CartWidgetState extends State<CartWidget> {
                                   safeSetState(() {});
                                 },
                                 child: Text(
-                                  FFLocalizations.of(context).getText(
-                                    'kdg4y44p' /* Futa */,
-                                  ),
+                                  FFLocalizations.of(context).getText('cart_clear_all'),
                                   style: FlutterFlowTheme.of(context)
                                       .bodyMedium
                                       .override(
@@ -393,11 +390,7 @@ class _CartWidgetState extends State<CartWidget> {
                                                         text: TextSpan(
                                                           children: [
                                                             TextSpan(
-                                                              text: FFLocalizations
-                                                                      .of(context)
-                                                                  .getText(
-                                                                'g34xq6uq' /* Saizi  */,
-                                                              ),
+                                                              text: FFLocalizations.of(context).getText('cart_size_label'),
                                                               style: FlutterFlowTheme
                                                                       .of(context)
                                                                   .bodyMedium
@@ -426,11 +419,7 @@ class _CartWidgetState extends State<CartWidget> {
                                                                   ),
                                                             ),
                                                             TextSpan(
-                                                              text: FFLocalizations
-                                                                      .of(context)
-                                                                  .getText(
-                                                                '5x6nlbj1' /* -  */,
-                                                              ),
+                                                              text: FFLocalizations.of(context).getText(' '),
                                                               style: FlutterFlowTheme
                                                                       .of(context)
                                                                   .bodyMedium
@@ -485,31 +474,19 @@ class _CartWidgetState extends State<CartWidget> {
                                                                   ),
                                                             ),
                                                             TextSpan(
-                                                              text: FFLocalizations
-                                                                      .of(context)
-                                                                  .getText(
-                                                                '2fgxv0cp' /*     */,
-                                                              ),
+                                                              text: FFLocalizations.of(context).getText('  '),
                                                               style:
                                                                   TextStyle(),
                                                             ),
                                                             TextSpan(
-                                                              text: FFLocalizations
-                                                                      .of(context)
-                                                                  .getText(
-                                                                'v5478j0p' /* Color */,
-                                                              ),
+                                                              text: FFLocalizations.of(context).getText('cart_color_label'),
                                                               style: TextStyle(
                                                                 color: Color(
                                                                     0xFFFF8C00),
                                                               ),
                                                             ),
                                                             TextSpan(
-                                                              text: FFLocalizations
-                                                                      .of(context)
-                                                                  .getText(
-                                                                '8dvc6kuv' /*  -  */,
-                                                              ),
+                                                              text: FFLocalizations.of(context).getText(' '),
                                                               style:
                                                                   TextStyle(),
                                                             ),
@@ -645,9 +622,7 @@ class _CartWidgetState extends State<CartWidget> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              FFLocalizations.of(context).getText(
-                                'lv31o219' /* Shipping Cost */,
-                              ),
+                              FFLocalizations.of(context).getText('cart_shipping'),
                               style: FlutterFlowTheme.of(context)
                                   .bodyMedium
                                   .override(
@@ -699,9 +674,7 @@ class _CartWidgetState extends State<CartWidget> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              FFLocalizations.of(context).getText(
-                                'je835csc' /* Tax */,
-                              ),
+                              FFLocalizations.of(context).getText('cart_tax'),
                               style: FlutterFlowTheme.of(context)
                                   .bodyMedium
                                   .override(
@@ -753,9 +726,7 @@ class _CartWidgetState extends State<CartWidget> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              FFLocalizations.of(context).getText(
-                                'rbwn07sz' /* Total */,
-                              ),
+                              FFLocalizations.of(context).getText('cart_total'),
                               style: FlutterFlowTheme.of(context)
                                   .bodyMedium
                                   .override(
@@ -831,9 +802,7 @@ class _CartWidgetState extends State<CartWidget> {
                                   padding: EdgeInsetsDirectional.fromSTEB(
                                       0.0, 0.0, 100.0, 0.0),
                                   child: Text(
-                                    FFLocalizations.of(context).getText(
-                                      'ztw6r6h7' /* Enter Promo Code */,
-                                    ),
+                                    FFLocalizations.of(context).getText('cart_promo_hint'),
                                     style: FlutterFlowTheme.of(context)
                                         .bodyMedium
                                         .override(
@@ -913,9 +882,7 @@ class _CartWidgetState extends State<CartWidget> {
                                 },
                               );
                             },
-                            text: FFLocalizations.of(context).getText(
-                              'zf6nc7ok' /* Checkout */,
-                            ),
+                            text: FFLocalizations.of(context).getText('cart_checkout'),
                             options: FFButtonOptions(
                               width: 250.0,
                               height: 46.9,

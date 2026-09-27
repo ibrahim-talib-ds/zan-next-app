@@ -1,5 +1,7 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/utils/responsive.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import '/backend/backend.dart';
 import 'package:flutter/material.dart';
@@ -79,11 +81,11 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
                     onRefresh: () async => safeSetState(() {}),
                     child: GridView.builder(
                       padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 24),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: Responsive.productCols(context),
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: 0.68,
+                        childAspectRatio: 0.72,
                       ),
                       itemCount: items.length,
                       itemBuilder: (_, i) => _productCard(items[i]),
@@ -121,14 +123,14 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
             onPressed: () => Navigator.pop(context),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('⭐ Boosted',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
-              SizedBox(height: 2),
-              Text('Featured products',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              Text(FFLocalizations.of(context).getText('bp_header_title'),
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('bp_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -185,8 +187,8 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
                           color: kAmber,
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text('BOOSTED',
-                          style: TextStyle(
+                        child: Text(FFLocalizations.of(context).getText('bp_badge'),
+                          style: const TextStyle(
                             color: Colors.white, fontSize: 8.5,
                             fontWeight: FontWeight.w900, letterSpacing: 0.4,
                           )),
@@ -197,7 +199,7 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
               ),
               const SizedBox(height: 6),
               Text(
-                valueOrDefault<String>(record.inventoryName, 'Product'),
+                valueOrDefault<String>(record.inventoryName, FFLocalizations.of(context).getText('bp_product_fallback')),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w500, height: 1.25),
@@ -229,7 +231,7 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
           child: const Icon(Icons.star_rounded, color: kAmber, size: 40),
         ),
         const SizedBox(height: 16),
-        Text('No boosted products',
+        Text(FFLocalizations.of(context).getText('bp_empty'),
           style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w700)),
       ],
     ),

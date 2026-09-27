@@ -7,6 +7,7 @@ import '/location_modal/location_modal_widget.dart';
 import '/flutter_flow/flutter_flow_animations.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:math';
@@ -259,119 +260,119 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/copm.png',
-                            labelKey: 'hi3oa9pn',
+                            labelKey: 'cat_computers',
                             fallback: 'Computers & Laptops',
                             categoryValue: 'Computers & Laptops',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/mean.webp',
-                            labelKey: 'ckkjz6bw',
+                            labelKey: 'cat_mens_wear',
                             fallback: 'Men’s Wear',
                             categoryValue: 'Men’s Wear',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/furniture.png',
-                            labelKey: '4gctyhxj',
+                            labelKey: 'cat_furniture',
                             fallback: 'Furniture',
                             categoryValue: 'Furniture',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/W.webp',
-                            labelKey: 'pv0ughiu',
+                            labelKey: 'cat_wearables',
                             fallback: 'Wearables',
                             categoryValue: 'Wearables',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/Luxiary.webp',
-                            labelKey: 'bbomrrnb',
+                            labelKey: 'cat_luxury_watches',
                             fallback: 'Luxury Watches',
                             categoryValue: 'Luxury Watches',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/9f05b_B.png',
-                            labelKey: 'w9tkhbbf',
+                            labelKey: 'cat_bracelets',
                             fallback: 'Bracelets & Earrings',
                             categoryValue: 'Bracelets & Earrings',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/1yi0p_L.png',
-                            labelKey: 'ywg5460f',
+                            labelKey: 'cat_laundry',
                             fallback: 'Laundry',
                             categoryValue: 'Laundry',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/mean.webp',
-                            labelKey: 'wmnswear1',
+                            labelKey: 'cat_women',
                             fallback: 'Women',
                             categoryValue: 'Womens Wear',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/Luxiary.webp',
-                            labelKey: 'beauty001',
+                            labelKey: 'cat_beauty',
                             fallback: 'Beauty',
                             categoryValue: 'Skincare',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/phone.png',
-                            labelKey: 'phones001',
+                            labelKey: 'cat_phones',
                             fallback: 'Phones',
                             categoryValue: 'Smart Phone',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/home.png',
-                            labelKey: 'home001',
+                            labelKey: 'cat_home_decor',
                             fallback: 'Home Decor',
                             categoryValue: 'Furniture',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/sport.png',
-                            labelKey: 'sports001',
+                            labelKey: 'cat_sports',
                             fallback: 'Sports',
                             categoryValue: 'Team Sports',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/shoes.png',
-                            labelKey: 'shoes001',
+                            labelKey: 'cat_shoes',
                             fallback: 'Shoes',
                             categoryValue: 'Formal Shoes',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/bag.png',
-                            labelKey: 'bags001',
+                            labelKey: 'cat_handbags',
                             fallback: 'Handbags',
                             categoryValue: 'Bracelets & Earrings',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/copm.png',
-                            labelKey: 'audio001',
+                            labelKey: 'cat_audio',
                             fallback: 'Audio',
                             categoryValue: 'Audio & Sound',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/furniture.png',
-                            labelKey: 'bedding001',
+                            labelKey: 'cat_bedding',
                             fallback: 'Bedding',
                             categoryValue: 'Bedding',
                           ),
                           _categoryTile(
                             context,
                             assetImage: 'assets/images/1yi0p_L.png',
-                            labelKey: 'kitchen001',
+                            labelKey: 'cat_kitchen',
                             fallback: 'Kitchen',
                             categoryValue: 'Kitchen',
                           ),
@@ -436,10 +437,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  FFLocalizations.of(context).getText(
-                                    'npwssap5' /* Start selling and achieve
-your goals */,
-                                  ),
+                                  FFLocalizations.of(context).getText('home_seller_cta_title'),
                                   style: theme.bodyMedium.override(
                                     font: GoogleFonts.inter(
                                       fontWeight: FontWeight.bold,
@@ -463,9 +461,7 @@ your goals */,
                                   alignment: AlignmentDirectional(0, 0),
                                   child: Center(
                                     child: Text(
-                                      FFLocalizations.of(context).getText(
-                                        '1ks3t7d1' /* New Products */,
-                                      ),
+                                      FFLocalizations.of(context).getText('home_seller_cta_button'),
                                       style: theme.bodyMedium.override(
                                         font: GoogleFonts.inter(
                                           fontWeight: FontWeight.bold,
@@ -523,7 +519,7 @@ your goals */,
                           if (items.isEmpty) {
                             return _emptyState(
                               context,
-                              'No products available',
+                              FFLocalizations.of(context).getText('home_no_products'),
                             );
                           }
 
@@ -654,7 +650,7 @@ your goals */,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Deliver to',
+                                  FFLocalizations.of(context).getText('home_deliver_to'),
                                   style: theme.bodyMedium.override(
                                     font: GoogleFonts.inter(
                                       fontWeight: FontWeight.normal,
@@ -681,7 +677,7 @@ your goals */,
                                         ),
                                         builder: (context, snapshot) {
                                           // Default fallback = Zanzibar
-                                          String label = 'Zanzibar';
+                                          String label = FFLocalizations.of(context).getText('home_default_location');
                                           if (snapshot.hasData &&
                                               snapshot.data!.isNotEmpty) {
                                             final a = snapshot.data!.first;
@@ -816,9 +812,7 @@ your goals */,
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          FFLocalizations.of(context).getText(
-                            'gdj7z02c' /* Search for products... */,
-                          ),
+                          FFLocalizations.of(context).getText('home_search_hint'),
                           style: theme.bodyMedium.override(
                             font: GoogleFonts.inter(
                               fontWeight: FontWeight.w500,
@@ -1213,6 +1207,12 @@ your goals */,
     final theme = FlutterFlowTheme.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Translate the label (falls back to hardcoded `fallback` if key missing)
+    final translatedLabel =
+        FFLocalizations.of(context).getText(labelKey).isEmpty
+            ? fallback
+            : FFLocalizations.of(context).getText(labelKey);
+
     // 🔄 Load admin override for this category (if any)
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
@@ -1228,7 +1228,7 @@ your goals */,
           theme: theme,
           isDark: isDark,
           assetImage: overrideImage ?? assetImage,
-          label: overrideLabel ?? fallback,
+          label: overrideLabel ?? translatedLabel,
           categoryValue: categoryValue,
           isUrl: overrideImage != null,
         );
@@ -1488,7 +1488,7 @@ your goals */,
           SizedBox(
             height: 24,
             child: Text(
-              'More',
+              FFLocalizations.of(context).getText('home_more'),
               style: theme.bodyMedium.override(
                 font: GoogleFonts.inter(
                   fontWeight: FontWeight.w700,
@@ -1536,7 +1536,7 @@ your goals */,
                       child: _seeAllCard(
                         context,
                         BoostedProductsWidget.routeName,
-                        'Boosted',
+                        FFLocalizations.of(context).getText('home_boosted'),
                       ),
                     );
                   }
@@ -1571,7 +1571,7 @@ your goals */,
           Icon(Icons.star_rounded, color: Colors.white, size: 11),
           SizedBox(width: 3),
           Text(
-            'BOOSTED',
+            FFLocalizations.of(context).getText('home_badge_boosted'),
             style: TextStyle(
               color: Colors.white,
               fontSize: 9,
@@ -1614,7 +1614,7 @@ your goals */,
                       child: _seeAllCard(
                         context,
                         TrendingProductWidget.routeName,
-                        'Trending',
+                        FFLocalizations.of(context).getText('home_trending'),
                       ),
                     );
                   }
@@ -1678,7 +1678,7 @@ your goals */,
                       child: _seeAllCard(
                         context,
                         NewProductsWidget.routeName,
-                        'New Arrivals',
+                        FFLocalizations.of(context).getText('home_new_arrivals'),
                       ),
                     );
                   }
@@ -1752,7 +1752,7 @@ your goals */,
             ),
             const SizedBox(height: 10),
             Text(
-              'See All',
+              FFLocalizations.of(context).getText('home_see_all'),
               style: theme.bodyMedium.override(
                 font: GoogleFonts.inter(
                   fontWeight: FontWeight.w800,
@@ -1829,14 +1829,14 @@ your goals */,
             ),
             const SizedBox(height: 4),
             Text(
-              'What do you want to do?',
+              FFLocalizations.of(context).getText('home_admin_menu_title'),
               style: TextStyle(color: muted, fontSize: 12),
             ),
             const SizedBox(height: 20),
             _menuOption(
               ctx,
               icon: Icons.edit_rounded,
-              label: 'Edit this category',
+              label: FFLocalizations.of(context).getText('home_admin_edit_category'),
               color: const Color(0xFF1B7A4E),
               value: 'edit',
               text: text, muted: muted,
@@ -1845,7 +1845,7 @@ your goals */,
             _menuOption(
               ctx,
               icon: Icons.arrow_forward_rounded,
-              label: 'Continue to page',
+              label: FFLocalizations.of(context).getText('home_admin_continue'),
               color: const Color(0xFF3B82F6),
               value: 'continue',
               text: text, muted: muted,
@@ -2036,7 +2036,7 @@ your goals */,
 
                 // ─── TITLE ───
                 Text(
-                  valueOrDefault<String>(record.inventoryName, 'Product'),
+                  valueOrDefault<String>(record.inventoryName, FFLocalizations.of(context).getText('home_product_fallback')),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.bodyMedium.override(
@@ -2101,7 +2101,7 @@ your goals */,
                       child: Text(
                         valueOrDefault<String>(
                           record.sellerName,
-                          'Verified',
+                          FFLocalizations.of(context).getText('home_seller_verified'),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -2164,7 +2164,7 @@ your goals */,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        'NEW',
+        FFLocalizations.of(context).getText('home_badge_new'),
         style: TextStyle(
           color: Colors.white,
           fontSize: 10,

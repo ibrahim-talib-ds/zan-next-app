@@ -4,6 +4,8 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/utils/responsive.dart';
+import '/flutter_flow/internationalization.dart';
 import '/seller_reviews/seller_reviews_widget.dart';
 import '/index.dart';
 import 'dart:math';
@@ -118,8 +120,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
       return _scaffold(
         body: _stateMessage(
           icon: Icons.person_off_outlined,
-          title: 'No seller',
-          subtitle: 'This seller could not be found.',
+          title: FFLocalizations.of(context).getText('sd_no_seller'),
+          subtitle: FFLocalizations.of(context).getText('sd_no_seller_sub'),
         ),
       );
     }
@@ -160,7 +162,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                         _buildOwnerQuickActions(),
                         const SizedBox(height: 24),
                         _buildSectionHeader(
-                          'My Products',
+                          FFLocalizations.of(context).getText('sd_my_products'),
                           trailing: '${products.length}',
                         ),
                       ] else ...[
@@ -172,8 +174,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                         _buildCategoryFilter(products),
                         const SizedBox(height: 14),
                         _buildSectionHeader(
-                          'Shop',
-                          trailing: '${_filteredProducts(products).length} items',
+                          FFLocalizations.of(context).getText('sd_shop'),
+                          trailing: '${_filteredProducts(products).length} ${FFLocalizations.of(context).getText('sd_items')}',
                         ),
                       ],
                       const SizedBox(height: 12),
@@ -235,9 +237,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
             onPressed: alreadyReported
                 ? () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'You already reported this seller. Our team is reviewing it.'),
+                      SnackBar(
+                        content: Text(FFLocalizations.of(context).getText('sd_already_reported')),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -265,7 +266,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
         if (v == 'share') {
           try {
             await Share.share(
-              'Check out this shop on ZanNext!',
+              FFLocalizations.of(context).getText('sd_report_shop'),
               sharePositionOrigin: getWidgetBoundingBox(context),
             );
           } catch (_) {}
@@ -275,14 +276,14 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
           _hideSellerConfirm();
         }
       },
-      itemBuilder: (_) => const [
+      itemBuilder: (_) => [
         PopupMenuItem(
           value: 'share',
           child: Row(
             children: [
-              Icon(Icons.share_outlined, size: 18),
-              SizedBox(width: 10),
-              Text('Share shop'),
+              const Icon(Icons.share_outlined, size: 18),
+              const SizedBox(width: 10),
+              Text(FFLocalizations.of(context).getText('sd_share_shop')),
             ],
           ),
         ),
@@ -290,9 +291,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
           value: 'hide',
           child: Row(
             children: [
-              Icon(Icons.visibility_off_outlined, size: 18),
-              SizedBox(width: 10),
-              Text('Hide from feed'),
+              const Icon(Icons.visibility_off_outlined, size: 18),
+              const SizedBox(width: 10),
+              Text(FFLocalizations.of(context).getText('sd_hide_feed')),
             ],
           ),
         ),
@@ -300,9 +301,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
           value: 'report',
           child: Row(
             children: [
-              Icon(Icons.flag_outlined, size: 18, color: kRed),
-              SizedBox(width: 10),
-              Text('Report', style: TextStyle(color: kRed)),
+              const Icon(Icons.flag_outlined, size: 18, color: kRed),
+              const SizedBox(width: 10),
+              Text(FFLocalizations.of(context).getText('sd_report'), style: const TextStyle(color: kRed)),
             ],
           ),
         ),
@@ -316,16 +317,16 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Hide this seller?',
+        title: Text(FFLocalizations.of(context).getText('sd_hide_seller'),
             style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
         content: Text(
-          "You won't see their products in your feed anymore.",
+          FFLocalizations.of(context).getText('sd_hide_seller_body'),
           style: TextStyle(color: _muted, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: _muted)),
+            child: Text(FFLocalizations.of(context).getText('sd_cancel'), style: TextStyle(color: _muted)),
           ),
           TextButton(
             onPressed: () async {
@@ -342,8 +343,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                 }
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Seller hidden'),
+                  SnackBar(
+                    content: Text(FFLocalizations.of(context).getText('sd_seller_hidden')),
                     backgroundColor: kGreen,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -356,8 +357,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                 );
               }
             },
-            child: const Text('Hide',
-                style: TextStyle(color: kRed, fontWeight: FontWeight.w800)),
+            child: Text(FFLocalizations.of(context).getText('sd_hide'),
+                style: const TextStyle(color: kRed, fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -367,8 +368,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   Future<void> _openReportSheet() async {
     if (_sellerRef == null) return;
     final name = widget.sellerRef == null
-        ? 'My Shop'
-        : 'Seller';
+        ? FFLocalizations.of(context).getText('sd_my_shop')
+        : FFLocalizations.of(context).getText('sd_seller');
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -405,7 +406,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   Widget _buildHeroHeader(UsersRecord? seller, List<InventoryRecord> products) {
     final topPad = MediaQuery.of(context).padding.top;
     final photo = _imgUrl(seller?.photoUrl);
-    final name = seller?.displayName ?? (_isOwner ? 'My Shop' : 'Seller');
+    final name = seller?.displayName ?? (_isOwner
+        ? FFLocalizations.of(context).getText('sd_my_shop')
+        : FFLocalizations.of(context).getText('sd_seller'));
     final city = seller?.city ?? '';
     final rating = _avgRating(products);
     final totalReviews = products.fold<int>(0, (s, p) => s + p.reviews);
@@ -442,7 +445,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                 ),
                 const Spacer(),
                 Text(
-                  _isOwner ? 'My Shop' : 'Seller',
+                  _isOwner ? FFLocalizations.of(context).getText('sd_my_shop') : FFLocalizations.of(context).getText('sd_seller'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -549,7 +552,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                           const SizedBox(width: 3),
                           Flexible(
                             child: Text(
-                              city.isNotEmpty ? city : 'Zanzibar',
+                              city.isNotEmpty ? city : FFLocalizations.of(context).getText('sd_zanzibar'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -585,7 +588,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '· $totalReviews reviews',
+                              '· $totalReviews ${FFLocalizations.of(context).getText('sd_reviews_suffix')}',
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 11.5,
@@ -629,9 +632,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                 child: _statCard(
                   icon: Icons.attach_money_rounded,
                   color: kAmber,
-                  label: 'Revenue',
+                  label: FFLocalizations.of(context).getText('sd_revenue'),
                   value: 'TZS 0',
-                  hint: 'This month',
+                  hint: FFLocalizations.of(context).getText('sd_this_month'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -647,9 +650,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                     return _statCard(
                       icon: Icons.shopping_bag_outlined,
                       color: kBlue,
-                      label: 'Orders',
+                      label: FFLocalizations.of(context).getText('sd_orders'),
                       value: '${snap.data ?? 0}',
-                      hint: 'All time',
+                      hint: FFLocalizations.of(context).getText('sd_all_time'),
                     );
                   },
                 ),
@@ -663,9 +666,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                 child: _statCard(
                   icon: Icons.inventory_2_outlined,
                   color: kOrange,
-                  label: 'Products',
+                  label: FFLocalizations.of(context).getText('sd_products'),
                   value: '${products.length}',
-                  hint: 'Listed by you',
+                  hint: FFLocalizations.of(context).getText('sd_listed_by_you'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -673,10 +676,10 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                 child: _statCard(
                   icon: Icons.visibility_outlined,
                   color: kPurple,
-                  label: 'Views',
+                  label: FFLocalizations.of(context).getText('sd_views'),
                   value: formatNumber(totalViews,
                       formatType: FormatType.compact),
-                  hint: 'All products',
+                  hint: FFLocalizations.of(context).getText('sd_all_products'),
                 ),
               ),
             ],
@@ -766,7 +769,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
             child: _quickAction(
               icon: Icons.add_circle_outline_rounded,
               color: kGreen,
-              label: 'Add Product',
+              label: FFLocalizations.of(context).getText('sd_add_product'),
               onTap: () => context.pushNamed(SelectAdWidget.routeName),
             ),
           ),
@@ -775,10 +778,10 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
             child: _quickAction(
               icon: Icons.list_alt_rounded,
               color: kBlue,
-              label: 'My Products',
+              label: FFLocalizations.of(context).getText('sd_my_products'),
               onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Scroll down to see your products'),
+                SnackBar(
+                  content: Text(FFLocalizations.of(context).getText('sd_scroll_hint')),
                   duration: Duration(seconds: 2),
                 ),
               ),
@@ -789,7 +792,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
             child: _quickAction(
               icon: Icons.local_shipping_outlined,
               color: kOrange,
-              label: 'Orders',
+              label: FFLocalizations.of(context).getText('sd_orders_btn'),
               onTap: () =>
                   context.pushNamed(OrderDetailsWidget.routeName),
             ),
@@ -879,15 +882,15 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                     ),
                   ],
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.chat_bubble_outline_rounded,
+                    const Icon(Icons.chat_bubble_outline_rounded,
                         color: Colors.white, size: 18),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text(
-                      'Chat',
-                      style: TextStyle(
+                      FFLocalizations.of(context).getText('sd_chat'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -954,26 +957,26 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
             _infoRow(
               icon: Icons.location_on_rounded,
               color: kRed,
-              label: 'Shop location',
+              label: FFLocalizations.of(context).getText('sd_shop_location'),
               value: city.isNotEmpty
                   ? (district.isNotEmpty ? '$district, $city' : city)
-                  : 'Zanzibar, Tanzania',
+                  : FFLocalizations.of(context).getText('sd_zanzibar_tanzania'),
             ),
             const SizedBox(height: 12),
             _infoRow(
               icon: Icons.calendar_today_rounded,
               color: kBlue,
-              label: 'Joined ZanNext',
+              label: FFLocalizations.of(context).getText('sd_joined'),
               value: joined != null
                   ? '${joined.day}/${joined.month}/${joined.year}'
-                  : 'Recently',
+                  : FFLocalizations.of(context).getText('sd_recently'),
             ),
             const SizedBox(height: 12),
             _infoRow(
               icon: Icons.inventory_2_rounded,
               color: kAmber,
-              label: 'Active listings',
-              value: '${products.length} products',
+              label: FFLocalizations.of(context).getText('sd_active_listings'),
+              value: '${products.length} ${FFLocalizations.of(context).getText('sd_products_count')}',
             ),
           ],
         ),
@@ -1049,7 +1052,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
           if (i == 0) {
             final active = _selectedCategory == null;
             return _filterChip(
-              label: 'All (${allProducts.length})',
+              label: '${FFLocalizations.of(context).getText('sd_all')} (${allProducts.length})',
               active: active,
               onTap: () => safeSetState(() => _selectedCategory = null),
             );
@@ -1268,7 +1271,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader(
-              'Customer Reviews',
+              FFLocalizations.of(context).getText('sd_customer_reviews'),
               trailing: '${all.length}',
             ),
             const SizedBox(height: 4),
@@ -1323,7 +1326,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                           Text(
                             unreplied.isEmpty
                                 ? 'All reviews answered'
-                                : '${unreplied.length} review${unreplied.length == 1 ? '' : 's'} need a reply',
+                                : '${unreplied.length} ${unreplied.length == 1 ? FFLocalizations.of(context).getText('sd_review_singular') : FFLocalizations.of(context).getText('sd_review_plural')} ${FFLocalizations.of(context).getText('sd_reviews_need_reply')}',
                             style: TextStyle(
                               color: _text,
                               fontSize: 14,
@@ -1333,7 +1336,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                           const SizedBox(height: 3),
                           Text(
                             unreplied.isEmpty
-                                ? 'Keep it up — customers love responses'
+                                ? FFLocalizations.of(context).getText('sd_keep_up')
                                 : 'Tap to reply and boost your seller score',
                             style: TextStyle(
                               color: _muted,
@@ -1356,8 +1359,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Total reviews: ${all.length}  ·  '
-                'Unreplied: ${unreplied.length}',
+                '${FFLocalizations.of(context).getText('sd_total_reviews')} ${all.length}  ·  '
+                '${FFLocalizations.of(context).getText('sd_unreplied')} ${unreplied.length}',
                 style: TextStyle(color: _muted, fontSize: 11.5),
               ),
             ),
@@ -1441,8 +1444,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
               const SizedBox(height: 14),
               Text(
                 _isOwner
-                    ? 'You haven\'t posted any products yet'
-                    : 'This seller hasn\'t posted any products yet',
+                    ? FFLocalizations.of(context).getText('sd_you_no_products')
+                    : FFLocalizations.of(context).getText('sd_seller_no_products'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _text,
@@ -1466,9 +1469,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                   ),
                   icon: const Icon(Icons.add_rounded,
                       color: Colors.white, size: 18),
-                  label: const Text(
-                    'Add your first product',
-                    style: TextStyle(
+                  label: Text(
+                    FFLocalizations.of(context).getText('sd_add_first'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -1488,11 +1491,11 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: Responsive.productCols(context),
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          childAspectRatio: 0.68,
+          childAspectRatio: 0.72,
         ),
         itemCount: products.length,
         itemBuilder: (context, i) => _productCard(products[i]),
@@ -1578,8 +1581,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                               color: kRed,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Text(
-                              'SOLD OUT',
+                            child: Text(
+                              FFLocalizations.of(context).getText('sd_sold_out'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -1626,7 +1629,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                available ? 'LIVE' : 'SOLD',
+                                available
+                                    ? FFLocalizations.of(context).getText('sd_live')
+                                    : FFLocalizations.of(context).getText('sd_sold'),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 9.5,
@@ -1652,8 +1657,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                           color: const Color(0xFF16A34A),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'IN STOCK',
+                        child: Text(
+                          FFLocalizations.of(context).getText('sd_in_stock'),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 9,
@@ -1677,7 +1682,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                   children: [
                     Text(
                       valueOrDefault<String>(
-                          item.inventoryName, 'Product'),
+                          item.inventoryName, FFLocalizations.of(context).getText('sd_product_fallback')),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1713,7 +1718,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                           Expanded(
                             child: _miniAction(
                               icon: Icons.edit_outlined,
-                              label: 'Edit',
+                              label: FFLocalizations.of(context).getText('sd_edit'),
                               color: kBlue,
                               onTap: () => context.pushNamed(
                                 EditModeWidget.routeName,
@@ -1730,7 +1735,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                           Expanded(
                             child: _miniAction(
                               icon: Icons.delete_outline_rounded,
-                              label: 'Del',
+                              label: FFLocalizations.of(context).getText('sd_del'),
                               color: kRed,
                               onTap: () => _confirmDelete(item),
                             ),
@@ -1759,8 +1764,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
         SnackBar(
           content: Text(
             !current
-                ? '"${item.inventoryName}" marked as available'
-                : '"${item.inventoryName}" marked as sold out',
+                ? '"${item.inventoryName}" ${FFLocalizations.of(context).getText('sd_marked_available')}'
+                : '"${item.inventoryName}" ${FFLocalizations.of(context).getText('sd_marked_sold')}',
           ),
           backgroundColor: !current ? kGreen : kRed,
           behavior: SnackBarBehavior.floating,
@@ -1815,11 +1820,11 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: _card,
         title: Text(
-          'Delete product?',
+          FFLocalizations.of(context).getText('sd_delete_product'),
           style: TextStyle(color: _text, fontWeight: FontWeight.w700),
         ),
         content: Text(
-          'This will permanently remove "${item.inventoryName}" from your shop.',
+          '${FFLocalizations.of(context).getText('sd_delete_body_prefix')}${item.inventoryName}${FFLocalizations.of(context).getText('sd_delete_body_suffix')}',
           style: TextStyle(color: _muted, fontSize: 13.5),
         ),
         shape: RoundedRectangleBorder(
@@ -1828,13 +1833,13 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text('Cancel', style: TextStyle(color: _muted)),
+            child: Text(FFLocalizations.of(context).getText('sd_cancel'), style: TextStyle(color: _muted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(
+            child: Text(
+              FFLocalizations.of(context).getText('sd_delete'),
+              style: const TextStyle(
                 color: kRed,
                 fontWeight: FontWeight.w700,
               ),
@@ -1849,7 +1854,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
         await item.reference.delete();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Product deleted')),
+          SnackBar(content: Text(FFLocalizations.of(context).getText('sd_product_deleted'))),
         );
       } catch (e) {
         if (!mounted) return;
@@ -1886,7 +1891,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
             lastMessageTime: getCurrentTimestamp,
             buyerRef: currentUserReference,
             sellerRef: _sellerRef,
-            productName: 'Shop inquiry',
+            productName: FFLocalizations.of(context).getText('sd_shop_inquiry'),
             price: 0,
           ),
           ...mapToFirestore({
@@ -1896,7 +1901,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
             ],
             'User_name': [
               currentUserDisplayName,
-              seller?.displayName ?? 'Seller',
+              seller?.displayName ?? FFLocalizations.of(context).getText('sd_seller'),
             ],
             'items_images': [
               _imgUrl(seller?.photoUrl).isNotEmpty

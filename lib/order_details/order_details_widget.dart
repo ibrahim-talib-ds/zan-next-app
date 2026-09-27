@@ -2,6 +2,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -109,8 +110,8 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
     if (currentUserReference == null) {
       return _stateMessage(
         icon: Icons.lock_outline_rounded,
-        title: 'Please sign in',
-        subtitle: 'You need to sign in to see your orders.',
+        title: FFLocalizations.of(context).getText('od_please_sign_in'),
+        subtitle: FFLocalizations.of(context).getText('od_sign_in_sub'),
       );
     }
 
@@ -131,7 +132,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
         if (snapshot.hasError) {
           return _stateMessage(
             icon: Icons.error_outline_rounded,
-            title: 'Could not load orders',
+            title: FFLocalizations.of(context).getText('od_could_not_load'),
             subtitle: '${snapshot.error}',
             iconColor: kRed,
           );
@@ -185,14 +186,14 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                     color: kRed,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.delete_outline_rounded,
+                      const Icon(Icons.delete_outline_rounded,
                           color: Colors.white, size: 22),
-                      SizedBox(width: 6),
-                      Text('Delete',
-                          style: TextStyle(
+                      const SizedBox(width: 6),
+                      Text(FFLocalizations.of(context).getText('od_delete'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
@@ -242,21 +243,21 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Orders',
-                style: TextStyle(
+                FFLocalizations.of(context).getText('od_header_title'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
-                'Buyer & Seller',
-                style: TextStyle(color: Colors.white70, fontSize: 11),
+                FFLocalizations.of(context).getText('od_header_sub'),
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
             ],
           ),
@@ -269,14 +270,14 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
               if (v == 'clear_cancelled') _confirmClearCancelled();
               if (v == 'clear_all') _confirmClearAllOrders();
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'clear_delivered',
                 child: Row(
                   children: [
-                    Icon(Icons.done_all_rounded, size: 18),
-                    SizedBox(width: 10),
-                    Text('Clear delivered'),
+                    const Icon(Icons.done_all_rounded, size: 18),
+                    const SizedBox(width: 10),
+                    Text(FFLocalizations.of(context).getText('od_menu_clear_delivered')),
                   ],
                 ),
               ),
@@ -284,9 +285,9 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                 value: 'clear_cancelled',
                 child: Row(
                   children: [
-                    Icon(Icons.cancel_outlined, size: 18),
-                    SizedBox(width: 10),
-                    Text('Clear cancelled'),
+                    const Icon(Icons.cancel_outlined, size: 18),
+                    const SizedBox(width: 10),
+                    Text(FFLocalizations.of(context).getText('od_menu_clear_cancelled')),
                   ],
                 ),
               ),
@@ -294,11 +295,11 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                 value: 'clear_all',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_sweep_rounded,
+                    const Icon(Icons.delete_sweep_rounded,
                         size: 18, color: kRed),
-                    SizedBox(width: 10),
-                    Text('Clear all',
-                        style: TextStyle(color: kRed)),
+                    const SizedBox(width: 10),
+                    Text(FFLocalizations.of(context).getText('od_menu_clear_all'),
+                        style: const TextStyle(color: kRed)),
                   ],
                 ),
               ),
@@ -319,26 +320,26 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             backgroundColor: _card,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16)),
-            title: Text('Delete order?',
+            title: Text(FFLocalizations.of(context).getText('od_delete_order_title'),
                 style: TextStyle(
                     color: _text,
                     fontWeight: FontWeight.w800,
                     fontSize: 16)),
             content: Text(
-              '"${order.productName ?? "This order"}" will be removed from your list. The other party still sees it.',
+              '${FFLocalizations.of(context).getText('od_delete_order_body_prefix')}${order.productName ?? FFLocalizations.of(context).getText('od_this_order')}${FFLocalizations.of(context).getText('od_delete_order_body_mid')}',
               style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text('Cancel',
+                child: Text(FFLocalizations.of(context).getText('od_cancel'),
                     style: TextStyle(
                         color: _muted, fontWeight: FontWeight.w600)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete',
-                    style: TextStyle(
+                child: Text(FFLocalizations.of(context).getText('od_delete'),
+                    style: const TextStyle(
                         color: kRed, fontWeight: FontWeight.w800)),
               ),
             ],
@@ -358,7 +359,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Order removed from your list'),
+          content: Text(FFLocalizations.of(context).getText('od_order_removed')),
           backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -368,7 +369,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not delete: $e'),
+          content: Text('${FFLocalizations.of(context).getText('od_could_not_delete')}$e'),
           backgroundColor: kRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -377,20 +378,23 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   }
 
   Future<void> _confirmClearDelivered() async {
-    final ok = await _confirmBulk('Clear delivered orders?',
-        'All delivered orders will be removed from your list.');
+    final ok = await _confirmBulk(
+        FFLocalizations.of(context).getText('od_clear_delivered_title'),
+        FFLocalizations.of(context).getText('od_clear_delivered_body'));
     if (ok) await _bulkHide(statuses: ['delivered']);
   }
 
   Future<void> _confirmClearCancelled() async {
-    final ok = await _confirmBulk('Clear cancelled orders?',
-        'All cancelled orders will be removed from your list.');
+    final ok = await _confirmBulk(
+        FFLocalizations.of(context).getText('od_clear_cancelled_title'),
+        FFLocalizations.of(context).getText('od_clear_cancelled_body'));
     if (ok) await _bulkHide(statuses: ['cancelled']);
   }
 
   Future<void> _confirmClearAllOrders() async {
-    final ok = await _confirmBulk('Clear all orders?',
-        'Every order in this tab will be removed from your list. The other party still sees them.');
+    final ok = await _confirmBulk(
+        FFLocalizations.of(context).getText('od_clear_all_title'),
+        FFLocalizations.of(context).getText('od_clear_all_body'));
     if (ok) await _bulkHide(statuses: null);
   }
 
@@ -411,14 +415,14 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text('Cancel',
+                child: Text(FFLocalizations.of(context).getText('od_cancel'),
                     style: TextStyle(
                         color: _muted, fontWeight: FontWeight.w600)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Clear',
-                    style: TextStyle(
+                child: Text(FFLocalizations.of(context).getText('od_clear'),
+                    style: const TextStyle(
                         color: kRed, fontWeight: FontWeight.w800)),
               ),
             ],
@@ -458,7 +462,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Cleared $count order(s)'),
+          content: Text('${FFLocalizations.of(context).getText('od_cleared_prefix')}$count${FFLocalizations.of(context).getText('od_cleared_suffix')}'),
           backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -468,7 +472,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not clear: $e'),
+          content: Text('${FFLocalizations.of(context).getText('od_could_not_clear')}$e'),
           backgroundColor: kRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -496,7 +500,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
           children: [
             Expanded(
               child: _tabBtn(
-                label: 'My Orders',
+                label: FFLocalizations.of(context).getText('od_tab_my_orders'),
                 icon: Icons.shopping_bag_outlined,
                 active: _model.activeTab == 'buyer',
                 onTap: () => safeSetState(() => _model.activeTab = 'buyer'),
@@ -504,7 +508,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             ),
             Expanded(
               child: _tabBtn(
-                label: 'Received',
+                label: FFLocalizations.of(context).getText('od_tab_received'),
                 icon: Icons.storefront_outlined,
                 active: _model.activeTab == 'seller',
                 onTap: () => safeSetState(() => _model.activeTab = 'seller'),
@@ -607,7 +611,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                     children: [
                       Text(
                         valueOrDefault<String>(
-                            order.productName, 'Product'),
+                            order.productName, FFLocalizations.of(context).getText('od_product_fallback')),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -704,7 +708,9 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             const SizedBox(width: 4),
             Flexible(
               child: Text(
-                isBuyer ? 'Seller: $name' : 'Buyer: $name',
+                isBuyer
+                    ? '${FFLocalizations.of(context).getText('od_seller_prefix')}$name'
+                    : '${FFLocalizations.of(context).getText('od_buyer_prefix')}$name',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: _muted, fontSize: 12),
@@ -731,18 +737,18 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
   _OrderStatus _statusOf(String? raw) {
     final s = (raw ?? '').toLowerCase().trim();
     if (s.contains('deliver')) {
-      return _OrderStatus('Delivered', kGreen, Icons.check_circle_rounded);
+      return _OrderStatus(FFLocalizations.of(context).getText('od_status_delivered'), kGreen, Icons.check_circle_rounded);
     }
     if (s.contains('ship') || s.contains('way')) {
-      return _OrderStatus('On the way', kBlue, Icons.local_shipping_rounded);
+      return _OrderStatus(FFLocalizations.of(context).getText('od_status_on_way'), kBlue, Icons.local_shipping_rounded);
     }
     if (s.contains('cancel')) {
-      return _OrderStatus('Cancelled', kRed, Icons.cancel_outlined);
+      return _OrderStatus(FFLocalizations.of(context).getText('od_status_cancelled'), kRed, Icons.cancel_outlined);
     }
     if (s.contains('return')) {
-      return _OrderStatus('Returned', _muted, Icons.replay_rounded);
+      return _OrderStatus(FFLocalizations.of(context).getText('od_status_returned'), _muted, Icons.replay_rounded);
     }
-    return _OrderStatus('Pending', kAmber, Icons.access_time_rounded);
+    return _OrderStatus(FFLocalizations.of(context).getText('od_status_pending'), kAmber, Icons.access_time_rounded);
   }
 
   Widget _statusBadge(_OrderStatus st) {
@@ -779,7 +785,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
         Expanded(
           child: _outlineBtn(
             icon: Icons.chat_bubble_outline_rounded,
-            label: 'Contact Seller',
+            label: FFLocalizations.of(context).getText('od_contact_seller'),
             onTap: () => _openChatWith(order.seller, order),
           ),
         ),
@@ -837,7 +843,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             Expanded(
               child: _outlineBtn(
                 icon: Icons.chat_bubble_outline_rounded,
-                label: 'Message Buyer',
+                label: FFLocalizations.of(context).getText('od_message_buyer'),
                 onTap: () => _openChatWith(order.buyer, order),
               ),
             ),
@@ -854,7 +860,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                 color: kGreen,
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Order completed')),
+                    SnackBar(content: Text(FFLocalizations.of(context).getText('od_order_completed'))),
                   );
                 },
               ),
@@ -891,12 +897,12 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Status updated to "$newStatus"')),
+        SnackBar(content: Text('${FFLocalizations.of(context).getText('od_status_updated_prefix')}$newStatus${FFLocalizations.of(context).getText('od_status_updated_suffix')}')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Update failed: $e')),
+        SnackBar(content: Text('${FFLocalizations.of(context).getText('od_update_failed')}$e')),
       );
     }
   }
@@ -945,7 +951,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
         final newDoc = ChatsRecord.collection.doc();
         await newDoc.set({
           ...createChatsRecordData(
-            lastMessage: 'Hi, about your order',
+            lastMessage: FFLocalizations.of(context).getText('od_chat_about_order'),
             lastMessageTime: getCurrentTimestamp,
             productRef: order.productRef,
             buyerRef: order.buyer,
@@ -975,7 +981,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open chat: $e')),
+        SnackBar(content: Text('${FFLocalizations.of(context).getText('od_could_not_open_chat')}$e')),
       );
     }
   }
@@ -1073,7 +1079,9 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             ),
             const SizedBox(height: 22),
             Text(
-              isBuyerTab ? 'No orders yet' : 'No incoming orders yet',
+              isBuyerTab
+                  ? FFLocalizations.of(context).getText('od_empty_buyer_title')
+                  : FFLocalizations.of(context).getText('od_empty_seller_title'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _text,
@@ -1084,8 +1092,8 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             const SizedBox(height: 8),
             Text(
               isBuyerTab
-                  ? "Start your first order — browse products\nand shop with trusted sellers."
-                  : "When buyers order your products,\nthey will show up here.",
+                  ? FFLocalizations.of(context).getText('od_empty_buyer_sub')
+                  : FFLocalizations.of(context).getText('od_empty_seller_sub'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _muted,
@@ -1134,7 +1142,9 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      isBuyerTab ? 'Start Shopping' : 'Add a Product',
+                      isBuyerTab
+                          ? FFLocalizations.of(context).getText('od_start_shopping')
+                          : FFLocalizations.of(context).getText('od_add_product'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,
@@ -1368,7 +1378,7 @@ class _TrackingSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Track Order',
+                            FFLocalizations.of(context).getText('ts_title'),
                             style: TextStyle(
                               color: colors.text,
                               fontSize: 17,
@@ -1443,7 +1453,7 @@ class _TrackingSheet extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'CURRENT STATUS',
+                                        FFLocalizations.of(context).getText('ts_current_status'),
                                         style: TextStyle(
                                           color:
                                               Colors.white.withOpacity(0.75),
@@ -1527,7 +1537,7 @@ class _TrackingSheet extends StatelessWidget {
                                       CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'ESTIMATED ARRIVAL',
+                                      FFLocalizations.of(context).getText('ts_eta'),
                                       style: TextStyle(
                                         color: colors.muted,
                                         fontSize: 10,
@@ -1577,7 +1587,7 @@ class _TrackingSheet extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Order Timeline',
+                                  FFLocalizations.of(context).getText('ts_timeline'),
                                   style: TextStyle(
                                     color: colors.text,
                                     fontSize: 13.5,
@@ -1681,8 +1691,8 @@ class _TrackingSheet extends StatelessWidget {
                                                           BorderRadius
                                                               .circular(6),
                                                     ),
-                                                    child: const Text(
-                                                      'NOW',
+                                                    child: Text(
+                                                      FFLocalizations.of(context).getText('ts_now'),
                                                       style: TextStyle(
                                                         color: kGreen,
                                                         fontSize: 9.5,
@@ -1699,9 +1709,9 @@ class _TrackingSheet extends StatelessWidget {
                                             Text(
                                               done
                                                   ? (isNow
-                                                      ? 'In progress'
-                                                      : 'Completed')
-                                                  : 'Pending',
+                                                      ? FFLocalizations.of(context).getText('ts_in_progress')
+                                                      : FFLocalizations.of(context).getText('ts_completed'))
+                                                  : FFLocalizations.of(context).getText('ts_pending_step'),
                                               style: TextStyle(
                                                 color: colors.muted,
                                                 fontSize: 11,
@@ -1824,7 +1834,7 @@ class _TrackingSheet extends StatelessWidget {
                                       CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'DELIVERING TO',
+                                      FFLocalizations.of(context).getText('ts_delivering_to'),
                                       style: TextStyle(
                                         color: colors.muted,
                                         fontSize: 10,
@@ -1870,9 +1880,9 @@ class _TrackingSheet extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              'Done',
+                              FFLocalizations.of(context).getText('ts_done'),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,

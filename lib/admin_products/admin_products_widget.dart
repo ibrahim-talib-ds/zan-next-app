@@ -1,5 +1,6 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -106,14 +107,14 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
                               color: kRed,
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.delete_outline_rounded,
+                                const Icon(Icons.delete_outline_rounded,
                                     color: Colors.white, size: 22),
-                                SizedBox(width: 6),
-                                Text('Delete',
-                                    style: TextStyle(
+                                const SizedBox(width: 6),
+                                Text(FFLocalizations.of(context).getText('ap_delete'),
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 13,
@@ -160,7 +161,7 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
-                  hintText: 'Search by product or seller...',
+                  hintText: FFLocalizations.of(context).getText('ap_search_hint'),
                   hintStyle: TextStyle(color: _muted, fontSize: 13.5),
                   contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -206,14 +207,14 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
             onPressed: () => Navigator.pop(context),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('All Products',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-              SizedBox(height: 2),
-              Text('Tap chips to toggle · swipe to delete',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              Text(FFLocalizations.of(context).getText('ap_header_title'),
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('ap_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -225,11 +226,11 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
 
   Widget _productTile(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
-    final name = (d['inventory_name'] ?? 'Product').toString();
+    final name = (d['inventory_name'] ?? FFLocalizations.of(context).getText('ap_product_fallback')).toString();
     final price = (d['inventory_price'] as num?)?.toDouble() ?? 0;
     final images = (d['inventory_images'] as List?) ?? [];
     final photo = images.isNotEmpty ? _imgUrl(images.first.toString()) : '';
-    final sellerName = (d['seller_name'] ?? 'Unknown seller').toString();
+    final sellerName = (d['seller_name'] ?? FFLocalizations.of(context).getText('ap_unknown_seller')).toString();
 
     // Visibility flags
     final inCatalog = d['all_products'] == true;
@@ -282,7 +283,7 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
                           fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 2),
-                    Text('By $sellerName', maxLines: 1,
+                    Text('${FFLocalizations.of(context).getText('ap_by_prefix')}$sellerName', maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: _muted, fontSize: 11)),
                   ],
@@ -298,28 +299,28 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
             runSpacing: 8,
             children: [
               _toggleChip(
-                label: 'Catalog',
+                label: FFLocalizations.of(context).getText('ap_chip_catalog'),
                 icon: Icons.grid_view_rounded,
                 active: inCatalog,
                 color: kGreen,
                 onTap: () => _toggleField(doc, 'all_products', inCatalog),
               ),
               _toggleChip(
-                label: 'New',
+                label: FFLocalizations.of(context).getText('ap_chip_new'),
                 icon: Icons.fiber_new_rounded,
                 active: isNew,
                 color: const Color(0xFF3B82F6),
                 onTap: () => _toggleField(doc, 'new_in', isNew),
               ),
               _toggleChip(
-                label: 'Trending',
+                label: FFLocalizations.of(context).getText('ap_chip_trending'),
                 icon: Icons.trending_up_rounded,
                 active: isTrending,
                 color: const Color(0xFFFF5964),
                 onTap: () => _toggleField(doc, 'top_selling', isTrending),
               ),
               _toggleChip(
-                label: 'Boosted',
+                label: FFLocalizations.of(context).getText('ap_chip_boosted'),
                 icon: Icons.star_rounded,
                 active: isBoosted,
                 color: const Color(0xFFFFB300),
@@ -406,17 +407,17 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Delete product?',
+        title: Text(FFLocalizations.of(context).getText('ap_delete_title'),
             style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
-        content: Text('"$name" will be permanently removed.',
+        content: Text('${FFLocalizations.of(context).getText('ap_delete_body_prefix')}$name${FFLocalizations.of(context).getText('ap_delete_body_suffix')}',
             style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
+            child: Text(FFLocalizations.of(context).getText('ap_cancel'), style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: kRed, fontWeight: FontWeight.w800))),
+            child: Text(FFLocalizations.of(context).getText('ap_delete'), style: const TextStyle(color: kRed, fontWeight: FontWeight.w800))),
         ],
       ),
     ) ?? false;
@@ -426,14 +427,14 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
     try {
       await doc.reference.delete();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Product deleted'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(FFLocalizations.of(context).getText('ap_deleted')),
         backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not delete: $e'),
+        content: Text('${FFLocalizations.of(context).getText('ap_delete_failed')}$e'),
         backgroundColor: kRed, behavior: SnackBarBehavior.floating,
       ));
     }
@@ -450,7 +451,7 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
             child: const Icon(Icons.inventory_2_outlined, color: kGreen, size: 36),
           ),
           const SizedBox(height: 16),
-          Text('No products yet', style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(FFLocalizations.of(context).getText('ap_empty'), style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w700)),
         ],
       ),
     );

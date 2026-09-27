@@ -1,4 +1,5 @@
 import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
@@ -131,7 +132,7 @@ class _WelcomeWidgetState extends State<WelcomeWidget>
 
                     // Title
                     Text(
-                      'ZanNext',
+                      FFLocalizations.of(context).getText('welcome_app_name'),
                       textAlign: TextAlign.center,
                       style: theme.headlineLarge.override(
                         font: GoogleFonts.interTight(
@@ -153,7 +154,7 @@ class _WelcomeWidgetState extends State<WelcomeWidget>
 
                     // Tagline
                     Text(
-                      'Buy. Sell. Connect.',
+                      FFLocalizations.of(context).getText('welcome_tagline'),
                       textAlign: TextAlign.center,
                       style: theme.bodyMedium.override(
                         font: GoogleFonts.inter(
@@ -200,7 +201,7 @@ class _WelcomeWidgetState extends State<WelcomeWidget>
                             children: [
                               // Header
                               Text(
-                                'Welcome',
+                                FFLocalizations.of(context).getText('welcome_title'),
                                 textAlign: TextAlign.center,
                                 style: theme.titleLarge.override(
                                   font: GoogleFonts.interTight(
@@ -216,7 +217,7 @@ class _WelcomeWidgetState extends State<WelcomeWidget>
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Sign in or create a new account to get started',
+                                FFLocalizations.of(context).getText('welcome_subtitle'),
                                 textAlign: TextAlign.center,
                                 style: theme.bodySmall.override(
                                   font: GoogleFonts.inter(
@@ -251,7 +252,7 @@ class _WelcomeWidgetState extends State<WelcomeWidget>
                                     },
                                   );
                                 },
-                                text: 'Sign In',
+                                text: FFLocalizations.of(context).getText('welcome_sign_in'),
                                 options: FFButtonOptions(
                                   width: double.infinity,
                                   height: 52,
@@ -297,7 +298,7 @@ class _WelcomeWidgetState extends State<WelcomeWidget>
                                     },
                                   );
                                 },
-                                text: 'Create New Account',
+                                text: FFLocalizations.of(context).getText('welcome_create_account'),
                                 options: FFButtonOptions(
                                   width: double.infinity,
                                   height: 52,
@@ -334,7 +335,7 @@ class _WelcomeWidgetState extends State<WelcomeWidget>
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    'Privacy Policy',
+                                    FFLocalizations.of(context).getText('welcome_privacy_policy'),
                                     style: theme.bodySmall.override(
                                       font: GoogleFonts.inter(
                                         fontWeight: FontWeight.w400,
@@ -360,7 +361,7 @@ class _WelcomeWidgetState extends State<WelcomeWidget>
                                   ),
                                   const SizedBox(width: 20),
                                   Text(
-                                    'Terms of Service',
+                                    FFLocalizations.of(context).getText('welcome_terms'),
                                     style: theme.bodySmall.override(
                                       font: GoogleFonts.inter(
                                         fontWeight: FontWeight.w400,

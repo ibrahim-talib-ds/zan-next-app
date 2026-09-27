@@ -4,6 +4,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -319,8 +320,8 @@ class _SearchWidgetState extends State<SearchWidget> {
                   onPressed: () => context.safePop(),
                 ),
                 const SizedBox(width: 6),
-                const Text('Search',
-                    style: TextStyle(
+                Text(FFLocalizations.of(context).getText('search_title'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -379,10 +380,10 @@ class _SearchWidgetState extends State<SearchWidget> {
                         fontWeight: FontWeight.w500,
                       ),
                       cursorColor: kGreen,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         isDense: true,
                         border: InputBorder.none,
-                        hintText: 'Search products...',
+                        hintText: FFLocalizations.of(context).getText('search_hint'),
                         hintStyle: TextStyle(
                           color: kMutedDark,
                           fontSize: 14,
@@ -441,7 +442,7 @@ class _SearchWidgetState extends State<SearchWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Category chips
-          Text('CATEGORY',
+          Text(FFLocalizations.of(context).getText('search_filter_category'),
               style: TextStyle(
                 color: _muted,
                 fontSize: 10.5,
@@ -475,7 +476,9 @@ class _SearchWidgetState extends State<SearchWidget> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      cat,
+                      cat == 'All'
+                          ? FFLocalizations.of(context).getText('search_category_all')
+                          : cat,
                       style: TextStyle(
                         color: active ? Colors.white : _text,
                         fontSize: 12,
@@ -493,7 +496,7 @@ class _SearchWidgetState extends State<SearchWidget> {
           // Price range
           Row(
             children: [
-              Text('PRICE',
+              Text(FFLocalizations.of(context).getText('search_filter_price'),
                   style: TextStyle(
                     color: _muted,
                     fontSize: 10.5,
@@ -534,7 +537,7 @@ class _SearchWidgetState extends State<SearchWidget> {
           // Sort dropdown
           Row(
             children: [
-              Text('SORT BY',
+              Text(FFLocalizations.of(context).getText('search_filter_sort_by'),
                   style: TextStyle(
                     color: _muted,
                     fontSize: 10.5,
@@ -557,19 +560,19 @@ class _SearchWidgetState extends State<SearchWidget> {
                       _model.applyFilters();
                     });
                   },
-                  items: const [
+                  items: [
                     DropdownMenuItem(
                         value: SearchSort.relevance,
-                        child: Text('Relevance')),
+                        child: Text(FFLocalizations.of(context).getText('search_sort_relevance'))),
                     DropdownMenuItem(
                         value: SearchSort.newest,
-                        child: Text('Newest')),
+                        child: Text(FFLocalizations.of(context).getText('search_sort_newest'))),
                     DropdownMenuItem(
                         value: SearchSort.priceLow,
-                        child: Text('Price ↑')),
+                        child: Text(FFLocalizations.of(context).getText('search_sort_price_up'))),
                     DropdownMenuItem(
                         value: SearchSort.priceHigh,
-                        child: Text('Price ↓')),
+                        child: Text(FFLocalizations.of(context).getText('search_sort_price_down'))),
                   ],
                 ),
               ),
@@ -627,7 +630,7 @@ class _SearchWidgetState extends State<SearchWidget> {
           if (_model.recentSearches.isNotEmpty) ...[
             Row(
               children: [
-                Text('RECENT',
+                Text(FFLocalizations.of(context).getText('search_recent'),
                     style: TextStyle(
                       color: _muted,
                       fontSize: 11,
@@ -637,7 +640,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                 const Spacer(),
                 GestureDetector(
                   onTap: _clearHistory,
-                  child: const Text('Clear',
+                  child: Text(FFLocalizations.of(context).getText('search_clear'),
                       style: TextStyle(
                         color: kGreen,
                         fontSize: 12,
@@ -663,7 +666,7 @@ class _SearchWidgetState extends State<SearchWidget> {
 
           // Trending
           if (_model.trendingSearches.isNotEmpty) ...[
-            Text('TRENDING',
+            Text(FFLocalizations.of(context).getText('search_trending'),
                 style: TextStyle(
                   color: _muted,
                   fontSize: 11,
@@ -692,7 +695,7 @@ class _SearchWidgetState extends State<SearchWidget> {
           ],
 
           // Category shortcuts
-          Text('BROWSE BY CATEGORY',
+          Text(FFLocalizations.of(context).getText('search_browse_category'),
               style: TextStyle(
                 color: _muted,
                 fontSize: 11,
@@ -851,7 +854,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    valueOrDefault<String>(r.inventoryName, 'Product'),
+                    valueOrDefault<String>(r.inventoryName, FFLocalizations.of(context).getText('search_product_fallback')),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -952,7 +955,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                 )),
             const SizedBox(height: 6),
             Text(
-              'Try a different keyword or check the spelling.',
+              FFLocalizations.of(context).getText('search_try_different'),
               textAlign: TextAlign.center,
               style: TextStyle(color: _muted, fontSize: 13),
             ),
@@ -966,7 +969,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                   _model.visibleResults = [];
                 });
               },
-              child: const Text('Clear search',
+              child: Text(FFLocalizations.of(context).getText('search_clear_search'),
                   style: TextStyle(
                     color: kGreen,
                     fontWeight: FontWeight.w700,
@@ -988,7 +991,7 @@ class _SearchWidgetState extends State<SearchWidget> {
             const Icon(Icons.error_outline_rounded,
                 color: kRed, size: 48),
             const SizedBox(height: 12),
-            Text('Search failed',
+            Text(FFLocalizations.of(context).getText('search_failed'),
                 style: TextStyle(
                   color: _text,
                   fontSize: 15,

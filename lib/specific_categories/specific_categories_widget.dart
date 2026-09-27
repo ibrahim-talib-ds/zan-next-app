@@ -2,6 +2,8 @@ import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/utils/responsive.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -154,7 +156,7 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Browse · Compare · Buy',
+                      FFLocalizations.of(context).getText('sc_tagline'),
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.75),
                         fontSize: 11.5,
@@ -187,10 +189,18 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
   // ═══════════════════════════════════════════════════════════
   Widget _sortChips() {
     final chips = [
-      ('popular', 'Popular', Icons.local_fire_department_rounded),
-      ('newest', 'Newest', Icons.fiber_new_rounded),
-      ('price_low', 'Price ↑', Icons.trending_up_rounded),
-      ('price_high', 'Price ↓', Icons.trending_down_rounded),
+      ('popular',
+          FFLocalizations.of(context).getText('sc_sort_popular'),
+          Icons.local_fire_department_rounded),
+      ('newest',
+          FFLocalizations.of(context).getText('sc_sort_newest'),
+          Icons.fiber_new_rounded),
+      ('price_low',
+          FFLocalizations.of(context).getText('sc_sort_price_up'),
+          Icons.trending_up_rounded),
+      ('price_high',
+          FFLocalizations.of(context).getText('sc_sort_price_down'),
+          Icons.trending_down_rounded),
     ];
 
     return Container(
@@ -295,11 +305,11 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
   Widget _grid(List<InventoryRecord> items) {
     return GridView.builder(
       padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: Responsive.productCols(context),
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.62,
+        childAspectRatio: 0.72,
       ),
       itemCount: items.length,
       itemBuilder: (_, i) => _productCard(items[i]),
@@ -361,7 +371,7 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
               ),
               const SizedBox(height: 6),
               Text(
-                valueOrDefault<String>(record.inventoryName, 'Product'),
+                valueOrDefault<String>(record.inventoryName, FFLocalizations.of(context).getText('sc_product_fallback')),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -398,7 +408,7 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
                   const SizedBox(width: 3),
                   Expanded(
                     child: Text(
-                      valueOrDefault<String>(record.sellerName, 'Verified'),
+                      valueOrDefault<String>(record.sellerName, FFLocalizations.of(context).getText('sc_seller_fallback')),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -423,11 +433,11 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
   Widget _loading() {
     return GridView.builder(
       padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: Responsive.productCols(context),
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.62,
+        childAspectRatio: 0.72,
       ),
       itemCount: 6,
       itemBuilder: (_, __) => Container(
@@ -459,7 +469,7 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
             ),
             const SizedBox(height: 18),
             Text(
-              'Nothing in $category yet',
+              '${FFLocalizations.of(context).getText('sc_empty_title_prefix')}$category${FFLocalizations.of(context).getText('sc_empty_title_suffix')}',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _text,
@@ -469,7 +479,7 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Try another category or check back later.',
+              FFLocalizations.of(context).getText('sc_empty_subtitle'),
               textAlign: TextAlign.center,
               style: TextStyle(color: _muted, fontSize: 12.5),
             ),

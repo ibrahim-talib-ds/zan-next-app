@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/form_field_controller.dart';
 import '/index.dart';
@@ -81,7 +82,7 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Reviews',
+          FFLocalizations.of(context).getText('rev_title'),
           style: TextStyle(
             color: _text,
             fontSize: 18,
@@ -148,14 +149,14 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
                         ),
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.only(right: 20),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.delete_rounded,
+                            const Icon(Icons.delete_rounded,
                                 color: Colors.white, size: 22),
-                            SizedBox(width: 6),
-                            Text('Delete',
-                                style: TextStyle(
+                            const SizedBox(width: 6),
+                            Text(FFLocalizations.of(context).getText('rev_delete'),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
@@ -330,7 +331,7 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
           decoration: InputDecoration(
             border: InputBorder.none,
             isDense: true,
-            hintText: 'Search reviews...',
+            hintText: FFLocalizations.of(context).getText('rev_search_hint'),
             hintStyle: TextStyle(color: _muted, fontSize: 13.5),
             prefixIcon:
                 Icon(Icons.search_rounded, color: _muted, size: 20),
@@ -352,7 +353,7 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'All reviews',
+            FFLocalizations.of(context).getText('rev_all_reviews'),
             style: TextStyle(
               color: _text,
               fontSize: 16,
@@ -383,7 +384,7 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
           children: [
             Icon(Icons.reviews_outlined, color: _muted, size: 40),
             const SizedBox(height: 10),
-            Text('No reviews yet',
+            Text(FFLocalizations.of(context).getText('rev_no_reviews'),
                 style: TextStyle(color: _muted, fontSize: 13)),
           ],
         ),
@@ -401,26 +402,26 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
             backgroundColor: _card,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16)),
-            title: Text('Delete review?',
+            title: Text(FFLocalizations.of(context).getText('rev_delete_title'),
                 style: TextStyle(
                     color: _text,
                     fontWeight: FontWeight.w800,
                     fontSize: 16)),
             content: Text(
-              'This review will be permanently removed. Product rating will be recalculated.',
+              FFLocalizations.of(context).getText('rev_delete_body'),
               style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text('Cancel',
+                child: Text(FFLocalizations.of(context).getText('rev_cancel'),
                     style: TextStyle(
                         color: _muted, fontWeight: FontWeight.w600)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete',
-                    style: TextStyle(
+                child: Text(FFLocalizations.of(context).getText('rev_delete'),
+                    style: const TextStyle(
                         color: Color(0xFFDC0F0F),
                         fontWeight: FontWeight.w800)),
               ),
@@ -458,8 +459,8 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Review deleted'),
+        SnackBar(
+          content: Text(FFLocalizations.of(context).getText('rev_deleted')),
           backgroundColor: Color(0xFF1B7A4E),
           behavior: SnackBarBehavior.floating,
         ),
@@ -588,7 +589,7 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
                           color: kGreen, size: 14),
                       const SizedBox(width: 6),
                       Text(
-                        'Seller replied',
+                        FFLocalizations.of(context).getText('rev_seller_replied'),
                         style: TextStyle(
                           color: kGreen,
                           fontSize: 11.5,
@@ -628,7 +629,7 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
   // ════════════════════════════════════════════════════════
   String _timeAgo(DateTime when) {
     final d = DateTime.now().difference(when);
-    if (d.inSeconds < 60) return 'Just now';
+    if (d.inSeconds < 60) return FFLocalizations.of(context).getText('rev_time_just_now');
     if (d.inMinutes < 60) return '${d.inMinutes}m ago';
     if (d.inHours < 24) return '${d.inHours}h ago';
     if (d.inDays < 7) return '${d.inDays}d ago';

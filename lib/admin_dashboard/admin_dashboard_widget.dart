@@ -2,6 +2,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -87,7 +88,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                         color: kRed, size: 40),
                   ),
                   const SizedBox(height: 16),
-                  Text('Access denied',
+                  Text(FFLocalizations.of(context).getText('ad_access_denied'),
                       style: TextStyle(
                         color: _text,
                         fontSize: 18,
@@ -95,15 +96,15 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                       )),
                   const SizedBox(height: 8),
                   Text(
-                    'You need admin privileges to view this page.',
+                    FFLocalizations.of(context).getText('ad_access_denied_sub'),
                     textAlign: TextAlign.center,
                     style: TextStyle(color: _muted, fontSize: 13),
                   ),
                   const SizedBox(height: 20),
                   TextButton(
                     onPressed: () => context.safePop(),
-                    child: const Text('Go back',
-                        style: TextStyle(
+                    child: Text(FFLocalizations.of(context).getText('ad_go_back'),
+                        style: const TextStyle(
                           color: kGreen,
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -146,19 +147,19 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                         const SizedBox(height: 20),
                         _buildQuickActions(),
                         const SizedBox(height: 24),
-                        _buildSectionHeader('Latest Orders', trailing: 'View all',
+                        _buildSectionHeader(FFLocalizations.of(context).getText('ad_section_latest_orders'), trailing: FFLocalizations.of(context).getText('ad_view_all'),
                             onTrailingTap: () {
                           context.pushNamed(AdminOrdersWidget.routeName);
                         }),
                         _buildLatestOrders(),
                         const SizedBox(height: 24),
-                        _buildSectionHeader('Recently Joined Users', trailing: 'View all',
+                        _buildSectionHeader(FFLocalizations.of(context).getText('ad_section_recent_users'), trailing: FFLocalizations.of(context).getText('ad_view_all'),
                             onTrailingTap: () {
                           context.pushNamed(AdminUsersWidget.routeName);
                         }),
                         _buildRecentUsers(),
                         const SizedBox(height: 24),
-                        _buildSectionHeader('Top Products'),
+                        _buildSectionHeader(FFLocalizations.of(context).getText('ad_section_top_products')),
                         _buildTopProducts(),
                       ],
                     ),
@@ -203,18 +204,18 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Admin Dashboard',
-                  style: TextStyle(
+              Text(FFLocalizations.of(context).getText('ad_header_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                   )),
-              SizedBox(height: 2),
-              Text('Full control panel',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('ad_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -233,14 +234,14 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                     color: Colors.white.withOpacity(0.18),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.shield_rounded,
+                      const Icon(Icons.shield_rounded,
                           color: Colors.white, size: 12),
-                      SizedBox(width: 4),
-                      Text('ADMIN',
-                          style: TextStyle(
+                      const SizedBox(width: 4),
+                      Text(FFLocalizations.of(context).getText('ad_badge_admin'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
@@ -270,8 +271,8 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                           fontWeight: FontWeight.w900,
                         )),
                     const SizedBox(width: 4),
-                    const Text('reports',
-                        style: TextStyle(
+                    Text(FFLocalizations.of(context).getText('ad_reports_label'),
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -300,7 +301,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                 child: _statCountCard(
                   icon: Icons.people_alt_outlined,
                   color: kBlue,
-                  label: 'Total Users',
+                  label: FFLocalizations.of(context).getText('ad_total_users'),
                   stream: FirebaseFirestore.instance
                       .collection('users')
                       .snapshots(),
@@ -312,7 +313,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                 child: _statCountCard(
                   icon: Icons.inventory_2_outlined,
                   color: kAmber,
-                  label: 'Products',
+                  label: FFLocalizations.of(context).getText('ad_products'),
                   stream: FirebaseFirestore.instance
                       .collection('Inventory')
                       .snapshots(),
@@ -328,7 +329,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                 child: _statCountCard(
                   icon: Icons.shopping_bag_outlined,
                   color: kGreen,
-                  label: 'Orders',
+                  label: FFLocalizations.of(context).getText('ad_orders'),
                   stream: FirebaseFirestore.instance
                       .collection('orders')
                       .snapshots(),
@@ -348,8 +349,8 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                       icon: Icons.support_agent_outlined,
                       color: unread > 0 ? kRed : kPurple,
                       label: unread > 0
-                          ? 'Support ($unread new)'
-                          : 'Support Chats',
+                          ? '${FFLocalizations.of(context).getText('ad_support_new')} ($unread${FFLocalizations.of(context).getText('ad_support_new_suffix')})'
+                          : FFLocalizations.of(context).getText('ad_support_chats'),
                       stream: FirebaseFirestore.instance
                           .collection('support_chats')
                           .snapshots(),
@@ -538,7 +539,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('Admin Tools'),
+          _buildSectionHeader(FFLocalizations.of(context).getText('ad_section_admin_tools')),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -546,7 +547,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                 child: _adminAction(
                   icon: Icons.support_agent_rounded,
                   color: kGreen,
-                  label: 'Support Inbox',
+                  label: FFLocalizations.of(context).getText('ad_action_support_inbox'),
                   onTap: () =>
                       context.pushNamed(AdminSupportInboxWidget.routeName),
                 ),
@@ -556,7 +557,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                 child: _adminAction(
                   icon: Icons.verified_user_outlined,
                   color: kBlue,
-                  label: 'Sellers',
+                  label: FFLocalizations.of(context).getText('ad_action_sellers'),
                   onTap: () =>
                       context.pushNamed(AdminSellersWidget.routeName),
                 ),
@@ -570,7 +571,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                 child: _adminAction(
                   icon: Icons.flag_outlined,
                   color: kRed,
-                  label: 'Reports',
+                  label: FFLocalizations.of(context).getText('ad_action_reports'),
                   onTap: () =>
                       context.pushNamed(AdminReportsWidget.routeName),
                 ),
@@ -580,7 +581,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                 child: _adminAction(
                   icon: Icons.campaign_outlined,
                   color: kAmber,
-                  label: 'Broadcast',
+                  label: FFLocalizations.of(context).getText('ad_action_broadcast'),
                   onTap: () =>
                       context.pushNamed(AdminBroadcastWidget.routeName),
                 ),
@@ -699,17 +700,17 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Delete order?',
+        title: Text(FFLocalizations.of(context).getText('ad_delete_order'),
             style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
-        content: Text('"$name" will be permanently removed.',
+        content: Text('"$name"${FFLocalizations.of(context).getText('ad_delete_suffix')}',
             style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
+            child: Text(FFLocalizations.of(context).getText('ad_cancel'), style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: kRed, fontWeight: FontWeight.w800))),
+            child: Text(FFLocalizations.of(context).getText('ad_delete'), style: const TextStyle(color: kRed, fontWeight: FontWeight.w800))),
         ],
       ),
     ) ?? false;
@@ -719,14 +720,14 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
     try {
       await doc.reference.delete();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Order deleted'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(FFLocalizations.of(context).getText('ad_order_deleted')),
         backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not delete: $e'),
+        content: Text('${FFLocalizations.of(context).getText('ad_delete_failed')}$e'),
         backgroundColor: kRed, behavior: SnackBarBehavior.floating,
       ));
     }
@@ -738,7 +739,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Delete user?',
+        title: Text(FFLocalizations.of(context).getText('ad_delete_user'),
             style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
         content: Text('"$name" will be permanently removed.',
             style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
@@ -758,8 +759,8 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
     try {
       await doc.reference.delete();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('User deleted'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(FFLocalizations.of(context).getText('ad_user_deleted')),
         backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
@@ -786,7 +787,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
         builder: (context, snap) {
           if (!snap.hasData) return _loadingStrip();
           final docs = snap.data!.docs;
-          if (docs.isEmpty) return _emptyStrip('No orders yet');
+          if (docs.isEmpty) return _emptyStrip(FFLocalizations.of(context).getText('ad_no_orders'));
 
           return Container(
             decoration: BoxDecoration(
@@ -797,7 +798,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
             child: Column(
               children: List.generate(docs.length, (i) {
                 final data = docs[i].data() as Map<String, dynamic>;
-                final name = (data['product_name'] ?? 'Order').toString();
+                final name = (data['product_name'] ?? FFLocalizations.of(context).getText('ad_order_fallback')).toString();
                 final status = (data['status'] ?? 'Pending').toString();
                 final price = (data['price'] as num?)?.toDouble() ?? 0;
                 final images = (data['Item_images'] as List?) ?? [];
@@ -811,12 +812,12 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
                         color: kRed,
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
-                            SizedBox(width: 6),
-                            Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                            const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 6),
+                            Text(FFLocalizations.of(context).getText('ad_delete'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
                           ],
                         ),
                       ),
@@ -926,7 +927,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
         builder: (context, snap) {
           if (!snap.hasData) return _loadingStrip();
           final docs = snap.data!.docs;
-          if (docs.isEmpty) return _emptyStrip('No users yet');
+          if (docs.isEmpty) return _emptyStrip(FFLocalizations.of(context).getText('ad_no_users'));
 
           return Container(
             decoration: BoxDecoration(
@@ -937,7 +938,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
             child: Column(
               children: List.generate(docs.length, (i) {
                 final data = docs[i].data() as Map<String, dynamic>;
-                final name = (data['display_name'] ?? 'User').toString();
+                final name = (data['display_name'] ?? FFLocalizations.of(context).getText('ad_user_fallback')).toString();
                 final email = (data['email'] ?? '').toString();
                 final photo = _imgUrl((data['photo_url'] ?? '').toString());
                 final isAdminUser = (data['isAdmin'] as bool?) ?? false;
@@ -1063,13 +1064,13 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
         builder: (context, snap) {
           if (!snap.hasData) return _loadingStrip();
           final docs = snap.data!.docs;
-          if (docs.isEmpty) return _emptyStrip('No products yet');
+          if (docs.isEmpty) return _emptyStrip(FFLocalizations.of(context).getText('ad_no_products'));
 
           return Column(
             children: docs.map((doc) {
               final data = doc.data() as Map<String, dynamic>;
               final name =
-                  (data['inventory_name'] ?? 'Product').toString();
+                  (data['inventory_name'] ?? FFLocalizations.of(context).getText('ad_product_fallback')).toString();
               final price =
                   (data['inventory_price'] as num?)?.toDouble() ?? 0;
               final views = (data['view_count'] as num?)?.toInt() ?? 0;
@@ -1124,7 +1125,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                               Icon(Icons.visibility_outlined,
                                   size: 11, color: _muted),
                               const SizedBox(width: 3),
-                              Text('$views views',
+                              Text('$views ${FFLocalizations.of(context).getText('ad_views')}',
                                   style: TextStyle(
                                       color: _muted, fontSize: 11)),
                             ],

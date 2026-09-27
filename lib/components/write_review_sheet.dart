@@ -1,6 +1,7 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -49,7 +50,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
     if (currentUserReference == null) return;
     final text = _controller.text.trim();
     if (text.isEmpty) {
-      _snack('Please write your review');
+      _snack(FFLocalizations.of(context).getText('wr_empty'));
       return;
     }
 
@@ -98,11 +99,11 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
 
       if (!mounted) return;
       Navigator.pop(context, true);
-      _snack('Review saved!', success: true);
+      _snack(FFLocalizations.of(context).getText('wr_saved'), success: true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      _snack('Failed: $e');
+      _snack('${FFLocalizations.of(context).getText('wr_failed')}$e');
     }
   }
 
@@ -193,7 +194,9 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isEditing ? 'Edit your review' : 'Write a review',
+                        isEditing
+                            ? FFLocalizations.of(context).getText('wr_edit_title')
+                            : FFLocalizations.of(context).getText('wr_write_title'),
                         style: TextStyle(
                           color: text,
                           fontSize: 17,
@@ -216,7 +219,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
 
             // Star rating
             Text(
-              'YOUR RATING',
+              FFLocalizations.of(context).getText('wr_your_rating'),
               style: TextStyle(
                 color: muted,
                 fontSize: 10.5,
@@ -245,7 +248,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
 
             // Review text
             Text(
-              'YOUR REVIEW',
+              FFLocalizations.of(context).getText('wr_your_review'),
               style: TextStyle(
                 color: muted,
                 fontSize: 10.5,
@@ -270,7 +273,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
-                  hintText: 'Share your experience with this product...',
+                  hintText: FFLocalizations.of(context).getText('wr_review_hint'),
                   hintStyle: TextStyle(color: muted, fontSize: 13.5),
                   contentPadding:
                       const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 14),
@@ -318,7 +321,9 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                                 color: Colors.white, size: 18),
                             const SizedBox(width: 8),
                             Text(
-                              isEditing ? 'Update Review' : 'Post Review',
+                              isEditing
+                                  ? FFLocalizations.of(context).getText('wr_update')
+                                  : FFLocalizations.of(context).getText('wr_post'),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,

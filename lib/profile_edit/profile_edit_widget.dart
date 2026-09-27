@@ -6,6 +6,7 @@ import '/backend/backend.dart';
 import '/backend/firebase_storage/storage.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/upload_data.dart';
 import 'package:flutter/material.dart';
 
@@ -130,50 +131,50 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
                       children: [
                         _buildAvatarSection(),
                         const SizedBox(height: 28),
-                        _buildFieldLabel('Full Name'),
+                        _buildFieldLabel(FFLocalizations.of(context).getText('pe_label_full_name')),
                         _buildTextField(
                           controller: _model.nameTextController!,
                           focusNode: _model.nameFocusNode!,
-                          hint: 'Enter your name',
+                          hint: FFLocalizations.of(context).getText('pe_name_hint'),
                           icon: Icons.person_outline_rounded,
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
-                              return 'Name is required';
+                              return FFLocalizations.of(context).getText('pe_error_name_required');
                             }
                             if (v.trim().length < 2) {
-                              return 'Name is too short';
+                              return FFLocalizations.of(context).getText('pe_error_name_short');
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 20),
-                        _buildFieldLabel('Email Address'),
+                        _buildFieldLabel(FFLocalizations.of(context).getText('pe_label_email')),
                         _buildTextField(
                           controller: _model.emailTextController!,
                           focusNode: _model.emailFocusNode!,
-                          hint: 'Enter your email',
+                          hint: FFLocalizations.of(context).getText('pe_email_hint'),
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
-                              return 'Email is required';
+                              return FFLocalizations.of(context).getText('pe_error_email_required');
                             }
                             final re =
                                 RegExp(r'^[\w\.\-]+@[\w\-]+\.[\w\.\-]+$');
                             if (!re.hasMatch(v.trim())) {
-                              return 'Enter a valid email';
+                              return FFLocalizations.of(context).getText('pe_error_email_invalid');
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 20),
-                        _buildFieldLabel('Phone Number'),
+                        _buildFieldLabel(FFLocalizations.of(context).getText('pe_label_phone')),
                         _buildPhoneField(),
                         const SizedBox(height: 20),
-                        _buildFieldLabel('Gender'),
+                        _buildFieldLabel(FFLocalizations.of(context).getText('pe_label_gender')),
                         _buildGenderChips(),
                         const SizedBox(height: 20),
-                        _buildFieldLabel('Birthday'),
+                        _buildFieldLabel(FFLocalizations.of(context).getText('pe_label_birthday')),
                         _buildBirthdayPicker(),
                         const SizedBox(height: 32),
                       ],
@@ -220,21 +221,21 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Edit Profile',
-                style: TextStyle(
+                FFLocalizations.of(context).getText('pe_header_title'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
-                'Update your info',
-                style: TextStyle(color: Colors.white70, fontSize: 11),
+                FFLocalizations.of(context).getText('pe_header_sub'),
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
             ],
           ),
@@ -339,8 +340,8 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
                 _model.isDataUploading_uploadDataDr6 ? null : _pickAvatar,
             child: Text(
               _model.isDataUploading_uploadDataDr6
-                  ? 'Uploading...'
-                  : 'Change Photo',
+                  ? FFLocalizations.of(context).getText('pe_uploading')
+                  : FFLocalizations.of(context).getText('pe_change_photo'),
               style: const TextStyle(
                 color: kGreen,
                 fontSize: 13,
@@ -380,8 +381,8 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
         } else {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Upload failed — check your connection and try again.'),
+            SnackBar(
+              content: Text(FFLocalizations.of(context).getText('pe_upload_failed')),
               backgroundColor: kRed,
             ),
           );
@@ -396,7 +397,7 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
       if (!mounted) return;
       safeSetState(() => _model.isDataUploading_uploadDataDr6 = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: $e')),
+        SnackBar(content: Text('${FFLocalizations.of(context).getText('pe_upload_failed_short')}$e')),
       );
     }
   }
@@ -506,17 +507,17 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
               cursorColor: kGreen,
               validator: (v) {
                 if (v == null || v.trim().isEmpty) {
-                  return 'Phone is required';
+                  return FFLocalizations.of(context).getText('pe_error_phone_required');
                 }
                 final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
                 if (digits.length < 10 || digits.length > 13) {
-                  return 'Enter a valid phone (10-13 digits)';
+                  return FFLocalizations.of(context).getText('pe_error_phone_invalid');
                 }
                 return null;
               },
               decoration: InputDecoration(
                 isDense: true,
-                hintText: '712 345 678',
+                hintText: FFLocalizations.of(context).getText('pe_phone_hint'),
                 hintStyle: TextStyle(color: _muted, fontSize: 14),
                 border: InputBorder.none,
                 contentPadding:
@@ -539,9 +540,9 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
   // ═══════════════════════════════════════════════════════════
   Widget _buildGenderChips() {
     final genders = [
-      ('Male', Icons.male_rounded),
-      ('Female', Icons.female_rounded),
-      ('Other', Icons.transgender_rounded),
+      (FFLocalizations.of(context).getText('pe_gender_male'), Icons.male_rounded),
+      (FFLocalizations.of(context).getText('pe_gender_female'), Icons.female_rounded),
+      (FFLocalizations.of(context).getText('pe_gender_other'), Icons.transgender_rounded),
     ];
 
     return Row(
@@ -624,7 +625,7 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
               child: Text(
                 hasDate
                     ? _formatDate(_selectedBirthday)
-                    : 'Select your birthday',
+                    : FFLocalizations.of(context).getText('pe_birthday_hint'),
                 style: TextStyle(
                   color: hasDate ? _text : _muted,
                   fontSize: 14.5,
@@ -709,15 +710,15 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
                           AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Row(
+                : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_rounded,
+                      const Icon(Icons.check_rounded,
                           color: Colors.white, size: 18),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
-                        'Save Changes',
-                        style: TextStyle(
+                        FFLocalizations.of(context).getText('pe_save_changes'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -746,8 +747,8 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
 
     if (!(_formKey.currentState?.validate() ?? false)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fix the errors above'),
+        SnackBar(
+          content: Text(FFLocalizations.of(context).getText('pe_fix_errors')),
           backgroundColor: kRed,
         ),
       );
@@ -774,8 +775,8 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully'),
+        SnackBar(
+          content: Text(FFLocalizations.of(context).getText('pe_updated')),
           backgroundColor: kGreen,
           duration: Duration(seconds: 2),
         ),
@@ -789,7 +790,7 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
       safeSetState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Save failed: $e'),
+          content: Text('${FFLocalizations.of(context).getText('pe_save_failed')}$e'),
           backgroundColor: kRed,
         ),
       );

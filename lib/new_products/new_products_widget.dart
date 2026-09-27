@@ -1,6 +1,8 @@
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/utils/responsive.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 
@@ -150,18 +152,18 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
                 },
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.fiber_new_rounded,
+                        const Icon(Icons.fiber_new_rounded,
                             color: Colors.white, size: 22),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Text(
-                          'New Arrivals',
-                          style: TextStyle(
+                          FFLocalizations.of(context).getText('newarrivals_title'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 19,
                             fontWeight: FontWeight.w900,
@@ -170,10 +172,10 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'Fresh drops & latest items',
-                      style: TextStyle(
+                      FFLocalizations.of(context).getText('newarrivals_subtitle'),
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
@@ -204,10 +206,18 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
   // ═══════════════════════════════════════════════════════════
   Widget _sortChips() {
     final chips = [
-      ('newest', 'Newest First', Icons.fiber_new_rounded),
-      ('price_low', 'Price ↑', Icons.trending_up_rounded),
-      ('price_high', 'Price ↓', Icons.trending_down_rounded),
-      ('popular', 'Most Viewed', Icons.visibility_rounded),
+      ('newest',
+          FFLocalizations.of(context).getText('newarrivals_sort_newest'),
+          Icons.fiber_new_rounded),
+      ('price_low',
+          FFLocalizations.of(context).getText('newarrivals_sort_price_up'),
+          Icons.trending_up_rounded),
+      ('price_high',
+          FFLocalizations.of(context).getText('newarrivals_sort_price_down'),
+          Icons.trending_down_rounded),
+      ('popular',
+          FFLocalizations.of(context).getText('newarrivals_sort_popular'),
+          Icons.visibility_rounded),
     ];
     return Container(
       height: 56,
@@ -280,11 +290,11 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
   Widget _grid(List<InventoryRecord> items) {
     return GridView.builder(
       padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: Responsive.productCols(context),
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.62,
+        childAspectRatio: 0.72,
       ),
       itemCount: items.length,
       itemBuilder: (_, i) => _productCard(items[i]),
@@ -361,9 +371,9 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
                             ),
                           ],
                         ),
-                        child: const Text(
-                          'NEW',
-                          style: TextStyle(
+                        child: Text(
+                          FFLocalizations.of(context).getText('newarrivals_badge'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 9.5,
                             fontWeight: FontWeight.w900,
@@ -377,7 +387,7 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
               ),
               const SizedBox(height: 6),
               Text(
-                valueOrDefault<String>(record.inventoryName, 'Product'),
+                valueOrDefault<String>(record.inventoryName, FFLocalizations.of(context).getText('newarrivals_product_fallback')),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -414,7 +424,7 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
                   const SizedBox(width: 3),
                   Expanded(
                     child: Text(
-                      'Just arrived',
+                      FFLocalizations.of(context).getText('newarrivals_just_arrived'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -439,11 +449,11 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
   Widget _loading() {
     return GridView.builder(
       padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: Responsive.productCols(context),
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.62,
+        childAspectRatio: 0.72,
       ),
       itemCount: 6,
       itemBuilder: (_, __) => Container(
@@ -474,7 +484,7 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
                   color: kGreen, size: 48),
             ),
             const SizedBox(height: 18),
-            Text('No new products yet',
+            Text(FFLocalizations.of(context).getText('newarrivals_empty_title'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _text,
@@ -482,7 +492,7 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
                   fontWeight: FontWeight.w800,
                 )),
             const SizedBox(height: 6),
-            Text('Fresh items will appear here as sellers add them.',
+            Text(FFLocalizations.of(context).getText('newarrivals_empty_subtitle'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: _muted, fontSize: 12.5)),
           ],
@@ -501,7 +511,7 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
             const Icon(Icons.error_outline_rounded,
                 color: kRed, size: 44),
             const SizedBox(height: 12),
-            Text('Something went wrong',
+            Text(FFLocalizations.of(context).getText('newarrivals_error_title'),
                 style: TextStyle(
                   color: _text,
                   fontSize: 15,

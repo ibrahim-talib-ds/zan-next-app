@@ -1,4 +1,6 @@
 import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/internationalization.dart';
+import '/services/app_language.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'package:flutter/material.dart';
@@ -95,7 +97,7 @@ class _LanguageModalWidgetState extends State<LanguageModalWidget> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Language',
+                          FFLocalizations.of(context).getText('lm_title'),
                           style: theme.titleLarge.override(
                             font: GoogleFonts.interTight(
                               fontWeight: FontWeight.w700,
@@ -110,7 +112,7 @@ class _LanguageModalWidgetState extends State<LanguageModalWidget> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Choose your preferred language',
+                          FFLocalizations.of(context).getText('lm_subtitle'),
                           style: theme.bodySmall.override(
                             font: GoogleFonts.inter(
                               fontWeight: FontWeight.w400,
@@ -149,8 +151,8 @@ class _LanguageModalWidgetState extends State<LanguageModalWidget> {
               // ---------- Language options ----------
               _languageTile(
                 context,
-                label: 'English',
-                nativeLabel: 'English',
+                label: FFLocalizations.of(context).getText('lm_english'),
+                nativeLabel: FFLocalizations.of(context).getText('lm_native_en'),
                 flagWidget: _flagUK(),
                 isSelected: currentLocale == 'en',
                 onTap: () => setAppLanguage(context, 'en'),
@@ -158,8 +160,8 @@ class _LanguageModalWidgetState extends State<LanguageModalWidget> {
               const SizedBox(height: 10),
               _languageTile(
                 context,
-                label: 'Swahili',
-                nativeLabel: 'Kiswahili',
+                label: FFLocalizations.of(context).getText('lm_swahili'),
+                nativeLabel: FFLocalizations.of(context).getText('lm_native_sw'),
                 flagWidget: _flagTanzania(),
                 isSelected: currentLocale == 'sw',
                 onTap: () => setAppLanguage(context, 'sw'),
@@ -169,7 +171,7 @@ class _LanguageModalWidgetState extends State<LanguageModalWidget> {
               // ---------- Done button ----------
               FFButtonWidget(
                 onPressed: () => Navigator.pop(context),
-                text: 'Done',
+                text: FFLocalizations.of(context).getText('lm_done'),
                 options: FFButtonOptions(
                   width: double.infinity,
                   height: 52,

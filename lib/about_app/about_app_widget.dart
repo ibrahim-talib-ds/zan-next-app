@@ -1,6 +1,7 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -52,26 +53,26 @@ class _AboutAppWidgetState extends State<AboutAppWidget> {
                 children: [
                   _buildLogoCard(context),
                   const SizedBox(height: 24),
-                  _sectionTitle(context, 'About'),
+                  _sectionTitle(context, FFLocalizations.of(context).getText('about_section_about')),
                   const SizedBox(height: 10),
                   _buildParagraph(context,
-                      'ZanNext is a modern marketplace built for Tanzania. Buy and sell with confidence — chat with sellers, save your favourite products, and get updates the moment something changes.'),
+                      FFLocalizations.of(context).getText('about_desc')),
                   const SizedBox(height: 24),
-                  _sectionTitle(context, 'App info'),
+                  _sectionTitle(context, FFLocalizations.of(context).getText('about_section_app_info')),
                   const SizedBox(height: 10),
                   _buildInfoCard(context, [
-                    _infoRow(context, 'Version', kVersion),
-                    _infoRow(context, 'Build', kBuild),
-                    _infoRow(context, 'Platform', 'Flutter 3.x'),
-                    _infoRow(context, 'Region', 'Tanzania'),
+                    _infoRow(context, FFLocalizations.of(context).getText('about_info_version'), kVersion),
+                    _infoRow(context, FFLocalizations.of(context).getText('about_info_build'), kBuild),
+                    _infoRow(context, FFLocalizations.of(context).getText('about_info_platform'), 'Flutter 3.x'),
+                    _infoRow(context, FFLocalizations.of(context).getText('about_info_region'), FFLocalizations.of(context).getText('about_region_value')),
                   ]),
                   const SizedBox(height: 24),
-                  _sectionTitle(context, 'Legal'),
+                  _sectionTitle(context, FFLocalizations.of(context).getText('about_section_legal')),
                   const SizedBox(height: 10),
                   _buildLinkCard(context, [
-                    _linkRow(context, Icons.description_outlined, 'Terms of Service'),
-                    _linkRow(context, Icons.privacy_tip_outlined, 'Privacy Policy'),
-                    _linkRow(context, Icons.verified_outlined, 'Licenses'),
+                    _linkRow(context, Icons.description_outlined, FFLocalizations.of(context).getText('about_terms')),
+                    _linkRow(context, Icons.privacy_tip_outlined, FFLocalizations.of(context).getText('about_privacy')),
+                    _linkRow(context, Icons.verified_outlined, FFLocalizations.of(context).getText('about_licenses')),
                   ]),
                   const SizedBox(height: 24),
                   _buildFooter(context),
@@ -116,7 +117,7 @@ class _AboutAppWidgetState extends State<AboutAppWidget> {
             ),
             const Spacer(),
             Text(
-              'About the App',
+              FFLocalizations.of(context).getText('about_title'),
               style: theme.titleLarge.override(
                 font: GoogleFonts.interTight(fontWeight: FontWeight.w700),
                 color: Colors.white,
@@ -165,7 +166,7 @@ class _AboutAppWidgetState extends State<AboutAppWidget> {
               fontWeight: FontWeight.w800,
             )),
         const SizedBox(height: 4),
-        Text('Version $kVersion',
+        Text('${FFLocalizations.of(context).getText('about_version_prefix')}$kVersion',
             style: theme.bodySmall.override(
               color: theme.secondaryText,
               fontSize: 12.5,
@@ -276,7 +277,7 @@ class _AboutAppWidgetState extends State<AboutAppWidget> {
     return InkWell(
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$label — coming soon')),
+          SnackBar(content: Text('$label${FFLocalizations.of(context).getText('about_coming_soon')}')),
         );
       },
       child: Padding(
@@ -307,13 +308,13 @@ class _AboutAppWidgetState extends State<AboutAppWidget> {
       padding: const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
       child: Column(
         children: [
-          Text('Made with ❤️ in Tanzania',
+          Text(FFLocalizations.of(context).getText('about_footer_made'),
               style: theme.bodySmall.override(
                 color: theme.secondaryText,
                 fontSize: 12,
               )),
           const SizedBox(height: 4),
-          Text('© ${DateTime.now().year} ZanNext. All rights reserved.',
+          Text('${FFLocalizations.of(context).getText('about_footer_copyright_prefix')}${DateTime.now().year}${FFLocalizations.of(context).getText('about_footer_copyright_suffix')}',
               style: theme.bodySmall.override(
                 color: theme.secondaryText,
                 fontSize: 11,

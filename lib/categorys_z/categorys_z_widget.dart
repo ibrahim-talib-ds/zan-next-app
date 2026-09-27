@@ -5,6 +5,7 @@ import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
@@ -43,61 +44,61 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
   late final Stream<List<InventoryRecord>> _newStream;
 
   final List<List<String>> _categories = const [
-    ['https://static.vecteezy.com/system/resources/thumbnails/070/259/583/small/men-s-autumnal-ensemble-on-isolated-transparent-background-displaying-elegant-fashion-png.png', "Men's Wear", 'Men’s Wear'],
-    ['https://static.vecteezy.com/system/resources/thumbnails/042/154/757/small/ai-generated-beautiful-women-dress-isolated-on-transparent-background-free-png.png', "Women's Wear", 'Women’s Wear'],
-    ['https://rosepng.com/wp-content/uploads/2025/07/s11728_kids_wear_isolated_on_white_background_-v_6-1_e752b563-39a6-4cfd-ab80-d300418034dd_0-photoroom.png', "Kids' Clothing", 'Kids’ Clothing'],
-    ['https://cdn-icons-png.flaticon.com/512/2806/2806220.png', 'Shorts Sporty', 'Shorts Sporty'],
-    ['https://static.vecteezy.com/system/resources/previews/070/649/690/non_2x/men-s-shorts-apparel-casual-summer-fashion-on-transparent-background-free-png.png', 'Shorts Casual', 'Shorts Casual'],
-    ['https://img.vitkac.com/uploads/product_thumb/SLIPY%20M3D03J%20ONN97-S8291/lg/1.png', 'Underwear', 'Underwear'],
-    ['https://png.pngtree.com/png-vector/20250210/ourmid/pngtree-aesthetic-single-sock-accessory-isolated-for-fashion-png-image_15432455.png', 'Socks', 'Socks'],
-    ['https://png.pngtree.com/png-vector/20230501/ourmid/pngtree-sneakers-a-pair-of-running-shoes-png-image_7078541.png', 'Sneakers', 'Sneakers & Sports'],
-    ['https://png.pngtree.com/png-vector/20250512/ourmid/pngtree-brown-formal-shoes-with-shining-leather-polish-neatly-arranged-elegant-style-png-image_16220207.png', 'Formal Shoes', 'Formal Shoes'],
-    ['https://png.pngtree.com/png-vector/20260521/ourmid/pngtree-teal-colorful-strap-sandals-footwear-summer-vacation-beach-shoes-for-women-png-image_19274617.webp', 'Sandals', 'Sandals & Slippers'],
-    ['https://png.pngtree.com/png-vector/20250320/ourmid/pngtree-trendy-blue-platform-high-heels-on-transparent-background-png-image_15748351.png', 'Heels', 'Heels & Wedge'],
-    ['https://png.pngtree.com/png-vector/20250119/ourmid/pngtree-laptop-with-windows-11-pro-png-image_15276820.png', 'Computers', 'Computers & Laptops'],
-    ['https://png.pngtree.com/png-clipart/20210309/original/pngtree-smart-mobile-phones-mockup-png-image_5893103.png', 'Smart Phone', 'Smart Phone'],
-    ['https://png.pngtree.com/png-vector/20241124/ourmid/pngtree-towering-speakers-that-bring-style-and-sound-together-png-image_14523229.png', 'Audio', 'Audio & Sound'],
-    ['https://static.vecteezy.com/system/resources/previews/035/197/725/non_2x/cosmetics-products-transparent-background-fashion-outfit-profucts-png.png', 'Skincare', 'Skincare'],
-    ['https://png.pngtree.com/png-clipart/20210523/original/pngtree-perfume-fragrance-liquid-png-image_6325986.jpg', 'Fragrances', 'Fragrances'],
-    ['https://static.vecteezy.com/system/resources/thumbnails/075/119/044/small/hair-care-product-bottle-with-blonde-hair-rose-png.png', 'Hair Care', 'Hair Care'],
-    ['https://png.pngtree.com/png-clipart/20230506/original/pngtree-makeup-female-cosmetics-png-image_9143399.png', 'Makeup', 'Makeup'],
-    ['https://png.pngtree.com/png-clipart/20240321/original/pngtree-light-bulb-isolated-on-white-or-transparent-background-cutout-png-image_14646805.png', 'Lighting', 'Lighting'],
-    ['https://png.pngtree.com/png-clipart/20250207/original/pngtree-minimalist-wall-art-frame-for-modern-home-decor-with-transparent-background-png-image_20367147.png', 'Wall Art', 'Wall Art'],
-    ['https://www.pngall.com/wp-content/uploads/11/Wooden-Furniture-Chair-PNG-Photo.png', 'Furniture', 'Furniture'],
-    ['https://pngimg.com/uploads/bed/bed_PNG17409.png', 'Bedding', 'Bedding'],
-    ['https://png.pngtree.com/png-vector/20231023/ourmid/pngtree-assortment-of-produce-on-a-blank-png-image_10173654.png', 'Fresh Produce', 'Fresh Produce'],
-    ['https://png.pngtree.com/png-clipart/20231005/original/pngtree-full-bag-of-flour-with-wheat-ears-illustration-png-image_13123698.png', 'Grains', 'Grains & Flour'],
-    ['https://png.pngtree.com/png-clipart/20250210/original/pngtree-refreshing-assortment-of-soft-drinks-on-transparent-background-1-png-image_20413963.png', 'Beverages', 'Beverages'],
-    ['https://png.pngtree.com/png-clipart/20250111/original/pngtree-snacks-png-image_19912509.png', 'Snacks', 'Snacks'],
-    ['https://png.pngtree.com/png-vector/20250422/ourmid/pngtree-smart-watch-white-color-png-image_16057996.png', 'Wearables', 'Wearables'],
-    ['https://png.pngtree.com/png-vector/20240715/ourmid/pngtree-cell-phone-accessories-psd-png-image_13095675.png', 'Mobile Accessories', 'Mobile Accessories'],
-    ['https://static.vecteezy.com/system/resources/thumbnails/071/183/345/small/smart-home-device-illustration-wifi-signal-png.png', 'Smart Home', 'Smart Home'],
-    ['https://png.pngtree.com/png-vector/20230831/ourmid/pngtree-sports-balls-3d-illustration-png-image_9235520.png', 'Team Sports', 'Team Sports'],
-    ['https://png.pngtree.com/png-clipart/20240905/original/pngtree-gym-fitness-t-shirts-design-it-never-gets-easier-you-just-png-image_15938057.png', 'Gym & Fitness', 'Gym & Fitness'],
-    ['https://png.pngtree.com/png-vector/20250429/ourmid/pngtree-wicker-basket-ready-for-use-in-outdoor-concepts-png-image_16134181.png', 'Outdoor', 'Outdoor'],
-    ['https://png.pngtree.com/png-clipart/20250111/original/pngtree-luxury-watche-png-image_19806288.png', 'Luxury Watches', 'Luxury Watches'],
-    ['https://www.nixon.com/cdn/shop/files/A1370-5191-view1.png?v=1718725113', 'Digital Watches', 'Digital Watches'],
-    ['https://png.pngtree.com/png-vector/20260527/ourmid/pngtree-wall-clock-image-png-image_19195399.webp', 'Wall Clocks', 'Wall Clocks'],
-    ['https://png.pngtree.com/png-clipart/20241101/original/pngtree-colorful-learning-playthings-isolated-png-image_16591879.png', 'Educational Toys', 'Educational Toys'],
-    ['https://freepngimg.com/thumb/baby_girl/35560-9-baby-girl-clipart-thumb.png', 'Baby Gear', 'Baby Gear'],
-    ['https://png.pngtree.com/png-vector/20250801/ourmid/pngtree-cute-little-girl-driving-children39s-electric-toy-car-on-white-background-png-image_16952144.webp', 'Electronic Toys', 'Electronic Toys'],
-    ['https://pngimg.com/uploads/vitamins/vitamins_PNG5.png', 'Supplements', 'Supplements'],
-    ['https://static.vecteezy.com/system/resources/thumbnails/013/271/454/small/3d-render-hospital-patient-bed-png.png', 'Medical Equipment', 'Medical Equipment'],
-    ['https://static.vecteezy.com/system/resources/previews/073/094/780/non_2x/assortment-of-personal-hygiene-products-in-a-green-container-transparent-background-free-png.png', 'Personal Hygiene', 'Personal Hygiene'],
-    ['https://static.vecteezy.com/system/resources/thumbnails/059/322/044/small/3d-pen-holder-office-equipment-set-png.png', 'Stationery', 'Stationery'],
-    ['https://png.pngtree.com/png-vector/20231115/ourmid/pngtree-set-of-stationery-items-office-png-image_10465196.png', 'Office Tech', 'Office Tech'],
-    ['https://png.pngtree.com/png-vector/20241225/ourmid/pngtree-organized-office-desk-setup-png-image_14877007.png', 'Organization', 'Organization'],
-    ['https://static.vecteezy.com/system/resources/thumbnails/024/952/067/small/car-tools-equipment-and-accessories-set-of-automobile-accessory-spare-parts-car-3d-illustration-png.png', 'Car Parts', 'Car Parts'],
-    ['https://png.pngtree.com/png-clipart/20241001/original/pngtree-red-and-black-beautiful-car-seat-png-image_16154743.png', 'Interior Accessories', 'Interior Accessories'],
-    ['https://png.pngtree.com/png-vector/20250715/ourmid/pngtree-realistic-stack-of-four-car-tires-with-shiny-alloy-wheels-on-png-image_16769611.webp', 'Tires & Rims', 'Tires & Rims'],
-    ['https://png.pngtree.com/png-clipart/20250115/original/pngtree-aluminum-modular-kitchen-png-image_20150164.png', 'Kitchen', 'Kitchen'],
-    ['https://png.pngtree.com/png-vector/20240403/ourmid/pngtree-washing-machine-isolated-on-transparent-background-png-image_12260985.png', 'Laundry', 'Laundry'],
-    ['https://static.vecteezy.com/system/resources/thumbnails/073/193/979/small/modern-air-conditioner-unit-with-blue-glowing-fan-isolated-on-transparency-background-energy-efficient-contemporary-design-cooling-appliance-home-comfort-png.png', 'Cooling', 'Cooling'],
-    ['https://png.pngtree.com/png-vector/20230206/ourmid/pngtree-wedding-ring-box-png-image_6583781.png', 'Rings & Wedding', 'Rings & Wedding'],
-    ['https://png.pngtree.com/png-vector/20260204/ourmid/pngtree-luxury-gift-box-necklace-elegant-gold-png-image_18709483.webp', 'Necklaces', 'Necklaces & Pendants'],
-    ['https://png.pngtree.com/png-vector/20250321/ourmid/pngtree-indian-gold-jewellery-set-png-image_15804105.png', 'Bracelets', 'Bracelets & Earrings'],
-    ['https://static.vecteezy.com/system/resources/thumbnails/011/648/980/small_2x/gift-card-3d-render-icon-illustration-png.png', 'Digital Cards', 'Digital Cards'],
-    ['https://png.pngtree.com/png-clipart/20240306/original/pngtree-gift-box-png-image_14516601.png', 'Physical Gifts', 'Physical Gifts'],
+    ['https://static.vecteezy.com/system/resources/thumbnails/070/259/583/small/men-s-autumnal-ensemble-on-isolated-transparent-background-displaying-elegant-fashion-png.png', 'cz_mens_wear', 'Men’s Wear'],
+    ['https://static.vecteezy.com/system/resources/thumbnails/042/154/757/small/ai-generated-beautiful-women-dress-isolated-on-transparent-background-free-png.png', 'cz_womens_wear', 'Women’s Wear'],
+    ['https://rosepng.com/wp-content/uploads/2025/07/s11728_kids_wear_isolated_on_white_background_-v_6-1_e752b563-39a6-4cfd-ab80-d300418034dd_0-photoroom.png', 'cz_kids_clothing', 'Kids’ Clothing'],
+    ['https://cdn-icons-png.flaticon.com/512/2806/2806220.png', 'cz_shorts_sporty', 'Shorts Sporty'],
+    ['https://static.vecteezy.com/system/resources/previews/070/649/690/non_2x/men-s-shorts-apparel-casual-summer-fashion-on-transparent-background-free-png.png', 'cz_shorts_casual', 'Shorts Casual'],
+    ['https://img.vitkac.com/uploads/product_thumb/SLIPY%20M3D03J%20ONN97-S8291/lg/1.png', 'cz_underwear', 'Underwear'],
+    ['https://png.pngtree.com/png-vector/20250210/ourmid/pngtree-aesthetic-single-sock-accessory-isolated-for-fashion-png-image_15432455.png', 'cz_socks', 'Socks'],
+    ['https://png.pngtree.com/png-vector/20230501/ourmid/pngtree-sneakers-a-pair-of-running-shoes-png-image_7078541.png', 'cz_sneakers', 'Sneakers & Sports'],
+    ['https://png.pngtree.com/png-vector/20250512/ourmid/pngtree-brown-formal-shoes-with-shining-leather-polish-neatly-arranged-elegant-style-png-image_16220207.png', 'cz_formal_shoes', 'Formal Shoes'],
+    ['https://png.pngtree.com/png-vector/20260521/ourmid/pngtree-teal-colorful-strap-sandals-footwear-summer-vacation-beach-shoes-for-women-png-image_19274617.webp', 'cz_sandals', 'Sandals & Slippers'],
+    ['https://png.pngtree.com/png-vector/20250320/ourmid/pngtree-trendy-blue-platform-high-heels-on-transparent-background-png-image_15748351.png', 'cz_heels', 'Heels & Wedge'],
+    ['https://png.pngtree.com/png-vector/20250119/ourmid/pngtree-laptop-with-windows-11-pro-png-image_15276820.png', 'cz_computers', 'Computers & Laptops'],
+    ['https://png.pngtree.com/png-clipart/20210309/original/pngtree-smart-mobile-phones-mockup-png-image_5893103.png', 'cz_smart_phone', 'Smart Phone'],
+    ['https://png.pngtree.com/png-vector/20241124/ourmid/pngtree-towering-speakers-that-bring-style-and-sound-together-png-image_14523229.png', 'cz_audio', 'Audio & Sound'],
+    ['https://static.vecteezy.com/system/resources/previews/035/197/725/non_2x/cosmetics-products-transparent-background-fashion-outfit-profucts-png.png', 'cz_skincare', 'Skincare'],
+    ['https://png.pngtree.com/png-clipart/20210523/original/pngtree-perfume-fragrance-liquid-png-image_6325986.jpg', 'cz_fragrances', 'Fragrances'],
+    ['https://static.vecteezy.com/system/resources/thumbnails/075/119/044/small/hair-care-product-bottle-with-blonde-hair-rose-png.png', 'cz_hair_care', 'Hair Care'],
+    ['https://png.pngtree.com/png-clipart/20230506/original/pngtree-makeup-female-cosmetics-png-image_9143399.png', 'cz_makeup', 'Makeup'],
+    ['https://png.pngtree.com/png-clipart/20240321/original/pngtree-light-bulb-isolated-on-white-or-transparent-background-cutout-png-image_14646805.png', 'cz_lighting', 'Lighting'],
+    ['https://png.pngtree.com/png-clipart/20250207/original/pngtree-minimalist-wall-art-frame-for-modern-home-decor-with-transparent-background-png-image_20367147.png', 'cz_wall_art', 'Wall Art'],
+    ['https://www.pngall.com/wp-content/uploads/11/Wooden-Furniture-Chair-PNG-Photo.png', 'cz_furniture', 'Furniture'],
+    ['https://pngimg.com/uploads/bed/bed_PNG17409.png', 'cz_bedding', 'Bedding'],
+    ['https://png.pngtree.com/png-vector/20231023/ourmid/pngtree-assortment-of-produce-on-a-blank-png-image_10173654.png', 'cz_fresh_produce', 'Fresh Produce'],
+    ['https://png.pngtree.com/png-clipart/20231005/original/pngtree-full-bag-of-flour-with-wheat-ears-illustration-png-image_13123698.png', 'cz_grains', 'Grains & Flour'],
+    ['https://png.pngtree.com/png-clipart/20250210/original/pngtree-refreshing-assortment-of-soft-drinks-on-transparent-background-1-png-image_20413963.png', 'cz_beverages', 'Beverages'],
+    ['https://png.pngtree.com/png-clipart/20250111/original/pngtree-snacks-png-image_19912509.png', 'cz_snacks', 'Snacks'],
+    ['https://png.pngtree.com/png-vector/20250422/ourmid/pngtree-smart-watch-white-color-png-image_16057996.png', 'cz_wearables', 'Wearables'],
+    ['https://png.pngtree.com/png-vector/20240715/ourmid/pngtree-cell-phone-accessories-psd-png-image_13095675.png', 'cz_mobile_accessories', 'Mobile Accessories'],
+    ['https://static.vecteezy.com/system/resources/thumbnails/071/183/345/small/smart-home-device-illustration-wifi-signal-png.png', 'cz_smart_home', 'Smart Home'],
+    ['https://png.pngtree.com/png-vector/20230831/ourmid/pngtree-sports-balls-3d-illustration-png-image_9235520.png', 'cz_team_sports', 'Team Sports'],
+    ['https://png.pngtree.com/png-clipart/20240905/original/pngtree-gym-fitness-t-shirts-design-it-never-gets-easier-you-just-png-image_15938057.png', 'cz_gym_fitness', 'Gym & Fitness'],
+    ['https://png.pngtree.com/png-vector/20250429/ourmid/pngtree-wicker-basket-ready-for-use-in-outdoor-concepts-png-image_16134181.png', 'cz_outdoor', 'Outdoor'],
+    ['https://png.pngtree.com/png-clipart/20250111/original/pngtree-luxury-watche-png-image_19806288.png', 'cz_luxury_watches', 'Luxury Watches'],
+    ['https://www.nixon.com/cdn/shop/files/A1370-5191-view1.png?v=1718725113', 'cz_digital_watches', 'Digital Watches'],
+    ['https://png.pngtree.com/png-vector/20260527/ourmid/pngtree-wall-clock-image-png-image_19195399.webp', 'cz_wall_clocks', 'Wall Clocks'],
+    ['https://png.pngtree.com/png-clipart/20241101/original/pngtree-colorful-learning-playthings-isolated-png-image_16591879.png', 'cz_educational_toys', 'Educational Toys'],
+    ['https://freepngimg.com/thumb/baby_girl/35560-9-baby-girl-clipart-thumb.png', 'cz_baby_gear', 'Baby Gear'],
+    ['https://png.pngtree.com/png-vector/20250801/ourmid/pngtree-cute-little-girl-driving-children39s-electric-toy-car-on-white-background-png-image_16952144.webp', 'cz_electronic_toys', 'Electronic Toys'],
+    ['https://pngimg.com/uploads/vitamins/vitamins_PNG5.png', 'cz_supplements', 'Supplements'],
+    ['https://static.vecteezy.com/system/resources/thumbnails/013/271/454/small/3d-render-hospital-patient-bed-png.png', 'cz_medical_equipment', 'Medical Equipment'],
+    ['https://static.vecteezy.com/system/resources/previews/073/094/780/non_2x/assortment-of-personal-hygiene-products-in-a-green-container-transparent-background-free-png.png', 'cz_personal_hygiene', 'Personal Hygiene'],
+    ['https://static.vecteezy.com/system/resources/thumbnails/059/322/044/small/3d-pen-holder-office-equipment-set-png.png', 'cz_stationery', 'Stationery'],
+    ['https://png.pngtree.com/png-vector/20231115/ourmid/pngtree-set-of-stationery-items-office-png-image_10465196.png', 'cz_office_tech', 'Office Tech'],
+    ['https://png.pngtree.com/png-vector/20241225/ourmid/pngtree-organized-office-desk-setup-png-image_14877007.png', 'cz_organization', 'Organization'],
+    ['https://static.vecteezy.com/system/resources/thumbnails/024/952/067/small/car-tools-equipment-and-accessories-set-of-automobile-accessory-spare-parts-car-3d-illustration-png.png', 'cz_car_parts', 'Car Parts'],
+    ['https://png.pngtree.com/png-clipart/20241001/original/pngtree-red-and-black-beautiful-car-seat-png-image_16154743.png', 'cz_interior_access', 'Interior Accessories'],
+    ['https://png.pngtree.com/png-vector/20250715/ourmid/pngtree-realistic-stack-of-four-car-tires-with-shiny-alloy-wheels-on-png-image_16769611.webp', 'cz_tires_rims', 'Tires & Rims'],
+    ['https://png.pngtree.com/png-clipart/20250115/original/pngtree-aluminum-modular-kitchen-png-image_20150164.png', 'cz_kitchen', 'Kitchen'],
+    ['https://png.pngtree.com/png-vector/20240403/ourmid/pngtree-washing-machine-isolated-on-transparent-background-png-image_12260985.png', 'cz_laundry', 'Laundry'],
+    ['https://static.vecteezy.com/system/resources/thumbnails/073/193/979/small/modern-air-conditioner-unit-with-blue-glowing-fan-isolated-on-transparency-background-energy-efficient-contemporary-design-cooling-appliance-home-comfort-png.png', 'cz_cooling', 'Cooling'],
+    ['https://png.pngtree.com/png-vector/20230206/ourmid/pngtree-wedding-ring-box-png-image_6583781.png', 'cz_rings_wedding', 'Rings & Wedding'],
+    ['https://png.pngtree.com/png-vector/20260204/ourmid/pngtree-luxury-gift-box-necklace-elegant-gold-png-image_18709483.webp', 'cz_necklaces', 'Necklaces & Pendants'],
+    ['https://png.pngtree.com/png-vector/20250321/ourmid/pngtree-indian-gold-jewellery-set-png-image_15804105.png', 'cz_bracelets', 'Bracelets & Earrings'],
+    ['https://static.vecteezy.com/system/resources/thumbnails/011/648/980/small_2x/gift-card-3d-render-icon-illustration-png.png', 'cz_digital_cards', 'Digital Cards'],
+    ['https://png.pngtree.com/png-clipart/20240306/original/pngtree-gift-box-png-image_14516601.png', 'cz_physical_gifts', 'Physical Gifts'],
   ];
 
   String _imgUrl(String? url) {
@@ -208,9 +209,9 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                   onPressed: () => context.safePop(),
                 ),
                 const SizedBox(width: 6),
-                const Text(
-                  'All Categories',
-                  style: TextStyle(
+                Text(
+                  FFLocalizations.of(context).getText('catz_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -249,7 +250,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Search Products...',
+                        FFLocalizations.of(context).getText('catz_search_hint'),
                         style: TextStyle(
                           color: kMuted,
                           fontSize: 14,
@@ -281,7 +282,11 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
   }
 
   Widget _buildTabBar() {
-    const labels = ['Category', 'Trending', 'New'];
+    final labels = [
+      FFLocalizations.of(context).getText('catz_tab_categories'),
+      FFLocalizations.of(context).getText('catz_tab_trending'),
+      FFLocalizations.of(context).getText('catz_tab_new'),
+    ];
 
     return Container(
       color: kBg,
@@ -431,7 +436,9 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    displayLabel,
+                    FFLocalizations.of(context).getText(displayLabel).isEmpty
+                        ? displayLabel
+                        : FFLocalizations.of(context).getText(displayLabel),
                     maxLines: 2,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
@@ -454,13 +461,13 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
 
   Widget _buildTrendingTab() => _buildProductTab(
         stream: _trendingStream,
-        emptyMessage: 'No trending products yet',
+        emptyMessage: FFLocalizations.of(context).getText('catz_no_trending'),
         badgeFor: (_) => _fireBadge(),
       );
 
   Widget _buildNewProductsTab() => _buildProductTab(
         stream: _newStream,
-        emptyMessage: 'No new products yet',
+        emptyMessage: FFLocalizations.of(context).getText('catz_no_new'),
         badgeFor: (_) => _newBadge(),
       );
 
@@ -476,7 +483,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             debugPrint('Inventory error: ${snapshot.error}');
-            return _errorState('Could not load products\n${snapshot.error}');
+            return _errorState('${FFLocalizations.of(context).getText('catz_error_prefix')}\n${snapshot.error}');
           }
           if (!snapshot.hasData) {
             return const Center(
@@ -603,7 +610,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
 
               // ─── Title ───
               Text(
-                valueOrDefault<String>(record.inventoryName, 'Product'),
+                valueOrDefault<String>(record.inventoryName, FFLocalizations.of(context).getText('catz_product_fallback')),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -644,7 +651,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
                   const SizedBox(width: 3),
                   Expanded(
                     child: Text(
-                      valueOrDefault<String>(record.sellerName, 'Verified'),
+                      valueOrDefault<String>(record.sellerName, FFLocalizations.of(context).getText('catz_seller_fallback')),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -682,9 +689,9 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
           color: const Color(0xFFDC0F0F),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Text(
-          'NEW',
-          style: TextStyle(
+        child: Text(
+          FFLocalizations.of(context).getText('catz_badge_new'),
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 10,
             fontWeight: FontWeight.w900,
@@ -745,15 +752,15 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
             ),
             const SizedBox(height: 4),
             Text(
-              'What do you want to do?',
+              FFLocalizations.of(context).getText('catz_admin_menu_title'),
               style: TextStyle(color: kMuted, fontSize: 12),
             ),
             const SizedBox(height: 20),
             _menuOption(
               ctx,
               icon: Icons.edit_rounded,
-              label: 'Edit this category',
-              subtitle: 'Change image or name',
+              label: FFLocalizations.of(context).getText('catz_admin_edit'),
+              subtitle: FFLocalizations.of(context).getText('catz_admin_edit_sub'),
               color: kGreen,
               value: 'edit',
             ),
@@ -761,8 +768,8 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
             _menuOption(
               ctx,
               icon: Icons.arrow_forward_rounded,
-              label: 'Continue to page',
-              subtitle: 'Open category normally',
+              label: FFLocalizations.of(context).getText('catz_admin_continue'),
+              subtitle: FFLocalizations.of(context).getText('catz_admin_continue_sub'),
               color: const Color(0xFF3B82F6),
               value: 'continue',
             ),

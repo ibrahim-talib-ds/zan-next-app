@@ -1,6 +1,7 @@
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -110,16 +111,18 @@ class _AdminUsersWidgetState extends State<AdminUsersWidget> {
                               color: kRed,
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
-                                SizedBox(width: 6),
-                                Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                                const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+                                const SizedBox(width: 6),
+                                Text(FFLocalizations.of(context).getText('au_delete'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
                               ],
                             ),
                           ),
-                          confirmDismiss: (_) => _confirmDelete('user', d['display_name'] ?? 'User'),
+                          confirmDismiss: (_) => _confirmDelete(
+                FFLocalizations.of(context).getText('au_kind_user'),
+                d['display_name'] ?? FFLocalizations.of(context).getText('au_user_fallback')),
                           onDismissed: (_) => _deleteUser(doc),
                           child: _userTile(doc),
                         );
@@ -158,7 +161,7 @@ class _AdminUsersWidgetState extends State<AdminUsersWidget> {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
-                  hintText: 'Search by name or email...',
+                  hintText: FFLocalizations.of(context).getText('au_search_hint'),
                   hintStyle: TextStyle(color: _muted, fontSize: 13.5),
                   contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -203,12 +206,14 @@ class _AdminUsersWidgetState extends State<AdminUsersWidget> {
             onPressed: () => Navigator.pop(context),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('All Users', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-              SizedBox(height: 2),
-              Text('Swipe left to delete', style: TextStyle(color: Colors.white70, fontSize: 11)),
+              Text(FFLocalizations.of(context).getText('au_header_title'),
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('au_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -220,7 +225,7 @@ class _AdminUsersWidgetState extends State<AdminUsersWidget> {
 
   Widget _userTile(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
-    final name = (d['display_name'] ?? 'User').toString();
+    final name = (d['display_name'] ?? FFLocalizations.of(context).getText('au_user_fallback')).toString();
     final email = (d['email'] ?? '').toString();
     final photo = _imgUrl(d['photo_url']?.toString());
     final isAdmin = d['is_admin'] == true;
@@ -259,7 +264,7 @@ class _AdminUsersWidgetState extends State<AdminUsersWidget> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                         decoration: BoxDecoration(color: kAmber.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
-                        child: const Text('ADMIN', style: TextStyle(color: kAmber, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.4)),
+                        child: Text(FFLocalizations.of(context).getText('au_badge_admin'), style: const TextStyle(color: kAmber, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.4)),
                       ),
                     ],
                   ],
@@ -281,13 +286,13 @@ class _AdminUsersWidgetState extends State<AdminUsersWidget> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Delete $kind?', style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
-        content: Text('"$name" will be permanently removed from Firestore.', style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
+        title: Text('${FFLocalizations.of(context).getText('au_delete_title_prefix')}$kind${FFLocalizations.of(context).getText('au_delete_title_suffix')}', style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('${FFLocalizations.of(context).getText('au_delete_body_prefix')}$name${FFLocalizations.of(context).getText('au_delete_body_suffix')}', style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
+            child: Text(FFLocalizations.of(context).getText('au_cancel'), style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
           TextButton(onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: kRed, fontWeight: FontWeight.w800))),
+            child: Text(FFLocalizations.of(context).getText('au_delete'), style: const TextStyle(color: kRed, fontWeight: FontWeight.w800))),
         ],
       ),
     ) ?? false;
@@ -297,14 +302,14 @@ class _AdminUsersWidgetState extends State<AdminUsersWidget> {
     try {
       await doc.reference.delete();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('User deleted'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(FFLocalizations.of(context).getText('au_deleted')),
         backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not delete: $e'),
+        content: Text('${FFLocalizations.of(context).getText('au_delete_failed')}$e'),
         backgroundColor: kRed, behavior: SnackBarBehavior.floating,
       ));
     }
@@ -321,7 +326,7 @@ class _AdminUsersWidgetState extends State<AdminUsersWidget> {
             child: const Icon(Icons.people_outline, color: kGreen, size: 36),
           ),
           const SizedBox(height: 16),
-          Text('No users yet', style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(FFLocalizations.of(context).getText('au_empty'), style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w700)),
         ],
       ),
     );

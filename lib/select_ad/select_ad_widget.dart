@@ -2,6 +2,7 @@ import '/flutter_flow/flutter_flow_icon_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
@@ -30,105 +31,105 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
 
   static const List<_Category> _categories = [
     _Category(
-      label: 'Fashion & Clothing',
+      label: 'sa_cat_fashion',
       icon: Icons.checkroom_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_MNx0TnozvbP_hpY-OfWJLzNQYRc_ZHV87A&s',
       routeName: 'Fashion',
     ),
     _Category(
-      label: 'Shoes & Footwear',
+      label: 'sa_cat_shoes',
       icon: Icons.hiking_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSghdJuyTosDFdp-KDY_6eF8oTXYp1nLVZ9RA&s',
       routeName: 'Footwear',
     ),
     _Category(
-      label: 'Electronics',
+      label: 'sa_cat_electronics',
       icon: Icons.devices_other_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvxPTAV_Zp5cX1zooDqNeCFG992bQdgauCUg&s',
       routeName: 'Electronics',
     ),
     _Category(
-      label: 'Beauty & Care',
+      label: 'sa_cat_beauty',
       icon: Icons.spa_rounded,
       imageUrl:
           'https://img.freepik.com/free-psd/luxurious-ornate-blue-glass-perfume-bottle-with-golden-accents_84443-76575.jpg',
       routeName: 'Beauty',
     ),
     _Category(
-      label: 'Home Decor',
+      label: 'sa_cat_home',
       icon: Icons.chair_rounded,
       imageUrl:
           'https://media.istockphoto.com/id/1310577216/photo/large-leaf-house-plant-monstera-deliciosa-in-a-gray-pot-on-a-white-background-in-a-light.jpg',
       routeName: 'HomeDecor',
     ),
     _Category(
-      label: 'Groceries',
+      label: 'sa_cat_groceries',
       icon: Icons.local_grocery_store_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrohkCpdJtrvwev9pLMZNODzMdIdEtsai5kg&s',
       routeName: 'Groceries',
     ),
     _Category(
-      label: 'Smart Tech',
+      label: 'sa_cat_smart',
       icon: Icons.smart_toy_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRK6vV3roYEphS0nCBEYhAXpPFUmJUpANg-nQ&s',
       routeName: 'SmartTech',
     ),
     _Category(
-      label: 'Sports Gear',
+      label: 'sa_cat_sports',
       icon: Icons.sports_soccer_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT17elfw89hmAivC6re0vzkA7fdjEzbsxR95g&s',
       routeName: 'SportsGear',
     ),
     _Category(
-      label: 'Watches',
+      label: 'sa_cat_watches',
       icon: Icons.watch_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcScrc7Z6TXas2R9p8ZsI-ZqrzHNLfpTl3jXgw&s',
       routeName: 'Watches',
     ),
     _Category(
-      label: 'Kids & Toys',
+      label: 'sa_cat_kids',
       icon: Icons.toys_rounded,
       imageUrl:
           'https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDI1LTA3L3NyLWltYWdlLTA1MDYyNS1nbGExMi1zLTEyNS1tY2xjc29nZy5qcGc.jpg',
       routeName: 'KidsToys',
     ),
     _Category(
-      label: 'Health',
+      label: 'sa_cat_health',
       icon: Icons.health_and_safety_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSLh9zI6GUxFuOeqCyURfSVhnsG9hchXTWJXw&s',
       routeName: 'Health',
     ),
     _Category(
-      label: 'Office Supply',
+      label: 'sa_cat_office',
       icon: Icons.business_center_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkC2rcmlfNZ0CuQxBvzb-6vjMon1lMdj3ioQ&s',
       routeName: 'OfficeSupply',
     ),
     _Category(
-      label: 'Automotive',
+      label: 'sa_cat_automotive',
       icon: Icons.directions_car_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvzUneT1fnPA_C9W26Xx354-du-pdn-SQUgQ&s',
       routeName: 'Automotive',
     ),
     _Category(
-      label: 'Appliances',
+      label: 'sa_cat_appliances',
       icon: Icons.kitchen_rounded,
       imageUrl:
           'https://png.pngtree.com/png-clipart/20240227/original/pngtree-white-blender-png-image_14434219.png',
       routeName: 'Appliances',
     ),
     _Category(
-      label: 'Jewelry',
+      label: 'sa_cat_jewelry',
       icon: Icons.diamond_rounded,
       imageUrl:
           'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-EVyFhDb-oeT9GJUP9ZasjQWtPkvaA4bhow&s',
@@ -181,7 +182,7 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Choose a category',
+                      FFLocalizations.of(context).getText('sa_choose_category'),
                       style: theme.titleMedium.override(
                         font: GoogleFonts.interTight(
                           fontWeight: FontWeight.w700,
@@ -200,7 +201,7 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 14),
                 child: Text(
-                  'Pick where your product belongs — buyers will find it faster.',
+                  FFLocalizations.of(context).getText('sa_choose_hint'),
                   style: theme.bodySmall.override(
                     font: GoogleFonts.inter(
                       fontWeight: FontWeight.w400,
@@ -299,7 +300,7 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
             ),
             const Spacer(),
             Text(
-              'Post Your Ad',
+              FFLocalizations.of(context).getText('sa_title'),
               style: theme.titleLarge.override(
                 font: GoogleFonts.interTight(
                   fontWeight: FontWeight.w700,
@@ -328,7 +329,9 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
   }) {
     final theme = FlutterFlowTheme.of(context);
     final displayImage = overrideImage ?? cat.imageUrl;
-    final displayLabel = overrideLabel ?? cat.label;
+    final translatedLabel = FFLocalizations.of(context).getText(cat.label);
+    final displayLabel = overrideLabel ??
+        (translatedLabel.isEmpty ? cat.label : translatedLabel);
 
     return InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -360,7 +363,7 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
           );
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Cannot open ${cat.label}')),
+            SnackBar(content: Text('${FFLocalizations.of(context).getText('sa_cannot_open')}${cat.label}')),
           );
         }
       },
@@ -421,7 +424,7 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Tap to choose subcategory',
+                    FFLocalizations.of(context).getText('sa_tap_sub'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.bodySmall.override(
@@ -486,15 +489,15 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
             ),
             const SizedBox(height: 4),
             Text(
-              'What do you want to do?',
+              FFLocalizations.of(context).getText('sa_admin_menu_title'),
               style: TextStyle(color: theme.secondaryText, fontSize: 12),
             ),
             const SizedBox(height: 20),
             _adminMenuOption(
               ctx,
               icon: Icons.edit_rounded,
-              label: 'Edit this category',
-              subtitle: 'Change image or name',
+              label: FFLocalizations.of(context).getText('sa_admin_edit'),
+              subtitle: FFLocalizations.of(context).getText('sa_admin_edit_sub'),
               color: theme.primary,
               value: 'edit',
               theme: theme,
@@ -503,8 +506,8 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
             _adminMenuOption(
               ctx,
               icon: Icons.arrow_forward_rounded,
-              label: 'Continue to page',
-              subtitle: 'Open category normally',
+              label: FFLocalizations.of(context).getText('sa_admin_continue'),
+              subtitle: FFLocalizations.of(context).getText('sa_admin_continue_sub'),
               color: const Color(0xFF3B82F6),
               value: 'continue',
               theme: theme,

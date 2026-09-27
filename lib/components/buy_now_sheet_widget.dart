@@ -2,6 +2,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -139,15 +140,15 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Confirm Order',
-                      style: TextStyle(
+                  Text(FFLocalizations.of(context).getText('bn_confirm_title'),
+                      style: const TextStyle(
                         color: kGreen,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                       )),
                   const SizedBox(height: 2),
                   Text(
-                    'Review before placing',
+                    FFLocalizations.of(context).getText('bn_confirm_sub'),
                     style: TextStyle(color: _muted, fontSize: 12),
                   ),
                 ],
@@ -202,7 +203,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  valueOrDefault<String>(p.inventoryName, 'Product'),
+                  valueOrDefault<String>(p.inventoryName, FFLocalizations.of(context).getText('bn_product_fallback')),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -244,7 +245,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Delivery Address'),
+        _sectionTitle(FFLocalizations.of(context).getText('bn_delivery_address')),
         const SizedBox(height: 10),
         StreamBuilder<List<AddressRecord>>(
           stream: queryAddressRecord(
@@ -290,14 +291,14 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('No address yet',
+                          Text(FFLocalizations.of(context).getText('bn_no_address'),
                               style: TextStyle(
                                 color: _text,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                               )),
                           const SizedBox(height: 2),
-                          Text('Add one to continue',
+                          Text(FFLocalizations.of(context).getText('bn_add_one'),
                               style: TextStyle(
                                   color: _muted, fontSize: 11.5)),
                         ],
@@ -309,8 +310,8 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
                             .pushNamed(AddNewadressWidget.routeName);
                         safeSetState(() {});
                       },
-                      child: const Text('Add',
-                          style: TextStyle(
+                      child: Text(FFLocalizations.of(context).getText('bn_add'),
+                          style: const TextStyle(
                             color: kGreen,
                             fontWeight: FontWeight.w700,
                           )),
@@ -383,7 +384,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
                                     const SizedBox(width: 5),
                                     Text(
                                       valueOrDefault<String>(
-                                          a.label, 'Address'),
+                                          a.label, FFLocalizations.of(context).getText('bn_address_fallback')),
                                       style: TextStyle(
                                         color: _text,
                                         fontSize: 13,
@@ -433,7 +434,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Contact Phone'),
+        _sectionTitle(FFLocalizations.of(context).getText('bn_contact_phone')),
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
@@ -456,7 +457,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
                   decoration: InputDecoration(
                     isDense: true,
                     border: InputBorder.none,
-                    hintText: '712 345 678',
+                    hintText: FFLocalizations.of(context).getText('bn_phone_hint'),
                     hintStyle: TextStyle(color: _muted, fontSize: 14),
                     contentPadding: const EdgeInsetsDirectional.fromSTEB(
                         0, 16, 0, 16),
@@ -477,7 +478,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Delivery Notes (optional)'),
+        _sectionTitle(FFLocalizations.of(context).getText('bn_delivery_notes')),
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
@@ -495,7 +496,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
             cursorColor: kGreen,
             decoration: InputDecoration(
               isDense: true,
-              hintText: 'e.g. Blue house near the mosque',
+              hintText: FFLocalizations.of(context).getText('bn_notes_hint'),
               hintStyle: TextStyle(color: _muted, fontSize: 13.5),
               border: InputBorder.none,
               contentPadding:
@@ -525,18 +526,18 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
       padding: const EdgeInsets.all(14),
       child: Column(
         children: [
-          _priceRow('Product price',
+          _priceRow(FFLocalizations.of(context).getText('bn_product_price'),
               formatNumber(price,
                   formatType: FormatType.decimal,
                   decimalType: DecimalType.automatic,
                   currency: 'TZS ')),
           const SizedBox(height: 6),
-          _priceRow('Delivery', 'Free'),
+          _priceRow(FFLocalizations.of(context).getText('bn_delivery'), FFLocalizations.of(context).getText('bn_free')),
           const Divider(height: 18),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total',
+              Text(FFLocalizations.of(context).getText('bn_total'),
                   style: TextStyle(
                     color: _text,
                     fontSize: 15,
@@ -563,13 +564,13 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
               color: kAmber.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.payments_outlined, color: kAmber, size: 14),
-                SizedBox(width: 6),
-                Text('Cash on Delivery',
-                    style: TextStyle(
+                const Icon(Icons.payments_outlined, color: kAmber, size: 14),
+                const SizedBox(width: 6),
+                Text(FFLocalizations.of(context).getText('bn_cash_delivery'),
+                    style: const TextStyle(
                       color: kAmber,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
@@ -634,14 +635,14 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
                         AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
-              : const Row(
+              : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle_rounded,
+                    const Icon(Icons.check_circle_rounded,
                         color: Colors.white, size: 20),
-                    SizedBox(width: 10),
-                    Text('Place Order',
-                        style: TextStyle(
+                    const SizedBox(width: 10),
+                    Text(FFLocalizations.of(context).getText('bn_place_order'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -664,8 +665,8 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
     // 🚫 Block buying your own product
     if (widget.product.sellersRef == currentUserReference) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("You can't buy your own product."),
+        SnackBar(
+          content: Text(FFLocalizations.of(context).getText('bn_cant_buy_own')),
           backgroundColor: Color(0xFFDC0F0F),
           behavior: SnackBarBehavior.floating,
         ),
@@ -677,7 +678,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
     if (phone.isEmpty || phone.length < 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Enter a valid phone number'),
+          content: Text(FFLocalizations.of(context).getText('bn_invalid_phone')),
           backgroundColor: kRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -737,9 +738,9 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
       if (p.sellersRef != null) {
         await NotificationsRecord.collection.doc().set({
           ...createNotificationsRecordData(
-            title: 'New Order Received',
+            title: FFLocalizations.of(context).getText('bn_new_order_title'),
             notificationText:
-                '${currentUserDisplayName} ordered "${p.inventoryName}"',
+                '${currentUserDisplayName}${FFLocalizations.of(context).getText('bn_ordered_prefix')}${p.inventoryName}${FFLocalizations.of(context).getText('bn_ordered_suffix')}',
             userRef: p.sellersRef,
             isRead: false,
             date: getCurrentTimestamp,
@@ -753,7 +754,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
         await NotificationSender.sendToUser(
           userRef: p.sellersRef,
           title: 'New Order Received',
-          body: '${currentUserDisplayName} ordered "${p.inventoryName}"',
+          body: '${currentUserDisplayName}${FFLocalizations.of(context).getText('bn_ordered_prefix')}${p.inventoryName}${FFLocalizations.of(context).getText('bn_ordered_suffix')}',
           data: {'route': 'Order_details', 'orderId': orderRef.id},
         );
       }
@@ -761,9 +762,9 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
       // 3. Also notify the buyer
       await NotificationsRecord.collection.doc().set({
         ...createNotificationsRecordData(
-          title: 'Order Placed',
+          title: FFLocalizations.of(context).getText('bn_order_placed_title'),
           notificationText:
-              'Your order for "${p.inventoryName}" was placed successfully.',
+              '${FFLocalizations.of(context).getText('bn_order_placed_body_prefix')}${p.inventoryName}${FFLocalizations.of(context).getText('bn_order_placed_body_suffix')}',
           userRef: currentUserReference,
           isRead: false,
           date: getCurrentTimestamp,
@@ -792,7 +793,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
       safeSetState(() => _model.isPlacing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to place order: $e'),
+          content: Text('${FFLocalizations.of(context).getText('bn_failed')}$e'),
           backgroundColor: kRed,
           behavior: SnackBarBehavior.floating,
         ),

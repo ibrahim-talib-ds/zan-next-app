@@ -5,6 +5,7 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/custom_functions.dart' as functions;
 import '/index.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart'
@@ -113,7 +114,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       return Scaffold(
         backgroundColor: _bg,
         body: Center(
-          child: Text('Product not found',
+          child: Text(FFLocalizations.of(context).getText('pd_product_not_found'),
               style: TextStyle(color: _muted, fontSize: 14)),
         ),
       );
@@ -128,7 +129,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Could not load product',
+                child: Text(FFLocalizations.of(context).getText('pd_could_not_load'),
                     style: TextStyle(color: _muted)),
               ),
             ),
@@ -176,18 +177,18 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                             const SizedBox(height: 20),
                             _buildRatingBreakdown(p),
                             const SizedBox(height: 20),
-                            _buildSectionHeader('Product Details'),
+                            _buildSectionHeader(FFLocalizations.of(context).getText('pd_section_product_details')),
                             _buildDescription(p),
                             const SizedBox(height: 20),
-                            _buildSectionHeader('Quick Messages'),
+                            _buildSectionHeader(FFLocalizations.of(context).getText('pd_section_quick_messages')),
                             _buildQuickMessages(p),
                             const SizedBox(height: 20),
-                            _buildSectionHeader('Seller'),
+                            _buildSectionHeader(FFLocalizations.of(context).getText('pd_section_seller')),
                             _buildSellerCard(p),
                             const SizedBox(height: 20),
                             _buildReviewsSection(p),
                             const SizedBox(height: 24),
-                            _buildSectionHeader('You may also like'),
+                            _buildSectionHeader(FFLocalizations.of(context).getText('pd_section_recommended')),
                             const SizedBox(height: 12),
                             _buildRecommended(p),
                           ],
@@ -228,7 +229,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
               onTap: () async {
                 try {
                   await Share.share(
-                    'Check out ${valueOrDefault<String>(p.inventoryName, 'this product')} on ZanNext',
+                    '${FFLocalizations.of(context).getText('pd_share_check')}${valueOrDefault<String>(p.inventoryName, FFLocalizations.of(context).getText('pd_this_product'))}${FFLocalizations.of(context).getText('pd_share_on_zannext')}',
                     sharePositionOrigin: getWidgetBoundingBox(context),
                   );
                 } catch (_) {}
@@ -313,9 +314,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             onPressed: alreadyReported
                 ? () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'You already reported this. Our team is reviewing it.'),
+                      SnackBar(
+                        content: Text(FFLocalizations.of(context).getText('pd_already_reported')),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
@@ -335,7 +335,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       builder: (context) => ReportSheetWidget(
         targetType: 'product',
         targetRef: p.reference,
-        targetLabel: valueOrDefault<String>(p.inventoryName, 'Product'),
+        targetLabel: valueOrDefault<String>(p.inventoryName, FFLocalizations.of(context).getText('pd_product_fallback')),
       ),
     );
   }
@@ -468,14 +468,14 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                 color: Colors.black.withOpacity(0.4),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.zoom_in_rounded,
+                  const Icon(Icons.zoom_in_rounded,
                       color: Colors.white, size: 12),
-                  SizedBox(width: 4),
-                  Text('Tap to zoom',
-                      style: TextStyle(
+                  const SizedBox(width: 4),
+                  Text(FFLocalizations.of(context).getText('pd_tap_to_zoom'),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w500,
@@ -551,7 +551,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              valueOrDefault<String>(p.categories, 'General'),
+              valueOrDefault<String>(p.categories, FFLocalizations.of(context).getText('pd_general')),
               style: const TextStyle(
                 color: kGreen,
                 fontSize: 11.5,
@@ -597,7 +597,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            valueOrDefault<String>(p.inventoryName, 'Product'),
+            valueOrDefault<String>(p.inventoryName, FFLocalizations.of(context).getText('pd_product_fallback')),
             style: TextStyle(
               color: _text,
               fontSize: 22,
@@ -626,11 +626,11 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                 ),
               ),
               const SizedBox(width: 10),
-              const Padding(
-                padding: EdgeInsets.only(bottom: 4),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                  'In Stock',
-                  style: TextStyle(
+                  FFLocalizations.of(context).getText('pd_in_stock'),
+                  style: const TextStyle(
                     color: Color(0xFF16A34A),
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -644,7 +644,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             children: [
               Icon(Icons.local_shipping_outlined, size: 14, color: _muted),
               const SizedBox(width: 4),
-              Text('Free delivery in Zanzibar',
+              Text(FFLocalizations.of(context).getText('pd_free_delivery'),
                   style: TextStyle(color: _muted, fontSize: 12.5)),
             ],
           ),
@@ -694,7 +694,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                   onRatingUpdate: (_) {},
                 ),
                 const SizedBox(height: 4),
-                Text('$reviewCount reviews',
+                Text('$reviewCount ${FFLocalizations.of(context).getText('pd_reviews_suffix')}',
                     style: TextStyle(color: _muted, fontSize: 11)),
               ],
             ),
@@ -783,7 +783,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Text(
         valueOrDefault<String>(
-            p.inventoryDescription, 'No description available.'),
+            p.inventoryDescription, FFLocalizations.of(context).getText('pd_no_description')),
         style: TextStyle(color: _muted, fontSize: 14, height: 1.6),
       ),
     );
@@ -794,10 +794,10 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   // ═══════════════════════════════════════════════════════════
   Widget _buildQuickMessages(InventoryRecord p) {
     final suggestions = [
-      'Is it available?',
-      'Last price?',
-      'Can you deliver today?',
-      'Is it negotiable?',
+      FFLocalizations.of(context).getText('pd_quick_available'),
+      FFLocalizations.of(context).getText('pd_quick_last_price'),
+      FFLocalizations.of(context).getText('pd_quick_deliver_today'),
+      FFLocalizations.of(context).getText('pd_quick_negotiable'),
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -865,7 +865,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not send: $e')),
+        SnackBar(content: Text('${FFLocalizations.of(context).getText('pd_could_not_send')}$e')),
       );
     }
   }
@@ -873,7 +873,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   Future<DocumentReference> _ensureChat(InventoryRecord p) async {
     // 🚫 Block self-chat — seller cannot chat with themselves
     if (p.sellersRef == currentUserReference) {
-      throw Exception("You can't message yourself on your own product.");
+      throw Exception(FFLocalizations.of(context).getText('pd_cannot_message_self'));
     }
     // Look for existing chat for this product + this buyer
     final existing = await FirebaseFirestore.instance
@@ -904,7 +904,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
         ),
         'User_name': functions.generatelistofnames(
           currentUserDisplayName,
-          valueOrDefault<String>(p.sellerName, 'Seller'),
+          valueOrDefault<String>(p.sellerName, FFLocalizations.of(context).getText('pd_section_seller')),
         ),
         'items_images': [
           valueOrDefault<String>(
@@ -949,7 +949,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             final user = snap.data;
             final photo = user?.photoUrl ?? '';
             final name = user?.displayName ??
-                valueOrDefault<String>(p.sellerName, 'Seller');
+                valueOrDefault<String>(p.sellerName, FFLocalizations.of(context).getText('pd_section_seller'));
             final city = user?.city ?? '';
 
             return Row(
@@ -997,7 +997,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                               city.isNotEmpty
                                   ? city
                                   : valueOrDefault<String>(
-                                      p.location, 'Zanzibar'),
+                                      p.location, FFLocalizations.of(context).getText('pd_seller_zanzibar')),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -1027,8 +1027,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                       color: kGreen.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text('Chat',
-                        style: TextStyle(
+                    child: Text(FFLocalizations.of(context).getText('pd_chat'),
+                        style: const TextStyle(
                           color: kGreen,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
@@ -1061,7 +1061,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
-          'Reviews',
+          FFLocalizations.of(context).getText('pd_section_reviews'),
           trailing: GestureDetector(
             onTap: () => _openWriteReview(p),
             child: Container(
@@ -1071,13 +1071,13 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: kGreen.withOpacity(0.35)),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.edit_rounded, color: kGreen, size: 14),
-                  SizedBox(width: 6),
-                  Text('Write Review',
-                      style: TextStyle(
+                  const Icon(Icons.edit_rounded, color: kGreen, size: 14),
+                  const SizedBox(width: 6),
+                  Text(FFLocalizations.of(context).getText('pd_write_review'),
+                      style: const TextStyle(
                         color: kGreen,
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -1128,11 +1128,11 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                           Icon(Icons.reviews_outlined,
                               color: _muted, size: 32),
                           const SizedBox(height: 8),
-                          Text('No reviews yet',
+                          Text(FFLocalizations.of(context).getText('pd_no_reviews'),
                               style: TextStyle(
                                   color: _muted, fontSize: 13)),
                           const SizedBox(height: 4),
-                          Text('Be the first to review!',
+                          Text(FFLocalizations.of(context).getText('pd_be_first_review'),
                               style: TextStyle(
                                   color: kGreen,
                                   fontSize: 12,
@@ -1158,8 +1158,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   Future<void> _openWriteReview(InventoryRecord p) async {
     if (currentUserReference == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please sign in to write a review'),
+        SnackBar(
+          content: Text(FFLocalizations.of(context).getText('pd_sign_in_to_review')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1203,26 +1203,26 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             backgroundColor: _card,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16)),
-            title: Text('Delete review?',
+            title: Text(FFLocalizations.of(context).getText('pd_delete_review'),
                 style: TextStyle(
                     color: _text,
                     fontWeight: FontWeight.w800,
                     fontSize: 16)),
             content: Text(
-              'This review will be permanently removed.',
+              FFLocalizations.of(context).getText('pd_delete_review_body'),
               style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: Text('Cancel',
+                child: Text(FFLocalizations.of(context).getText('pd_cancel'),
                     style: TextStyle(
                         color: _muted, fontWeight: FontWeight.w600)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete',
-                    style: TextStyle(
+                child: Text(FFLocalizations.of(context).getText('pd_delete'),
+                    style: const TextStyle(
                         color: Color(0xFFDC0F0F),
                         fontWeight: FontWeight.w800)),
               ),
@@ -1257,8 +1257,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Review deleted'),
+        SnackBar(
+          content: Text(FFLocalizations.of(context).getText('pd_review_deleted')),
           backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1268,7 +1268,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to delete: $e'),
+          content: Text('${FFLocalizations.of(context).getText('pd_delete_failed')}$e'),
           backgroundColor: const Color(0xFFDC0F0F),
           behavior: SnackBarBehavior.floating,
         ),
@@ -1326,7 +1326,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                         Flexible(
                           child: Text(
                             isMine
-                                ? '${r.reviewersName} (You)'
+                                ? '${r.reviewersName}${FFLocalizations.of(context).getText('pd_you_suffix')}'
                                 : r.reviewersName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1346,8 +1346,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                               color: kAmber.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text('ADMIN VIEW',
-                                style: TextStyle(
+                            child: Text(FFLocalizations.of(context).getText('pd_admin_view'),
+                                style: const TextStyle(
                                   color: kAmber,
                                   fontSize: 8.5,
                                   fontWeight: FontWeight.w900,
@@ -1418,7 +1418,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
 
   String _timeAgo(DateTime when) {
     final d = DateTime.now().difference(when);
-    if (d.inSeconds < 60) return 'Just now';
+    if (d.inSeconds < 60) return FFLocalizations.of(context).getText('pd_time_just_now');
     if (d.inMinutes < 60) return '${d.inMinutes}m';
     if (d.inHours < 24) return '${d.inHours}h';
     if (d.inDays < 7) return '${d.inDays}d';
@@ -1506,7 +1506,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             ),
             const SizedBox(height: 6),
             Text(
-              valueOrDefault<String>(item.inventoryName, 'Product'),
+              valueOrDefault<String>(item.inventoryName, FFLocalizations.of(context).getText('pd_product_fallback')),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -1576,8 +1576,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             onTap: () async {
               if (p.sellersRef == currentUserReference) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("This is your product — you can't chat with yourself."),
+                  SnackBar(
+                    content: Text(FFLocalizations.of(context).getText('pd_cant_chat_self')),
                   ),
                 );
                 return;
@@ -1643,9 +1643,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       onTap: isOwner
           ? () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content:
-                      Text("You can't buy your own product — this is yours."),
+                SnackBar(
+                  content: Text(FFLocalizations.of(context).getText('pd_cant_buy_own')),
                 ),
               );
             }
@@ -1667,15 +1666,15 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.shopping_cart_checkout_rounded,
+            const Icon(Icons.shopping_cart_checkout_rounded,
                 color: Colors.white, size: 18),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
-              'Buy Now',
-              style: TextStyle(
+              FFLocalizations.of(context).getText('pd_buy_now'),
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w800,

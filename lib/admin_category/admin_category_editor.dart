@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'category_service.dart';
+import '/flutter_flow/internationalization.dart';
 
 /// Bottom sheet that lets admin edit a category.
 /// Returns `true` if admin chose "Edit" and saved.
@@ -56,8 +57,8 @@ class _AdminCategoryEditorState extends State<AdminCategoryEditor> {
     // ⚠️ Validate: must be a real URL, not an asset path
     if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Image URL must start with http:// or https://'),
+        SnackBar(
+          content: Text(FFLocalizations.of(context).getText('ace_error_url')),
           backgroundColor: kRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -76,8 +77,8 @@ class _AdminCategoryEditorState extends State<AdminCategoryEditor> {
       if (!mounted) return;
       Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Category updated'),
+        SnackBar(
+          content: Text(FFLocalizations.of(context).getText('ace_saved')),
           backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -86,7 +87,7 @@ class _AdminCategoryEditorState extends State<AdminCategoryEditor> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed: $e'), backgroundColor: kRed),
+        SnackBar(content: Text('${FFLocalizations.of(context).getText('ace_failed')}$e'), backgroundColor: kRed),
       );
     }
   }
@@ -138,10 +139,10 @@ class _AdminCategoryEditorState extends State<AdminCategoryEditor> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Edit "${widget.categoryKey}"',
+                      Text('${FFLocalizations.of(context).getText('ace_title_prefix')}${widget.categoryKey}${FFLocalizations.of(context).getText('ace_title_suffix')}',
                           style: TextStyle(color: text, fontSize: 16, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 2),
-                      Text('Admin only',
+                      Text(FFLocalizations.of(context).getText('ace_admin_only'),
                           style: TextStyle(color: muted, fontSize: 11.5)),
                     ],
                   ),
@@ -150,15 +151,21 @@ class _AdminCategoryEditorState extends State<AdminCategoryEditor> {
             ),
             const SizedBox(height: 20),
 
-            _field(label: 'Image URL', hint: 'https://...',
+            _field(
+                label: FFLocalizations.of(context).getText('ace_label_image_url'),
+                hint: FFLocalizations.of(context).getText('ace_hint_image_url'),
                 controller: _imageController, muted: muted, text: text, border: border),
 
             const SizedBox(height: 14),
-            _field(label: 'Label', hint: 'Category name',
+            _field(
+                label: FFLocalizations.of(context).getText('ace_label_name'),
+                hint: FFLocalizations.of(context).getText('ace_hint_name'),
                 controller: _labelController, muted: muted, text: text, border: border),
 
             const SizedBox(height: 14),
-            _field(label: 'Route name', hint: 'e.g. Specific_categories',
+            _field(
+                label: FFLocalizations.of(context).getText('ace_label_route'),
+                hint: FFLocalizations.of(context).getText('ace_hint_route'),
                 controller: _routeController, muted: muted, text: text, border: border),
 
             const SizedBox(height: 20),
@@ -175,7 +182,7 @@ class _AdminCategoryEditorState extends State<AdminCategoryEditor> {
                         side: BorderSide(color: border),
                       ),
                     ),
-                    child: Text('Cancel',
+                    child: Text(FFLocalizations.of(context).getText('ace_cancel'),
                         style: TextStyle(color: muted, fontWeight: FontWeight.w700)),
                   ),
                 ),
@@ -195,8 +202,8 @@ class _AdminCategoryEditorState extends State<AdminCategoryEditor> {
                             width: 20, height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
-                        : const Text('Save',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                        : Text(FFLocalizations.of(context).getText('ace_save'),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                   ),
                 ),
               ],

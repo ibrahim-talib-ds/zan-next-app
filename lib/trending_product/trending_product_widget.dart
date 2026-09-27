@@ -1,6 +1,8 @@
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/utils/responsive.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:flutter/material.dart';
 
@@ -157,18 +159,18 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
                 },
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.local_fire_department_rounded,
+                        const Icon(Icons.local_fire_department_rounded,
                             color: Colors.white, size: 20),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Text(
-                          'Trending Now',
-                          style: TextStyle(
+                          FFLocalizations.of(context).getText('trending_title'),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 19,
                             fontWeight: FontWeight.w900,
@@ -177,10 +179,10 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'Most viewed products this week',
-                      style: TextStyle(
+                      FFLocalizations.of(context).getText('trending_subtitle'),
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
@@ -211,10 +213,18 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
   // ═══════════════════════════════════════════════════════════
   Widget _sortChips() {
     final chips = [
-      ('popular', 'Most Viewed', Icons.visibility_rounded),
-      ('newest', 'Newest', Icons.fiber_new_rounded),
-      ('price_low', 'Price ↑', Icons.trending_up_rounded),
-      ('price_high', 'Price ↓', Icons.trending_down_rounded),
+      ('popular',
+          FFLocalizations.of(context).getText('trending_sort_popular'),
+          Icons.visibility_rounded),
+      ('newest',
+          FFLocalizations.of(context).getText('trending_sort_newest'),
+          Icons.fiber_new_rounded),
+      ('price_low',
+          FFLocalizations.of(context).getText('trending_sort_price_up'),
+          Icons.trending_up_rounded),
+      ('price_high',
+          FFLocalizations.of(context).getText('trending_sort_price_down'),
+          Icons.trending_down_rounded),
     ];
     return Container(
       height: 56,
@@ -287,11 +297,11 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
   Widget _grid(List<InventoryRecord> items) {
     return GridView.builder(
       padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: Responsive.productCols(context),
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.62,
+        childAspectRatio: 0.72,
       ),
       itemCount: items.length,
       itemBuilder: (_, i) => _productCard(items[i], index: i),
@@ -394,7 +404,7 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
               ),
               const SizedBox(height: 6),
               Text(
-                valueOrDefault<String>(record.inventoryName, 'Product'),
+                valueOrDefault<String>(record.inventoryName, FFLocalizations.of(context).getText('trending_product_fallback')),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -431,7 +441,7 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
                   const SizedBox(width: 3),
                   Expanded(
                     child: Text(
-                      '${_views(record)} views',
+                      '${_views(record)} ${FFLocalizations.of(context).getText('trending_views')}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -456,11 +466,11 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
   Widget _loading() {
     return GridView.builder(
       padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: Responsive.productCols(context),
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.62,
+        childAspectRatio: 0.72,
       ),
       itemCount: 6,
       itemBuilder: (_, __) => Container(
@@ -491,7 +501,7 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
                   color: kGreen, size: 44),
             ),
             const SizedBox(height: 18),
-            Text('No trending products yet',
+            Text(FFLocalizations.of(context).getText('trending_empty_title'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: _text,
@@ -499,7 +509,7 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
                   fontWeight: FontWeight.w800,
                 )),
             const SizedBox(height: 6),
-            Text('Come back soon — popular items show up here.',
+            Text(FFLocalizations.of(context).getText('trending_empty_subtitle'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: _muted, fontSize: 12.5)),
           ],
@@ -518,7 +528,7 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
             const Icon(Icons.error_outline_rounded,
                 color: kRed, size: 44),
             const SizedBox(height: 12),
-            Text('Something went wrong',
+            Text(FFLocalizations.of(context).getText('trending_error_title'),
                 style: TextStyle(
                   color: _text,
                   fontSize: 15,

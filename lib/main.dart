@@ -1,4 +1,5 @@
 import 'auth/firebase_auth/google_auth.dart';
+import '/services/app_language.dart';
 import '/services/local_notifications.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
@@ -145,6 +146,17 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
+
+    // Keep MaterialApp in sync with the global language notifier
+    AppLanguage.locale.addListener(_onLanguageChanged);
+    // Seed from stored locale
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final stored = FFLocalizations.getStoredLocale();
+      if (stored != null && stored.languageCode != AppLanguage.locale.value) {
+        AppLanguage.locale.value = stored.languageCode;
+      }
+    });
+
     super.initState();
 
     _appStateNotifier = AppStateNotifier.instance;
@@ -162,8 +174,16 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    AppLanguage.locale.removeListener(_onLanguageChanged);
     authUserSub.cancel();
     super.dispose();
+  }
+
+  void _onLanguageChanged() {
+    final code = AppLanguage.locale.value;
+    if (_locale?.languageCode == code) return;
+    debugPrint('🌐 MaterialApp rebuilding with locale: $code');
+    setLocale(code);
   }
 
   void setLocale(String language) {

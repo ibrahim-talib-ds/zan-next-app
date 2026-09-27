@@ -2,6 +2,8 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/utils/responsive.dart';
+import '/flutter_flow/internationalization.dart';
 import '/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -117,11 +119,11 @@ class _WishlistWidgetState extends State<WishlistWidget> {
                 child: GridView.builder(
                   padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
                   gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                      SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: Responsive.productCols(context),
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
-                    childAspectRatio: 0.68,
+                    childAspectRatio: 0.72,
                   ),
                   itemCount: items.length,
                   itemBuilder: (context, i) => _savedCard(items[i]),
@@ -165,18 +167,18 @@ class _WishlistWidgetState extends State<WishlistWidget> {
             onPressed: () => context.safePop(),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Saved Products',
-                  style: TextStyle(
+              Text(FFLocalizations.of(context).getText('wishlist_title'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   )),
-              SizedBox(height: 2),
-              Text('Your favourites',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('wishlist_subtitle'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -201,7 +203,9 @@ class _WishlistWidgetState extends State<WishlistWidget> {
           ),
           const SizedBox(width: 8),
           Text(
-            count == 1 ? '1 saved item' : '$count saved items',
+            count == 1
+                ? FFLocalizations.of(context).getText('wishlist_count_one')
+                : '$count ${FFLocalizations.of(context).getText('wishlist_count_many')}',
             style: TextStyle(
               color: _text,
               fontSize: 14,
@@ -305,7 +309,7 @@ class _WishlistWidgetState extends State<WishlistWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    valueOrDefault<String>(item.inventoryName, 'Product'),
+                    valueOrDefault<String>(item.inventoryName, FFLocalizations.of(context).getText('wishlist_product_fallback')),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -363,7 +367,7 @@ class _WishlistWidgetState extends State<WishlistWidget> {
                     color: kGreen, size: 44),
               ),
               const SizedBox(height: 20),
-              Text('No saved products yet',
+              Text(FFLocalizations.of(context).getText('wishlist_empty_title'),
                   style: TextStyle(
                     color: _text,
                     fontSize: 17,
@@ -371,7 +375,7 @@ class _WishlistWidgetState extends State<WishlistWidget> {
                   )),
               const SizedBox(height: 8),
               Text(
-                'Tap the heart on any product and\nit will show up here.',
+                FFLocalizations.of(context).getText('wishlist_empty_subtitle'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
               ),
@@ -389,8 +393,8 @@ class _WishlistWidgetState extends State<WishlistWidget> {
                 ),
                 icon: const Icon(Icons.storefront_outlined,
                     color: Colors.white, size: 18),
-                label: const Text('Browse Products',
-                    style: TextStyle(
+                label: Text(FFLocalizations.of(context).getText('wishlist_browse_products'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -410,7 +414,7 @@ class _WishlistWidgetState extends State<WishlistWidget> {
               const Icon(Icons.error_outline_rounded,
                   color: Color(0xFFDC0F0F), size: 48),
               const SizedBox(height: 12),
-              Text('Could not load saved products',
+              Text(FFLocalizations.of(context).getText('wishlist_error_title'),
                   style: TextStyle(
                     color: _text,
                     fontSize: 14,
@@ -433,7 +437,7 @@ class _WishlistWidgetState extends State<WishlistWidget> {
             children: [
               Icon(Icons.lock_outline_rounded, color: _muted, size: 48),
               const SizedBox(height: 12),
-              Text('Please sign in',
+              Text(FFLocalizations.of(context).getText('wishlist_not_logged_in_title'),
                   style: TextStyle(
                     color: _text,
                     fontSize: 16,
@@ -441,7 +445,7 @@ class _WishlistWidgetState extends State<WishlistWidget> {
                   )),
               const SizedBox(height: 6),
               Text(
-                'You need to be signed in to see your saved products.',
+                FFLocalizations.of(context).getText('wishlist_not_logged_in_subtitle'),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: _muted, fontSize: 13),
               ),

@@ -1,5 +1,6 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
+import '/flutter_flow/internationalization.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -117,14 +118,14 @@ class _AdminOrdersWidgetState extends State<AdminOrdersWidget> {
                               color: kRed,
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.delete_outline_rounded,
+                                const Icon(Icons.delete_outline_rounded,
                                     color: Colors.white, size: 22),
-                                SizedBox(width: 6),
-                                Text('Delete',
-                                    style: TextStyle(
+                                const SizedBox(width: 6),
+                                Text(FFLocalizations.of(context).getText('ao_delete'),
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 13,
@@ -171,7 +172,7 @@ class _AdminOrdersWidgetState extends State<AdminOrdersWidget> {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
-                  hintText: 'Search by product, status, or address...',
+                  hintText: FFLocalizations.of(context).getText('ao_search_hint'),
                   hintStyle: TextStyle(color: _muted, fontSize: 13.5),
                   contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -217,14 +218,14 @@ class _AdminOrdersWidgetState extends State<AdminOrdersWidget> {
             onPressed: () => Navigator.pop(context),
           ),
           const Spacer(),
-          const Column(
+          Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('All Orders',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-              SizedBox(height: 2),
-              Text('Swipe left to delete',
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+              Text(FFLocalizations.of(context).getText('ao_header_title'),
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(FFLocalizations.of(context).getText('ao_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -236,8 +237,8 @@ class _AdminOrdersWidgetState extends State<AdminOrdersWidget> {
 
   Widget _orderTile(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
-    final name = (d['product_name'] ?? 'Order').toString();
-    final status = (d['status'] ?? 'Pending').toString();
+    final name = (d['product_name'] ?? FFLocalizations.of(context).getText('ao_order_fallback')).toString();
+    final status = (d['status'] ?? FFLocalizations.of(context).getText('ao_status_pending')).toString();
     final price = (d['price'] as num?)?.toDouble() ?? 0;
     final images = (d['Item_images'] as List?) ?? [];
     final photo = images.isNotEmpty ? _imgUrl(images.first.toString()) : '';
@@ -312,17 +313,17 @@ class _AdminOrdersWidgetState extends State<AdminOrdersWidget> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Delete order?',
+        title: Text(FFLocalizations.of(context).getText('ao_delete_title'),
             style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
-        content: Text('"$name" will be permanently removed from Firestore.',
+        content: Text('${FFLocalizations.of(context).getText('ao_delete_body_prefix')}$name${FFLocalizations.of(context).getText('ao_delete_body_suffix')}',
             style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
+            child: Text(FFLocalizations.of(context).getText('ao_cancel'), style: TextStyle(color: _muted, fontWeight: FontWeight.w600))),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: kRed, fontWeight: FontWeight.w800))),
+            child: Text(FFLocalizations.of(context).getText('ao_delete'), style: const TextStyle(color: kRed, fontWeight: FontWeight.w800))),
         ],
       ),
     ) ?? false;
@@ -332,14 +333,14 @@ class _AdminOrdersWidgetState extends State<AdminOrdersWidget> {
     try {
       await doc.reference.delete();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Order deleted'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(FFLocalizations.of(context).getText('ao_deleted')),
         backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not delete: $e'),
+        content: Text('${FFLocalizations.of(context).getText('ao_delete_failed')}$e'),
         backgroundColor: kRed, behavior: SnackBarBehavior.floating,
       ));
     }
@@ -356,7 +357,7 @@ class _AdminOrdersWidgetState extends State<AdminOrdersWidget> {
             child: const Icon(Icons.shopping_bag_outlined, color: kGreen, size: 36),
           ),
           const SizedBox(height: 16),
-          Text('No orders yet', style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(FFLocalizations.of(context).getText('ao_empty'), style: TextStyle(color: _text, fontSize: 16, fontWeight: FontWeight.w700)),
         ],
       ),
     );

@@ -1,4 +1,5 @@
 import '/flutter_flow/flutter_flow_theme.dart';
+import '/flutter_flow/internationalization.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
@@ -78,9 +79,7 @@ class _OrdersuccessfulpopulWidgetState
                               padding: EdgeInsetsDirectional.fromSTEB(
                                   0.0, 100.0, 0.0, 0.0),
                               child: Text(
-                                FFLocalizations.of(context).getText(
-                                  'gzmq154n' /* Agizo limefanikiwa */,
-                                ),
+                                FFLocalizations.of(context).getText('osp_title'),
                                 textAlign: TextAlign.center,
                                 style: FlutterFlowTheme.of(context)
                                     .bodyMedium
@@ -141,9 +140,7 @@ class _OrdersuccessfulpopulWidgetState
                         padding: EdgeInsetsDirectional.fromSTEB(
                             20.0, 15.0, 0.0, 0.0),
                         child: Text(
-                          FFLocalizations.of(context).getText(
-                            '6lu4py2n' /* Utapokeye  email ya uthibitish... */,
-                          ),
+                          FFLocalizations.of(context).getText('osp_message'),
                           style:
                               FlutterFlowTheme.of(context).bodyMedium.override(
                                     font: GoogleFonts.inter(
@@ -183,9 +180,7 @@ class _OrdersuccessfulpopulWidgetState
                       },
                     );
                   },
-                  text: FFLocalizations.of(context).getText(
-                    '7ggejuc1' /* Angaliya maelezo ya agizo */,
-                  ),
+                  text: FFLocalizations.of(context).getText('osp_view_order'),
                   options: FFButtonOptions(
                     height: 58.75,
                     padding:

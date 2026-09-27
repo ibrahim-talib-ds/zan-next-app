@@ -1,4 +1,5 @@
 import 'dart:io';
+import '/services/app_language.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -421,8 +422,10 @@ extension StringDocRef on String {
   DocumentReference get ref => FirebaseFirestore.instance.doc(this);
 }
 
-void setAppLanguage(BuildContext context, String language) =>
-    MyApp.of(context).setLocale(language);
+void setAppLanguage(BuildContext context, String language) {
+  // Uses the global notifier — no fragile ancestor lookup.
+  AppLanguage.set(language);
+}
 
 void setDarkModeSetting(BuildContext context, ThemeMode themeMode) =>
     MyApp.of(context).setThemeMode(themeMode);
