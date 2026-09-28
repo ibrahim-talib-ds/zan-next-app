@@ -1,3 +1,4 @@
+import '/components/product_bottom_info.dart';
 import 'package:share_plus/share_plus.dart';
 import '/components/report_sheet_widget.dart';
 import '/auth/firebase_auth/auth_util.dart';
@@ -1692,6 +1693,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                         height: 1.25,
                       ),
                     ),
+              _pbDescription(item, color: _muted),
                     const Spacer(),
                     Text(
                       valueOrDefault<String>(
@@ -1711,6 +1713,8 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+                  const SizedBox(height: 2),
+                  _pbBottomRow(item),
                     if (_isOwner) ...[
                       const SizedBox(height: 8),
                       Row(
@@ -1971,6 +1975,67 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
           ],
         ),
       ),
+    );
+  }
+
+
+  // ── product description (2 lines + trailing "...") ──
+  Widget _pbDescription(InventoryRecord r, {required Color color, double size = 10.5}) {
+    String desc = '';
+    try {
+      final data = (r as dynamic).snapshotData;
+      if (data is Map) {
+        desc = (data['inventory_description'] ??
+                data['description'] ??
+                data['inventoryDescription'] ??
+                '').toString().trim();
+      }
+    } catch (_) {}
+    if (desc.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Text(
+        '$desc...',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: size,
+          height: 1.2,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+    );
+  }
+
+  // ── rotating bottom row ──
+  Widget _pbBottomRow(InventoryRecord r) {
+    DateTime? created;
+    try {
+      final data = (r as dynamic).snapshotData;
+      if (data is Map) {
+        final v = data['created_at'] ?? data['created_time'] ?? data['createdAt'];
+        if (v is DateTime) created = v;
+        else if (v is String) created = DateTime.tryParse(v);
+        else if (v is int) created = DateTime.fromMillisecondsSinceEpoch(v);
+        else if (v != null && v.runtimeType.toString().contains('Timestamp')) {
+          try { created = (v as dynamic).toDate(); } catch (_) {}
+        }
+      }
+    } catch (_) {}
+    String ship = '';
+    try {
+      final data = (r as dynamic).snapshotData;
+      if (data is Map) {
+        ship = (data['shipping_days'] ??
+                data['delivery_time'] ??
+                '').toString().trim();
+      }
+    } catch (_) {}
+    return ProductBottomInfo(
+      sellerName: r.sellerName,
+      shippingDays: ship,
+      createdAt: created,
     );
   }
 }

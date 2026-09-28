@@ -2192,4 +2192,34 @@ final kTranslationsMap = <Map<String, Map<String, String>>>[
     'loc_save_failed': { 'en': 'Save failed: ', 'sw': 'Imeshindwa kuhifadhi: ' },
   },
 
+  // ═══════════════════════════════════════════════════════════
+  // PRODUCT BOTTOM ROW (option A labels, full-word time)
+  // ═══════════════════════════════════════════════════════════
+  {
+    'pb_delivered_today': { 'en': 'Delivered today', 'sw': 'Inafikishwa leo' },
+    'pb_delivering':      { 'en': 'Delivering',      'sw': 'Inafikisha' },
+    'pb_added':           { 'en': 'Added',           'sw': 'Imeongezwa' },
+    'pb_unknown_seller':  { 'en': 'Seller',          'sw': 'Muuzaji' },
+    'pb_just_now':        { 'en': 'just now',        'sw': 'sasa hivi' },
+    'pb_minute':          { 'en': 'minute ago',      'sw': 'dakika iliyopita' },
+    'pb_minutes':         { 'en': 'minutes ago',     'sw': 'dakika zilizopita' },
+    'pb_hour':            { 'en': 'hour ago',        'sw': 'saa iliyopita' },
+    'pb_hours':           { 'en': 'hours ago',       'sw': 'saa zilizopita' },
+    'pb_day':             { 'en': 'day ago',         'sw': 'siku iliyopita' },
+    'pb_days':            { 'en': 'days ago',        'sw': 'siku zilizopita' },
+    'pb_week':            { 'en': 'week ago',        'sw': 'wiki iliyopita' },
+    'pb_weeks':           { 'en': 'weeks ago',       'sw': 'wiki zilizopita' },
+    'pb_month':           { 'en': 'month ago',       'sw': 'mwezi uliopita' },
+    'pb_months':          { 'en': 'months ago',      'sw': 'miezi iliyopita' },
+    'pb_year':            { 'en': 'year ago',        'sw': 'mwaka uliopita' },
+    'pb_years':           { 'en': 'years ago',       'sw': 'miaka iliyopita' },
+  },
+
+  // ═══════════════════════════════════════════════════════════
+  // HOME SEARCH BAR ROTATING HINT
+  // ═══════════════════════════════════════════════════════════
+  {
+    'home_search_prefix': { 'en': 'Search', 'sw': 'Tafuta' },
+  },
+
 ].reduce((a, b) => a..addAll(b));

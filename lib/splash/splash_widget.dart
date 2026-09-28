@@ -59,7 +59,7 @@ class _SplashWidgetState extends State<SplashWidget>
       logFirebaseEvent('SPLASH_PAGE_splash_ON_INIT_STATE');
       logFirebaseEvent('splash_wait__delay');
       await Future.delayed(
-        Duration(milliseconds: 2000),
+        Duration(milliseconds: 900),
       );
       if (!mounted) return;
       logFirebaseEvent('splash_navigate_to');

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../auth_manager.dart';
 import '../base_auth_user_provider.dart';
 import '../../flutter_flow/flutter_flow_util.dart';
+import '/services/push_service.dart';
 
 import '/backend/backend.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -59,7 +60,12 @@ class FirebaseAuthManager extends AuthManager
   FirebasePhoneAuthManager phoneAuthManager = FirebasePhoneAuthManager();
 
   @override
-  Future signOut() {
+  Future signOut() async {
+    // Clear FCM token from this user's doc BEFORE signing out,
+    // so they stop getting pushes meant for their account.
+    try {
+      await PushService.instance.clearTokenFromUser();
+    } catch (_) {}
     return FirebaseAuth.instance.signOut();
   }
 
@@ -332,6 +338,11 @@ class FirebaseAuthManager extends AuthManager
       final userCredential = await signInFunc();
       if (userCredential?.user != null) {
         await maybeCreateUser(userCredential!.user!);
+        // 🔔 After login, save this device's FCM token to the user's doc.
+        // Without this, only the FIRST user to ever open the app gets a token.
+        try {
+          await PushService.instance.syncTokenToCurrentUser();
+        } catch (_) {}
       }
       return userCredential == null
           ? null

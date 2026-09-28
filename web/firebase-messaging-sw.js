@@ -31,8 +31,15 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
-  const route = data.route || '/notification';
-  const url = `${self.location.origin}/#${route}`;
+  const route = data.route || 'notification';
+
+  // Build a path-based URL (app uses usePathUrlStrategy, not hash routing)
+  const params = new URLSearchParams();
+  if (data.chatId) params.set('receiveChats', data.chatId);
+  if (data.threadId) params.set('threadId', data.threadId);
+  if (data.orderId) params.set('orderId', data.orderId);
+  const qs = params.toString();
+  const url = `${self.location.origin}/${route}${qs ? '?' + qs : ''}`;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {

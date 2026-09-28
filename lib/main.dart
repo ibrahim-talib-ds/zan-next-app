@@ -166,10 +166,9 @@ class _MyAppState extends State<MyApp> {
         _appStateNotifier.update(user);
       });
     jwtTokenStream.listen((_) {});
-    Future.delayed(
-      Duration(milliseconds: 2000),
-      () => _appStateNotifier.stopShowingSplashImage(),
-    );
+    // Splash timing is handled by the Dart splash widget itself.
+    // No artificial delay here — removes double-wait on cold start.
+    _appStateNotifier.stopShowingSplashImage();
   }
 
   @override

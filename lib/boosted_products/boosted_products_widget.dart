@@ -1,3 +1,5 @@
+import 'dart:math';
+import '/components/product_bottom_info.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/utils/responsive.dart';
@@ -74,11 +76,11 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
                       ),
                     );
                   }
-                  final items = snap.data!;
+                  final items = _shuffleList(snap.data!);
                   if (items.isEmpty) return _empty();
                   return RefreshIndicator(
                     color: kGreen,
-                    onRefresh: () async => safeSetState(() {}),
+                    onRefresh: () async => _reshuffle(),
                     child: GridView.builder(
                       padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 12, 24),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -204,6 +206,7 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: _text, fontSize: 12, fontWeight: FontWeight.w500, height: 1.25),
               ),
+              _pbDescription(record, color: _muted),
               const SizedBox(height: 4),
               Text(
                 valueOrDefault<String>(
@@ -214,6 +217,8 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
                 ),
                 style: const TextStyle(color: kRed, fontSize: 14, fontWeight: FontWeight.w900),
               ),
+                  const SizedBox(height: 2),
+                  _pbBottomRow(record),
             ],
           ),
         ),
@@ -236,4 +241,79 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
       ],
     ),
   );
+
+
+  // ── product description (2 lines + trailing "...") ──
+  Widget _pbDescription(InventoryRecord r, {required Color color, double size = 10.5}) {
+    String desc = '';
+    try {
+      final data = (r as dynamic).snapshotData;
+      if (data is Map) {
+        desc = (data['inventory_description'] ??
+                data['description'] ??
+                data['inventoryDescription'] ??
+                '').toString().trim();
+      }
+    } catch (_) {}
+    if (desc.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Text(
+        '$desc...',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: size,
+          height: 1.2,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+    );
+  }
+
+  // ── rotating bottom row ──
+  Widget _pbBottomRow(InventoryRecord r) {
+    DateTime? created;
+    try {
+      final data = (r as dynamic).snapshotData;
+      if (data is Map) {
+        final v = data['created_at'] ?? data['created_time'] ?? data['createdAt'];
+        if (v is DateTime) created = v;
+        else if (v is String) created = DateTime.tryParse(v);
+        else if (v is int) created = DateTime.fromMillisecondsSinceEpoch(v);
+        else if (v != null && v.runtimeType.toString().contains('Timestamp')) {
+          try { created = (v as dynamic).toDate(); } catch (_) {}
+        }
+      }
+    } catch (_) {}
+    String ship = '';
+    try {
+      final data = (r as dynamic).snapshotData;
+      if (data is Map) {
+        ship = (data['shipping_days'] ??
+                data['delivery_time'] ??
+                '').toString().trim();
+      }
+    } catch (_) {}
+    return ProductBottomInfo(
+      sellerName: r.sellerName,
+      shippingDays: ship,
+      createdAt: created,
+    );
+  }
+
+
+  // ── seeded shuffle: stable within a build, fresh on refresh ──
+  int _shuffleSeed = 0;
+  void _reshuffle() {
+    if (mounted) setState(() => _shuffleSeed++);
+  }
+  List<T> _shuffleList<T>(List<T> items, {int keepTop = 0}) {
+    if (items.length <= keepTop + 1) return items;
+    final head = items.take(keepTop).toList();
+    final tail = items.skip(keepTop).toList();
+    tail.shuffle(Random(_shuffleSeed));
+    return <T>[...head, ...tail];
+  }
 }

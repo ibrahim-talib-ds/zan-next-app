@@ -120,12 +120,8 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
     return StreamBuilder<List<OrdersRecord>>(
       stream: queryOrdersRecord(
         queryBuilder: (q) => isBuyerTab
-            ? q
-                .where('buyer', isEqualTo: currentUserReference)
-                .orderBy('date', descending: true)
-            : q
-                .where('seller', isEqualTo: currentUserReference)
-                .orderBy('date', descending: true),
+            ? q.where('buyer', isEqualTo: currentUserReference)
+            : q.where('seller', isEqualTo: currentUserReference),
         limit: 100,
       ),
       builder: (context, snapshot) {
@@ -138,16 +134,8 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
           );
         }
         if (!snapshot.hasData) {
-          // Connection waiting → brief spinner
-          return const Center(
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(kGreen),
-                strokeWidth: 3,
-              ),
-            ),
+          return _SpinnerWithTimeout(
+            onTimeout: () => _emptyOrdersState(isBuyerTab),
           );
         }
         final hiddenField =
@@ -161,6 +149,12 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
           } catch (_) {}
           return true;
         }).toList();
+
+        orders.sort((a, b) {
+          final ad = a.date ?? DateTime(1970);
+          final bd = b.date ?? DateTime(1970);
+          return bd.compareTo(ad);
+        });
 
         if (orders.isEmpty) {
           return _emptyOrdersState(isBuyerTab);
@@ -1899,6 +1893,38 @@ class _TrackingSheet extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SpinnerWithTimeout extends StatefulWidget {
+  const _SpinnerWithTimeout({required this.onTimeout});
+  final Widget Function() onTimeout;
+  @override
+  State<_SpinnerWithTimeout> createState() => _SpinnerWithTimeoutState();
+}
+
+class _SpinnerWithTimeoutState extends State<_SpinnerWithTimeout> {
+  bool _timedOut = false;
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) setState(() => _timedOut = true);
+    });
+  }
+  @override
+  Widget build(BuildContext context) {
+    if (_timedOut) return widget.onTimeout();
+    return const Center(
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1B7A4E)),
+          strokeWidth: 3,
         ),
       ),
     );

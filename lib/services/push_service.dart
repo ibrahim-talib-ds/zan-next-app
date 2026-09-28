@@ -18,9 +18,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('🔔 Background push: ${message.messageId}');
 }
 
-class PushService {
+class PushService with WidgetsBindingObserver {
   PushService._();
   static final PushService instance = PushService._();
+
+  /// Flag so we don't attach the observer twice
+  bool _observerAttached = false;
 
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   bool _initialized = false;
@@ -66,6 +69,76 @@ class PushService {
         _handleTap(initial);
       });
     }
+
+    // 7. Attach lifecycle observer — syncs token every time the app
+    //    comes back to foreground (covers users logged in before this
+    //    patch, and any case where the token rotated while backgrounded).
+    if (!_observerAttached) {
+      WidgetsBinding.instance.addObserver(this);
+      _observerAttached = true;
+
+      // Also sync once after startup — by the time this fires,
+      // the auth stream has typically restored the user.
+      Future.delayed(const Duration(seconds: 2), () {
+        syncTokenToCurrentUser();
+      });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App came back to foreground → re-sync token (cheap, idempotent)
+      syncTokenToCurrentUser();
+    }
+  }
+
+  void dispose() {
+    if (_observerAttached) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observerAttached = false;
+    }
+  }
+
+  /// Call this right after a successful login.
+  /// Saves the current FCM token to the now-logged-in user's doc.
+  /// Without this, users who log in AFTER app start never get a token.
+  Future<void> syncTokenToCurrentUser() async {
+    if (currentUserReference == null) return;
+    // Small delay to let Firestore user doc settle
+    await Future.delayed(const Duration(milliseconds: 500));
+    await _saveToken();
+  }
+
+  /// Call this right BEFORE logout.
+  /// Removes the FCM token from the outgoing user's doc so their device
+  /// stops receiving pushes meant for the account.
+  Future<void> clearTokenFromUser() async {
+    final user = currentUserReference;
+    if (user == null) return;
+    try {
+      await user.update({'fcm_token': FieldValue.delete()});
+      debugPrint('🔔 Token cleared from user doc');
+    } catch (e) {
+      debugPrint('🔔 Token clear error: $e');
+    }
+  }
+
+  /// Re-request permission — call from a "enable notifications" button if
+  /// the user previously denied. Safe to call anytime.
+  Future<bool> ensurePermission() async {
+    final settings = await _fcm.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    final granted = settings.authorizationStatus ==
+            AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+    if (granted) {
+      await _saveToken();
+    }
+    return granted;
   }
 
   Future<void> _saveToken() async {
@@ -162,8 +235,8 @@ class PushService {
 
     // Context not ready → wait and retry (cold start)
     if (ctx == null) {
-      if (attempt >= 10) {
-        debugPrint('🔔 Nav gave up after 10 attempts');
+      if (attempt >= 30) {
+        debugPrint('🔔 Nav gave up after 30 attempts');
         return;
       }
       Future.delayed(const Duration(milliseconds: 300), () {
@@ -204,9 +277,33 @@ class PushService {
         return;
       }
 
+      // ── SUPPORT CHAT ──────────────────────────────────────
+      if (route == 'SupportChat') {
+        final threadId = data['threadId'] as String?;
+        GoRouter.of(ctx).pushNamed(
+          SupportChatWidget.routeName,
+          queryParameters: {
+            if (threadId != null && threadId.isNotEmpty) 'threadId': threadId,
+          }.withoutNulls,
+        );
+        return;
+      }
+
       // ── ORDER ─────────────────────────────────────────────
-      if (route == 'Order_details') {
-        GoRouter.of(ctx).pushNamed(OrderDetailsWidget.routeName);
+      if (route == 'Order_details' || route == 'OrderDetails') {
+        final orderId = data['orderId'] as String?;
+        if (orderId != null && orderId.isNotEmpty) {
+          final orderRef =
+              FirebaseFirestore.instance.collection('orders').doc(orderId);
+          GoRouter.of(ctx).pushNamed(
+            OrderDetailsWidget.routeName,
+            queryParameters: {
+              'orderRef': serializeParam(orderRef, ParamType.DocumentReference),
+            }.withoutNulls,
+          );
+        } else {
+          GoRouter.of(ctx).pushNamed(OrderDetailsWidget.routeName);
+        }
         return;
       }
 

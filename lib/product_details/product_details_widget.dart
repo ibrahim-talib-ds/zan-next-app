@@ -16,6 +16,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:http/http.dart' as http;
+import 'dart:io' show File;
+import 'package:path_provider/path_provider.dart';
+
 
 import 'product_details_model.dart';
 export 'product_details_model.dart';
@@ -226,14 +230,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             const Spacer(),
             _roundBtn(
               icon: Icons.share_outlined,
-              onTap: () async {
-                try {
-                  await Share.share(
-                    '${FFLocalizations.of(context).getText('pd_share_check')}${valueOrDefault<String>(p.inventoryName, FFLocalizations.of(context).getText('pd_this_product'))}${FFLocalizations.of(context).getText('pd_share_on_zannext')}',
-                    sharePositionOrigin: getWidgetBoundingBox(context),
-                  );
-                } catch (_) {}
-              },
+              onTap: () => _shareProductWithImage(p),
             ),
             const SizedBox(width: 8),
             _buildReportBtn(p),
@@ -517,7 +514,12 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
         ],
       ),
     );
-  }
+  
+  // ═══════════════════════════════════════════════════════════
+  // SHARE PRODUCT WITH IMAGE — downloads the first product image
+  // and shares it as a real photo attachment.
+  // ═══════════════════════════════════════════════════════════
+}
 
   void _openFullScreen(List<String> images, int startIndex) {
     Navigator.of(context).push(
@@ -1696,6 +1698,73 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     );
   }
 
+
+  // ═══════════════════════════════════════════════════════════
+  // SHARE PRODUCT WITH IMAGE — downloads the first product image
+  // and shares it as a real photo attachment.
+  // ═══════════════════════════════════════════════════════════
+  Future<void> _shareProductWithImage(InventoryRecord p) async {
+    try {
+      final name = valueOrDefault<String>(
+        p.inventoryName,
+        FFLocalizations.of(context).getText('pd_this_product'),
+      );
+      final priceStr = valueOrDefault<String>(
+        formatNumber(
+          p.inventoryPrice,
+          formatType: FormatType.decimal,
+          decimalType: DecimalType.automatic,
+          currency: 'TZS ',
+        ),
+        'TZS 0',
+      );
+      final caption = '$name — $priceStr\n'
+          '${FFLocalizations.of(context).getText('pd_share_check')}'
+          'ZanNext';
+
+      final imageUrl = _imgUrl(p.inventoryImages.firstOrNull);
+
+      if (imageUrl.isEmpty) {
+        await Share.share(caption, subject: name);
+        return;
+      }
+
+      final resp = await http.get(Uri.parse(imageUrl));
+      if (resp.statusCode != 200) {
+        await Share.share(caption, subject: name);
+        return;
+      }
+
+      final tmp = await getTemporaryDirectory();
+      final ext = imageUrl.contains('.')
+          ? imageUrl.split('.').last.split('?').first
+          : 'jpg';
+      final file = File('${tmp.path}/zannext_share_${p.reference.id}.$ext');
+      await file.writeAsBytes(resp.bodyBytes);
+
+      final box = context.findRenderObject() as RenderBox?;
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: caption,
+        subject: name,
+        sharePositionOrigin: box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
+      );
+    } catch (e) {
+      debugPrint('Share image failed: $e');
+      try {
+        final name = valueOrDefault<String>(
+          p.inventoryName,
+          FFLocalizations.of(context).getText('pd_this_product'),
+        );
+        await Share.share(
+          '$name\n${FFLocalizations.of(context).getText('pd_share_check')}ZanNext',
+          subject: name,
+        );
+      } catch (_) {}
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════

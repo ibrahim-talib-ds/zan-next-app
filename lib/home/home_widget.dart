@@ -1,4 +1,6 @@
 import '/auth/firebase_auth/auth_util.dart';
+import '/components/product_bottom_info.dart';
+import '/components/rotating_search_hint.dart';
 import '/admin_category/admin_category_editor.dart';
 import '/admin_category/category_service.dart';
 import '/utils/responsive.dart';
@@ -119,7 +121,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                 color: theme.primary,
                 backgroundColor: theme.secondaryBackground,
                 onRefresh: () async {
-                  safeSetState(() {});
+                  _reshuffle();
                   await Future.delayed(const Duration(milliseconds: 600));
                 },
                 child: SingleChildScrollView(
@@ -491,7 +493,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                     SizedBox(height: 4),
 
                     Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+                      padding: EdgeInsetsDirectional.fromSTEB(0, 0, 0, 0),
                       child: StreamBuilder<List<InventoryRecord>>(
                         stream: queryInventoryRecord(
                           queryBuilder: (inventoryRecord) => inventoryRecord
@@ -514,7 +516,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                               ),
                             );
                           }
-                          final items = snapshot.data!;
+                          final items = _shuffleList(snapshot.data!);
 
                           if (items.isEmpty) {
                             return _emptyState(
@@ -528,9 +530,9 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: Responsive.productCols(context),
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                              childAspectRatio: 0.72,
+                              crossAxisSpacing: 0,
+                              mainAxisSpacing: 0,
+                              childAspectRatio: 0.66,
                             ),
                             primary: false,
                             shrinkWrap: true,
@@ -811,20 +813,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                       ),
                       SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          FFLocalizations.of(context).getText('home_search_hint'),
-                          style: theme.bodyMedium.override(
-                            font: GoogleFonts.inter(
-                              fontWeight: FontWeight.w500,
-                              fontStyle: theme.bodyMedium.fontStyle,
-                            ),
-                            color: theme.secondaryText,
-                            fontSize: 14,
-                            letterSpacing: 0.0,
-                            fontWeight: FontWeight.w500,
-                            fontStyle: theme.bodyMedium.fontStyle,
-                          ),
-                        ),
+                        child: const RotatingSearchHint(),
                       ),
                       Container(
                         width: 36,
@@ -1517,7 +1506,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
       ),
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
-        final items = snap.data!;
+        final items = _shuffleList(snap.data!);
         if (items.isEmpty) return const SizedBox.shrink();
 
         return Column(
@@ -1595,7 +1584,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
       ),
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
-        final items = snap.data!.take(10).toList();
+        final items = _shuffleList(snap.data!).take(10).toList();
         if (items.isEmpty) return const SizedBox.shrink();
 
         return Column(
@@ -1660,7 +1649,8 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
           return true;
         }).toList();
 
-        if (items.isEmpty) return const SizedBox.shrink();
+        final shuffled = _shuffleList(items);
+        if (shuffled.isEmpty) return const SizedBox.shrink();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1670,9 +1660,9 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
               child: ListView.builder(
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 scrollDirection: Axis.horizontal,
-                itemCount: items.length + 1,
+                itemCount: shuffled.length + 1,
                 itemBuilder: (context, i) {
-                  if (i == items.length) {
+                  if (i == shuffled.length) {
                     return Padding(
                       padding: EdgeInsetsDirectional.fromSTEB(0, 4, 8, 4),
                       child: _seeAllCard(
@@ -2012,7 +2002,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                               record.inventoryImages.firstOrNull,
                               'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxz9T3n9wAdGgBp1oXZxkQMdECuc3cuvcOw&s',
                             ),
-                            fit: BoxFit.contain,
+                            fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Icon(
                                 Icons.image_not_supported_outlined,
@@ -2052,6 +2042,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                     lineHeight: 1.25,
                   ),
                 ),
+                _pbDescription(record, color: theme.secondaryText),
                 SizedBox(height: 4),
 
                 // ─── PRICE ROW ───
@@ -2089,37 +2080,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                 SizedBox(height: 2),
 
                 // ─── SELLER / TRUST ROW ───
-                Row(
-                  children: [
-                    Icon(
-                      Icons.verified_rounded,
-                      color: theme.primary,
-                      size: 11,
-                    ),
-                    SizedBox(width: 3),
-                    Expanded(
-                      child: Text(
-                        valueOrDefault<String>(
-                          record.sellerName,
-                          FFLocalizations.of(context).getText('home_seller_verified'),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.bodyMedium.override(
-                          font: GoogleFonts.inter(
-                            fontWeight: FontWeight.w400,
-                            fontStyle: theme.bodyMedium.fontStyle,
-                          ),
-                          color: theme.secondaryText,
-                          fontSize: 9.5,
-                          letterSpacing: 0.0,
-                          fontWeight: FontWeight.w400,
-                          fontStyle: theme.bodyMedium.fontStyle,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                _pbBottomRow(record),
               ],
             ),
           ),
@@ -2206,6 +2167,81 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+
+  // ── product description (2 lines + trailing "...") ──
+  Widget _pbDescription(InventoryRecord r, {required Color color, double size = 10.5}) {
+    String desc = '';
+    try {
+      final data = (r as dynamic).snapshotData;
+      if (data is Map) {
+        desc = (data['inventory_description'] ??
+                data['description'] ??
+                data['inventoryDescription'] ??
+                '').toString().trim();
+      }
+    } catch (_) {}
+    if (desc.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Text(
+        '$desc...',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: size,
+          height: 1.2,
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+    );
+  }
+
+  // ── rotating bottom row ──
+  Widget _pbBottomRow(InventoryRecord r) {
+    DateTime? created;
+    try {
+      final data = (r as dynamic).snapshotData;
+      if (data is Map) {
+        final v = data['created_at'] ?? data['created_time'] ?? data['createdAt'];
+        if (v is DateTime) created = v;
+        else if (v is String) created = DateTime.tryParse(v);
+        else if (v is int) created = DateTime.fromMillisecondsSinceEpoch(v);
+        else if (v != null && v.runtimeType.toString().contains('Timestamp')) {
+          try { created = (v as dynamic).toDate(); } catch (_) {}
+        }
+      }
+    } catch (_) {}
+    String ship = '';
+    try {
+      final data = (r as dynamic).snapshotData;
+      if (data is Map) {
+        ship = (data['shipping_days'] ??
+                data['delivery_time'] ??
+                '').toString().trim();
+      }
+    } catch (_) {}
+    return ProductBottomInfo(
+      sellerName: r.sellerName,
+      shippingDays: ship,
+      createdAt: created,
+    );
+  }
+
+
+  // ── seeded shuffle: stable within a build, fresh on refresh ──
+  int _shuffleSeed = 0;
+  void _reshuffle() {
+    if (mounted) setState(() => _shuffleSeed++);
+  }
+  List<T> _shuffleList<T>(List<T> items, {int keepTop = 0}) {
+    if (items.length <= keepTop + 1) return items;
+    final head = items.take(keepTop).toList();
+    final tail = items.skip(keepTop).toList();
+    tail.shuffle(Random(_shuffleSeed));
+    return <T>[...head, ...tail];
   }
 }
 
