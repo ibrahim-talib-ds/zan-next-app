@@ -3,6 +3,13 @@ flutter_native_splash:
   color_dark: "#0A3A22"
   image: "assets/images/zannext_logo.png"
   image_dark: "assets/images/zannext_logo.png"
+
+  # ── Logo sizing (prevents "over-fitting" / cropping) ──
+  # The logo will be rendered at this size on the splash.
+  # 250px is safe for most phones without looking too big.
+  android_gravity: center
+  ios_content_mode: center
+
   android_12:
     color: "#0A3A22"
     color_dark: "#0A3A22"
@@ -10,6 +17,7 @@ flutter_native_splash:
     image_dark: "assets/images/zannext_logo.png"
     icon_background_color: "#0A3A22"
     icon_background_color_dark: "#0A3A22"
+
   android: true
   ios: true
   web: false
