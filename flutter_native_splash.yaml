@@ -1,20 +1,13 @@
 flutter_native_splash:
+  # ── Native splash is JUST the brand green — no logo, no text ──
+  # The logo appears on the Dart splash that follows immediately.
+  # This makes the transition seamless: green → green + logo → Home
   color: "#0A3A22"
   color_dark: "#0A3A22"
-  image: "assets/images/zannext_logo.png"
-  image_dark: "assets/images/zannext_logo.png"
-
-  # ── Logo sizing (prevents "over-fitting" / cropping) ──
-  # The logo will be rendered at this size on the splash.
-  # 250px is safe for most phones without looking too big.
-  android_gravity: center
-  ios_content_mode: center
 
   android_12:
     color: "#0A3A22"
     color_dark: "#0A3A22"
-    image: "assets/images/zannext_logo.png"
-    image_dark: "assets/images/zannext_logo.png"
     icon_background_color: "#0A3A22"
     icon_background_color_dark: "#0A3A22"
 
