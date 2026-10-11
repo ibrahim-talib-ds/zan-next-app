@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 
 import 'profile_edit_model.dart';
 import '/services/cloudinary_service.dart';
+import '/services/api_client.dart' as zannext_api;
+import '/repositories/user_repository.dart';
 export 'profile_edit_model.dart';
 
 class ProfileEditWidget extends StatefulWidget {
@@ -85,14 +87,47 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
     _model.birthdayTextController ??= TextEditingController();
     _model.birthdayFocusNode ??= FocusNode();
 
-    _selectedBirthday = currentUserDocument?.birthday;
-    _model.birthdayTextController?.text = _formatDate(_selectedBirthday);
-
-    final g = currentUserDocument?.gender ?? '';
-    if (g.isNotEmpty) {
-      _model.choiceChipsValue = g;
-    }
+    // fix25: ZanNextApiUser has no birthday/gender getters, so we load
+    // the real row from Postgres via GET /users/{id}.
+    _loadProfile();
   }
+
+  Future<void> _loadProfile() async {
+    if (currentUserUid.isEmpty) return;
+    try {
+      final raw = await zannext_api.ApiClient.get('/users/$currentUserUid');
+      if (raw is! Map) return;
+      final u = Map<String, dynamic>.from(raw);
+      String sv(List<String> keys) {
+        for (final k in keys) {
+          final v = u[k];
+          if (v != null && v.toString().trim().isNotEmpty) {
+            return v.toString();
+          }
+        }
+        return '';
+      }
+
+      final bdayRaw = sv(['birthday']);
+      final bday = bdayRaw.isNotEmpty ? DateTime.tryParse(bdayRaw) : null;
+      final gender = sv(['gender']);
+      final photo = sv(['photo_url', 'photoUrl']);
+
+      if (!mounted) return;
+      safeSetState(() {
+        _model.nameTextController?.text = sv(['display_name', 'displayName']);
+        _model.emailTextController?.text = sv(['email']);
+        _model.phoneTextController?.text = sv(['phone_number', 'phoneNumber']);
+        if (gender.isNotEmpty) _model.choiceChipsValue = gender;
+        _selectedBirthday = bday;
+        _model.birthdayTextController?.text = _formatDate(bday);
+        if (photo.isNotEmpty) _apiPhoto = photo;
+      });
+    } catch (_) {}
+  }
+
+  /// Photo from the Postgres row (used when auth cache has none).
+  String _apiPhoto = '';
 
   @override
   void dispose() {
@@ -252,7 +287,7 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
   Widget _buildAvatarSection() {
     final preview = _model.uploadedFileUrl_uploadDataDr6.isNotEmpty
         ? _model.uploadedFileUrl_uploadDataDr6
-        : currentUserPhoto;
+        : (_apiPhoto.isNotEmpty ? _apiPhoto : currentUserPhoto);
 
     return Center(
       child: Column(
@@ -742,7 +777,7 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
     return CloudinaryService.upload(bytes, filename: filename);
   }
 
-  Future<void> _save() async {
+    Future<void> _save() async {
     if (_isSaving) return;
 
     if (!(_formKey.currentState?.validate() ?? false)) {
@@ -755,30 +790,34 @@ class _ProfileEditWidgetState extends State<ProfileEditWidget> {
       return;
     }
 
-    if (currentUserReference == null) return;
+    if (currentUserUid.isEmpty) return;
 
     safeSetState(() => _isSaving = true);
 
     try {
-      await currentUserReference!.update(
-        createUsersRecordData(
-          email: _model.emailTextController!.text.trim(),
-          displayName: _model.nameTextController!.text.trim(),
-          photoUrl: _model.uploadedFileUrl_uploadDataDr6.isNotEmpty
-              ? _model.uploadedFileUrl_uploadDataDr6
-              : currentUserPhoto,
-          phoneNumber: _model.phoneTextController!.text.trim(),
-          gender: _model.choiceChipsValue,
-          birthday: _selectedBirthday,
-        ),
-      );
+      String? birthdayIso;
+      if (_selectedBirthday != null) {
+        birthdayIso =
+            '${_selectedBirthday!.year.toString().padLeft(4, '0')}-${_selectedBirthday!.month.toString().padLeft(2, '0')}-${_selectedBirthday!.day.toString().padLeft(2, '0')}';
+      }
+
+      await UserRepository.update(currentUserUid, {
+        'display_name': _model.nameTextController!.text.trim(),
+        'email': _model.emailTextController!.text.trim(),
+        'photo_url': _model.uploadedFileUrl_uploadDataDr6.isNotEmpty
+            ? _model.uploadedFileUrl_uploadDataDr6
+            : (_apiPhoto.isNotEmpty ? _apiPhoto : currentUserPhoto),
+        'phone_number': _model.phoneTextController!.text.trim(),
+        'gender': _model.choiceChipsValue ?? '',
+        if (birthdayIso != null) 'birthday': birthdayIso,
+      });
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(FFLocalizations.of(context).getText('pe_updated')),
           backgroundColor: kGreen,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
 

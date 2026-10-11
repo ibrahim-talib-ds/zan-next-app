@@ -1,8 +1,8 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '/services/api_client.dart' as zannext_api;
 
 import 'admin_products_model.dart';
 export 'admin_products_model.dart';
@@ -63,10 +63,8 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
             _header(),
             _searchBar(),
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('Inventory')
-                    .snapshots(),
+              child: FutureBuilder<List<dynamic>>(
+                future: _fetchProducts(),
                 builder: (context, snap) {
                   if (!snap.hasData) {
                     return const Center(
@@ -75,12 +73,12 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
                       ),
                     );
                   }
-                  var docs = snap.data!.docs;
+                  var docs = snap.data!;
                   if (_query.isNotEmpty) {
                     final q = _query.toLowerCase();
                     docs = docs.where((doc) {
-                      final d = doc.data() as Map<String, dynamic>;
-                      final name = (d['inventory_name'] ?? '').toString().toLowerCase();
+                      final d = doc as Map<String, dynamic>;
+                      final name = (d['name'] ?? '').toString().toLowerCase();
                       final seller = (d['seller_name'] ?? '').toString().toLowerCase();
                       return name.contains(q) || seller.contains(q);
                     }).toList();
@@ -95,10 +93,9 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
                       itemCount: docs.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (_, i) {
-                        final doc = docs[i];
-                        final d = doc.data() as Map<String, dynamic>;
+                        final d = docs[i] as Map<String, dynamic>;
                         return Dismissible(
-                          key: ValueKey('product_${doc.id}'),
+                          key: ValueKey('product_${d['id']}'),
                           direction: DismissDirection.endToStart,
                           background: Container(
                             alignment: Alignment.centerRight,
@@ -122,9 +119,9 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
                               ],
                             ),
                           ),
-                          confirmDismiss: (_) => _confirmDelete(d['inventory_name'] ?? 'Product'),
-                          onDismissed: (_) => _deleteProduct(doc),
-                          child: _productTile(doc),
+                          confirmDismiss: (_) => _confirmDelete(d['name'] ?? 'Product'),
+                          onDismissed: (_) => _deleteProductById(d['id'] as String),
+                          child: _productTile(d),
                         );
                       },
                     ),
@@ -224,11 +221,10 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
     );
   }
 
-  Widget _productTile(DocumentSnapshot doc) {
-    final d = doc.data() as Map<String, dynamic>;
-    final name = (d['inventory_name'] ?? FFLocalizations.of(context).getText('ap_product_fallback')).toString();
-    final price = (d['inventory_price'] as num?)?.toDouble() ?? 0;
-    final images = (d['inventory_images'] as List?) ?? [];
+  Widget _productTile(Map<String, dynamic> d) {
+    final name = (d['name'] ?? FFLocalizations.of(context).getText('ap_product_fallback')).toString();
+    final price = (d['price'] as num?)?.toDouble() ?? 0;
+    final images = (d['images'] as List?) ?? [];
     final photo = images.isNotEmpty ? _imgUrl(images.first.toString()) : '';
     final sellerName = (d['seller_name'] ?? FFLocalizations.of(context).getText('ap_unknown_seller')).toString();
 
@@ -303,28 +299,28 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
                 icon: Icons.grid_view_rounded,
                 active: inCatalog,
                 color: kGreen,
-                onTap: () => _toggleField(doc, 'all_products', inCatalog),
+                onTap: () => _toggleField(d['id'] as String, 'all_products', inCatalog),
               ),
               _toggleChip(
                 label: FFLocalizations.of(context).getText('ap_chip_new'),
                 icon: Icons.fiber_new_rounded,
                 active: isNew,
                 color: const Color(0xFF3B82F6),
-                onTap: () => _toggleField(doc, 'new_in', isNew),
+                onTap: () => _toggleField(d['id'] as String, 'new_in', isNew),
               ),
               _toggleChip(
                 label: FFLocalizations.of(context).getText('ap_chip_trending'),
                 icon: Icons.trending_up_rounded,
                 active: isTrending,
                 color: const Color(0xFFFF5964),
-                onTap: () => _toggleField(doc, 'top_selling', isTrending),
+                onTap: () => _toggleField(d['id'] as String, 'top_selling', isTrending),
               ),
               _toggleChip(
                 label: FFLocalizations.of(context).getText('ap_chip_boosted'),
                 icon: Icons.star_rounded,
                 active: isBoosted,
                 color: const Color(0xFFFFB300),
-                onTap: () => _toggleField(doc, 'boosted', isBoosted),
+                onTap: () => _toggleField(d['id'] as String, 'boosted', isBoosted),
               ),
             ],
           ),
@@ -377,10 +373,12 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
     );
   }
 
-  Future<void> _toggleField(DocumentSnapshot doc, String field, bool current) async {
+  Future<void> _toggleField(String productId, String field, bool current) async {
     try {
-      await doc.reference.update({field: !current});
+      await zannext_api.ApiClient.patch('/products/$productId', body: {field: !current});
       if (!mounted) return;
+      // 🔄 Refresh the list so the chip reflects the new state
+      safeSetState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$field ${!current ? "ON" : "OFF"}'),
@@ -423,10 +421,12 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
     ) ?? false;
   }
 
-  Future<void> _deleteProduct(DocumentSnapshot doc) async {
+  Future<void> _deleteProductById(String productId) async {
     try {
-      await doc.reference.delete();
+      await zannext_api.ApiClient.delete('/products/$productId');
       if (!mounted) return;
+      // Refresh so the row disappears from the list immediately
+      safeSetState(() {});
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(FFLocalizations.of(context).getText('ap_deleted')),
         backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
@@ -456,4 +456,20 @@ class _AdminProductsWidgetState extends State<AdminProductsWidget> {
       ),
     );
   }
+
+  Future<List<dynamic>> _fetchProducts() async {
+    try {
+      final r = await zannext_api.ApiClient.get('/products?limit=200');
+      final list = (r as List).cast<Map>();
+      // Hide soft-deleted rows so they don't keep coming back
+      return list
+          .where((m) => (m['status'] ?? '').toString() != 'deleted')
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+
+
 }

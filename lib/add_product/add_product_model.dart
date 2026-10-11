@@ -3,6 +3,8 @@ import 'add_product_widget.dart' show AddProductWidget;
 import 'package:flutter/material.dart';
 
 class AddProductModel extends FlutterFlowModel<AddProductWidget> {
+  bool isSubmitting = false;
+
   ///  State fields for stateful widgets in this page.
 
   // Form key for validating the whole form on submit

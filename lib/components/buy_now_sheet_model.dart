@@ -2,9 +2,10 @@ import '/flutter_flow/flutter_flow_util.dart';
 import '/backend/backend.dart';
 import 'buy_now_sheet_widget.dart' show BuyNowSheetWidget;
 import 'package:flutter/material.dart';
+import '/models/address.dart';
 
 class BuyNowSheetModel extends FlutterFlowModel<BuyNowSheetWidget> {
-  AddressRecord? selectedAddress;
+  Address? selectedAddress;
   String? customPhone;
   String? notes;
   bool isPlacing = false;

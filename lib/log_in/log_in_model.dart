@@ -32,6 +32,9 @@ class LogInModel extends FlutterFlowModel<LogInWidget> {
   // State field(s) for Checkbox widget.
   bool? checkboxValue;
 
+  // Submit state
+  bool isSubmitting = false;
+
   @override
   void initState(BuildContext context) {
     passwordVisibility = false;

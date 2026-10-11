@@ -14,7 +14,6 @@ import 'dart:ui';
 import '/index.dart';
 import 'fragrances1_widget.dart' show Fragrances1Widget;
 import 'package:sticky_headers/sticky_headers.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';

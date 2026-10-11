@@ -1,17 +1,16 @@
 import '/auth/firebase_auth/auth_util.dart';
-import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 
 import 'my_adress_model.dart';
 export 'my_adress_model.dart';
 
+/// My Addresses — 100% Postgres via GET/DELETE /addresses.
 class MyAdressWidget extends StatefulWidget {
   const MyAdressWidget({super.key});
 
@@ -24,22 +23,104 @@ class MyAdressWidget extends StatefulWidget {
 
 class _MyAdressWidgetState extends State<MyAdressWidget> {
   late MyAdressModel _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  List<Map<String, dynamic>> _addresses = const [];
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => MyAdressModel());
-    logFirebaseEvent('screen_view',
-        parameters: {'screen_name': 'myAdress'});
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    _load();
   }
 
   @override
   void dispose() {
     _model.dispose();
     super.dispose();
+  }
+
+  String _s(Map m, List<String> keys, [String fb = '']) {
+    for (final k in keys) {
+      final v = m[k];
+      if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+    }
+    return fb;
+  }
+
+  Future<void> _load() async {
+    if (currentUserUid.isEmpty) {
+      if (mounted) safeSetState(() => _loading = false);
+      return;
+    }
+    try {
+      final raw =
+          await zannext_api.ApiClient.get('/addresses?user_id=$currentUserUid');
+      final list =
+          (raw as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      _addresses = list;
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    }
+    if (mounted) safeSetState(() => _loading = false);
+  }
+
+  Future<void> _deleteOne(Map<String, dynamic> a) async {
+    final id = _s(a, ['id']);
+    if (id.isEmpty) return;
+    try {
+      await zannext_api.ApiClient.delete('/addresses/$id');
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Address deleted'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not delete: $e'),
+        backgroundColor: const Color(0xFFDC0F0F),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
+  Future<bool> _confirmDelete(Map<String, dynamic> a) async {
+    final theme = FlutterFlowTheme.of(context);
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: theme.secondaryBackground,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: const Text('Delete this address?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+            content: Text(_s(a, ['label', 'city'], 'This address'),
+                style: TextStyle(
+                    color: theme.secondaryText, fontSize: 13, height: 1.4)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Keep',
+                    style: TextStyle(
+                        color: theme.secondaryText,
+                        fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Delete',
+                    style: TextStyle(
+                        color: Color(0xFFDC0F0F),
+                        fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   @override
@@ -60,7 +141,7 @@ class _MyAdressWidgetState extends State<MyAdressWidget> {
             children: [
               _buildHeader(context),
               Expanded(
-                child: currentUserReference == null
+                child: currentUserUid.isEmpty
                     ? _emptyState(
                         context,
                         'Sign in to manage your addresses',
@@ -75,9 +156,6 @@ class _MyAdressWidgetState extends State<MyAdressWidget> {
     );
   }
 
-  // ============================================================
-  // HEADER
-  // ============================================================
   Widget _buildHeader(BuildContext context) {
     final theme = FlutterFlowTheme.of(context);
     final topPad = MediaQuery.of(context).padding.top;
@@ -165,9 +243,6 @@ class _MyAdressWidgetState extends State<MyAdressWidget> {
     );
   }
 
-  // ============================================================
-  // ADDRESS LIST
-  // ============================================================
   Widget _buildAddressList(BuildContext context) {
     final theme = FlutterFlowTheme.of(context);
 
@@ -176,15 +251,11 @@ class _MyAdressWidgetState extends State<MyAdressWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ---------- Info banner ----------
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  theme.primary,
-                  const Color(0xFF053020),
-                ],
+                colors: [theme.primary, const Color(0xFF053020)],
                 stops: const [0, 1],
                 begin: AlignmentDirectional(-1, -1),
                 end: AlignmentDirectional(1, 1),
@@ -256,104 +327,14 @@ class _MyAdressWidgetState extends State<MyAdressWidget> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // ---------- Addresses ----------
-          StreamBuilder<List<AddressRecord>>(
-            stream: queryAddressRecord(
-              queryBuilder: (q) => q.where(
-                'user',
-                isEqualTo: currentUserReference,
-              ),
-            ),
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return _emptyState(
-                  context,
-                  'Could not load your addresses',
-                  Icons.error_outline_rounded,
-                );
-              }
-              if (!snapshot.hasData) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 40),
-                    child: SizedBox(
-                      width: 36,
-                      height: 36,
-                      child: CircularProgressIndicator(
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(theme.primary),
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              final addresses = snapshot.data!;
-              if (addresses.isEmpty) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.location_off_outlined,
-                        color: theme.secondaryText,
-                        size: 44,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No addresses saved yet',
-                        style: theme.titleMedium.override(
-                          font: GoogleFonts.interTight(
-                            fontWeight: FontWeight.w600,
-                            fontStyle: theme.titleMedium.fontStyle,
-                          ),
-                          color: theme.primaryText,
-                          fontSize: 15,
-                          letterSpacing: 0.0,
-                          fontWeight: FontWeight.w600,
-                          fontStyle: theme.titleMedium.fontStyle,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Add your first delivery address below',
-                        textAlign: TextAlign.center,
-                        style: theme.bodySmall.override(
-                          font: GoogleFonts.inter(
-                            fontWeight: FontWeight.w400,
-                            fontStyle: theme.bodySmall.fontStyle,
-                          ),
-                          color: theme.secondaryText,
-                          fontSize: 12,
-                          letterSpacing: 0.0,
-                          fontWeight: FontWeight.w400,
-                          fontStyle: theme.bodySmall.fontStyle,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return Column(
-                children: addresses
-                    .map((a) => _addressCard(context, address: a))
-                    .toList(),
-              );
-            },
-          ),
+          _buildAddressesBody(context),
           const SizedBox(height: 20),
-
-          // ---------- Add new address ----------
           InkWell(
             borderRadius: BorderRadius.circular(14),
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
-            onTap: () {
-              context.pushNamed(
+            onTap: () async {
+              await context.pushNamed(
                 AddNewadressWidget.routeName,
                 extra: <String, dynamic>{
                   '__transition_info__': TransitionInfo(
@@ -363,6 +344,7 @@ class _MyAdressWidgetState extends State<MyAdressWidget> {
                   ),
                 },
               );
+              _load(); // refresh after returning from AddNewadress
             },
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -407,138 +389,215 @@ class _MyAdressWidgetState extends State<MyAdressWidget> {
     );
   }
 
-  // ============================================================
-  // ADDRESS CARD
-  // ============================================================
-  Widget _addressCard(
-    BuildContext context, {
-    required AddressRecord address,
-  }) {
+  Widget _buildAddressesBody(BuildContext context) {
     final theme = FlutterFlowTheme.of(context);
 
-    // Build the full address line from parts
-    final lineParts = <String>[];
-    if ((address.label ?? '').trim().isNotEmpty) {
-      lineParts.add(address.label!.trim());
+    if (_loading) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(theme.primary),
+            ),
+          ),
+        ),
+      );
     }
-    if ((address.district ?? '').trim().isNotEmpty) {
-      lineParts.add(address.district!.trim());
+    if (_error != null) {
+      return _emptyState(context, 'Could not load your addresses',
+          Icons.error_outline_rounded);
     }
-    if ((address.streetAddress ?? '').trim().isNotEmpty) {
-      lineParts.add(address.streetAddress!.trim());
-    }
-    final fullAddress = lineParts.join(', ');
-
-    // Build the second line
-    final secondParts = <String>[];
-    if ((address.landmark ?? '').trim().isNotEmpty) {
-      secondParts.add(address.landmark!.trim());
-    }
-    if ((address.phone ?? '').trim().isNotEmpty) {
-      secondParts.add(address.phone!.trim());
-    }
-    final secondLine = secondParts.join(' · ');
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.secondaryBackground,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: theme.alternate, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+    if (_addresses.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.location_off_outlined,
+                color: theme.secondaryText, size: 44),
+            const SizedBox(height: 12),
+            Text(
+              'No addresses saved yet',
+              style: theme.titleMedium.override(
+                font: GoogleFonts.interTight(
+                  fontWeight: FontWeight.w600,
+                  fontStyle: theme.titleMedium.fontStyle,
+                ),
+                color: theme.primaryText,
+                fontSize: 15,
+                letterSpacing: 0.0,
+                fontWeight: FontWeight.w600,
+                fontStyle: theme.titleMedium.fontStyle,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Add your first delivery address below',
+              textAlign: TextAlign.center,
+              style: theme.bodySmall.override(
+                font: GoogleFonts.inter(
+                  fontWeight: FontWeight.w400,
+                  fontStyle: theme.bodySmall.fontStyle,
+                ),
+                color: theme.secondaryText,
+                fontSize: 12,
+                letterSpacing: 0.0,
+                fontWeight: FontWeight.w400,
+                fontStyle: theme.bodySmall.fontStyle,
+              ),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top row: icon + full address
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: theme.primary.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.home_rounded,
-                    color: theme.primary,
-                    size: 20,
-                  ),
+      );
+    }
+
+    return Column(
+      children: _addresses
+          .map((a) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _addressCard(context, a),
+              ))
+          .toList(),
+    );
+  }
+
+  Widget _addressCard(BuildContext context, Map<String, dynamic> a) {
+    final theme = FlutterFlowTheme.of(context);
+
+    final lineParts = <String>[
+      _s(a, ['label']),
+      _s(a, ['district']),
+      _s(a, ['street_address', 'streetAddress']),
+      _s(a, ['house_no', 'houseNo']),
+    ].where((s) => s.isNotEmpty).toList();
+    final fullAddress = lineParts.join(', ');
+    final city = _s(a, ['city']);
+    final secondParts = <String>[
+      _s(a, ['landmark']),
+      _s(a, ['phone']),
+    ].where((s) => s.isNotEmpty).toList();
+    final secondLine = secondParts.join(' · ');
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.secondaryBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.alternate, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: theme.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        fullAddress.isEmpty ? 'Address' : fullAddress,
-                        style: theme.bodyLarge.override(
-                          font: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700,
-                            fontStyle: theme.bodyLarge.fontStyle,
-                          ),
-                          color: theme.primaryText,
-                          fontSize: 14,
-                          letterSpacing: 0.0,
+                child: Icon(
+                  Icons.home_rounded,
+                  color: theme.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      fullAddress.isEmpty ? 'Address' : fullAddress,
+                      style: theme.bodyLarge.override(
+                        font: GoogleFonts.inter(
                           fontWeight: FontWeight.w700,
                           fontStyle: theme.bodyLarge.fontStyle,
-                          lineHeight: 1.3,
                         ),
+                        color: theme.primaryText,
+                        fontSize: 14,
+                        letterSpacing: 0.0,
+                        fontWeight: FontWeight.w700,
+                        fontStyle: theme.bodyLarge.fontStyle,
+                        lineHeight: 1.3,
                       ),
-                      if (secondLine.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.phone_outlined,
-                              color: theme.secondaryText,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                secondLine,
-                                style: theme.bodySmall.override(
-                                  font: GoogleFonts.inter(
-                                    fontWeight: FontWeight.w400,
-                                    fontStyle: theme.bodySmall.fontStyle,
-                                  ),
-                                  color: theme.secondaryText,
-                                  fontSize: 12,
-                                  letterSpacing: 0.0,
+                    ),
+                    if (city.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(city,
+                          style: TextStyle(
+                              color: theme.secondaryText, fontSize: 12)),
+                    ],
+                    if (secondLine.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.phone_outlined,
+                              color: theme.secondaryText, size: 14),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              secondLine,
+                              style: theme.bodySmall.override(
+                                font: GoogleFonts.inter(
                                   fontWeight: FontWeight.w400,
                                   fontStyle: theme.bodySmall.fontStyle,
                                 ),
+                                color: theme.secondaryText,
+                                fontSize: 12,
+                                letterSpacing: 0.0,
+                                fontWeight: FontWeight.w400,
+                                fontStyle: theme.bodySmall.fontStyle,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () async {
+                  final ok = await _confirmDelete(a);
+                  if (ok) await _deleteOne(a);
+                },
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDC0F0F).withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Color(0xFFDC0F0F),
+                    size: 17,
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  // ============================================================
-  // EMPTY STATE
-  // ============================================================
   Widget _emptyState(BuildContext context, String message, IconData icon) {
     final theme = FlutterFlowTheme.of(context);
     return Center(
@@ -577,6 +636,10 @@ class _MyAdressWidgetState extends State<MyAdressWidget> {
                 lineHeight: 1.5,
               ),
             ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              TextButton(onPressed: _load, child: const Text('Retry')),
+            ],
           ],
         ),
       ),

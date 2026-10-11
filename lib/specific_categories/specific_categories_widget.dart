@@ -1,5 +1,6 @@
 import 'dart:math';
 import '/components/product_bottom_info.dart';
+import '/components/product_badge.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
@@ -83,7 +84,7 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
             Expanded(
               child: StreamBuilder<List<InventoryRecord>>(
                 stream: queryInventoryRecord(
-                  queryBuilder: (r) => r.where('categories', isEqualTo: category),
+                  filterCategory: category,
                 ),
                 builder: (context, snap) {
                   if (!snap.hasData) return _loading();
@@ -294,8 +295,7 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
         break;
       case 'popular':
       default:
-        list.sort((a, b) =>
-            (b.viewCount ?? 0).compareTo(a.viewCount ?? 0));
+        list.sort((a, b) => b.viewCount.compareTo(a.viewCount));
         break;
     }
     return list;
@@ -340,10 +340,7 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
           context.pushNamed(
             ProductDetailsWidget.routeName,
             queryParameters: {
-              'inventoryRef': serializeParam(
-                record.reference,
-                ParamType.DocumentReference,
-              ),
+              'inventoryRef': serializeParam( record.id, ParamType.String),
             }.withoutNulls,
           );
         },
@@ -354,21 +351,31 @@ class _SpecificCategoriesWidgetState extends State<SpecificCategoriesWidget> {
             children: [
               Expanded(
                 flex: 7,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: double.infinity,
-                    color: _soft,
-                    child: Image.network(
-                      img,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(
-                        Icons.image_not_supported_outlined,
-                        color: _muted,
-                        size: 28,
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: double.infinity,
+                        color: _soft,
+                        child: Image.network(
+                          img,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Icon(
+                            Icons.image_not_supported_outlined,
+                            color: _muted,
+                            size: 28,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    if (productBadge(context, record) != null)
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: productBadge(context, record)!,
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 6),

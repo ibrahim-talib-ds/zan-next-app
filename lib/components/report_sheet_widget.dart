@@ -1,7 +1,7 @@
 import '/auth/firebase_auth/auth_util.dart';
+import '/services/api_client.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'report_sheet_model.dart';
@@ -13,12 +13,12 @@ class ReportSheetWidget extends StatefulWidget {
   const ReportSheetWidget({
     super.key,
     required this.targetType,   // 'product' | 'user'
-    required this.targetRef,    // DocumentReference
+    required this.targetId,     // String id (was DocumentReference)
     required this.targetLabel,  // display name for header
   });
 
   final String targetType;
-  final DocumentReference targetRef;
+  final String targetId;
   final String targetLabel;
 
   @override
@@ -362,7 +362,7 @@ class _ReportSheetWidgetState extends State<ReportSheetWidget> {
   }
 
   Future<void> _submit() async {
-    if (currentUserReference == null) return;
+    if (currentUserUid.isEmpty) return;
 
     final reasonId = _model.selectedReason!;
     final reason = _reasons.firstWhere((r) => r['id'] == reasonId);
@@ -370,22 +370,14 @@ class _ReportSheetWidgetState extends State<ReportSheetWidget> {
     safeSetState(() => _model.isSubmitting = true);
 
     try {
-      await FirebaseFirestore.instance.collection('reports').add({
-        'reporter_ref': currentUserReference,
-        'reporter_name': currentUserDisplayName,
-        'reporter_email': currentUserEmail,
+      await ApiClient.post('/reports', body: {
         'target_type': widget.targetType,
-        'target_ref': widget.targetRef,
+        'target_id': widget.targetId,
         'target_label': widget.targetLabel,
         'reason_id': reasonId,
         'reason_label': reason['label'],
         'priority': reason['priority'],
         'notes': _model.notesController?.text.trim() ?? '',
-        'status': 'pending',
-        'created_at': FieldValue.serverTimestamp(),
-        'resolved_at': null,
-        'resolved_by': null,
-        'action_taken': null,
       });
 
       if (!mounted) return;

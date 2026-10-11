@@ -11,6 +11,29 @@ import '../../flutter_flow/uploaded_file.dart';
 
 /// SERIALIZATION HELPERS
 
+
+/// Firebase-free DocumentReference shim — carries the path/id.
+/// Mimics Firestore's DocumentReference API surface so callers that
+/// expected `.get()` or `.id` keep compiling without Firestore.
+class _PathRef {
+  const _PathRef(this.path);
+  final String path;
+  String get id => path.split('/').last;
+
+  /// Returns an empty snapshot-like map. Any code path expecting real
+  /// Firestore data at this point should be migrated to a repository call.
+  Future<Map<String, dynamic>?> get() async => null;
+
+  @override
+  String toString() => path;
+  @override
+  bool operator ==(Object other) =>
+      other is _PathRef ? other.path == path : other == path;
+  @override
+  int get hashCode => path.hashCode;
+}
+
+
 String dateTimeToString(DateTime dateTime) =>
     '${dateTime.isUtc ? 'u' : 'l'}${dateTime.millisecondsSinceEpoch}';
 
@@ -94,9 +117,6 @@ String? serializeParam(
       case ParamType.Document:
         final reference = (param as FirestoreRecord).reference;
         data = _serializeDocumentReference(reference);
-
-      default:
-        data = null;
     }
     return data;
   } catch (e) {
@@ -190,7 +210,7 @@ FFPlace placeFromString(String placeStr) {
 FFUploadedFile uploadedFileFromString(String uploadedFileStr) =>
     FFUploadedFile.deserialize(uploadedFileStr);
 
-DocumentReference _deserializeDocumentReference(
+dynamic _deserializeDocumentReference(
   String refStr,
   List<String> collectionNamePath,
 ) {
@@ -199,7 +219,8 @@ DocumentReference _deserializeDocumentReference(
   for (int i = 0; i < docIds.length && i < collectionNamePath.length; i++) {
     path += '/${collectionNamePath[i]}/${docIds[i]}';
   }
-  return FirebaseFirestore.instance.doc(path);
+  // Firebase-free: return the path string as a DocumentReference-like object.
+  return _PathRef(path);
 }
 
 enum ParamType {
@@ -278,31 +299,25 @@ dynamic deserializeParam<T>(
   }
 }
 
+// ═════════════════════════════════════════════════════════════
+// Firebase-free: getDoc / getDocList
+//
+// These used to fetch Firestore documents by id. After the
+// Postgres migration, screens receive plain string ids via route
+// params (e.g. `?productId=xxx`) and load data through repositories.
+// Both helpers now return empty / null to preserve their signatures
+// without touching Firestore.
+// ═════════════════════════════════════════════════════════════
 Future<dynamic> Function(String) getDoc(
   List<String> collectionNamePath,
   RecordBuilder recordBuilder,
 ) {
-  return (String ids) => _deserializeDocumentReference(ids, collectionNamePath)
-      .get()
-      .then((s) => recordBuilder(s));
+  return (_) async => null;
 }
 
 Future<List<T>> Function(String) getDocList<T>(
   List<String> collectionNamePath,
   RecordBuilder<T> recordBuilder,
 ) {
-  return (String idsList) {
-    List<String> docIds = [];
-    try {
-      final ids = json.decode(idsList) as Iterable;
-      docIds = ids.where((d) => d is String).map((d) => d as String).toList();
-    } catch (_) {}
-    return Future.wait(
-      docIds.map(
-        (ids) => _deserializeDocumentReference(ids, collectionNamePath)
-            .get()
-            .then((s) => recordBuilder(s)),
-      ),
-    ).then((docs) => docs.where((d) => d != null).map((d) => d!).toList());
-  };
+  return (_) async => <T>[];
 }

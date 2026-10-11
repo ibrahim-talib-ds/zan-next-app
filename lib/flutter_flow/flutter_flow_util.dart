@@ -1,7 +1,6 @@
 import 'dart:io';
 import '/services/app_language.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,7 +26,7 @@ export 'dart:typed_data' show Uint8List;
 export 'dart:convert' show jsonEncode, jsonDecode;
 export 'package:intl/intl.dart';
 export 'package:cloud_firestore/cloud_firestore.dart'
-    show DocumentReference, FirebaseFirestore;
+    show DocumentReference;
 export 'package:page_transition/page_transition.dart';
 export 'internationalization.dart' show FFLocalizations;
 export 'nav/nav.dart';
@@ -419,7 +418,9 @@ extension IterableExt<T> on Iterable<T> {
 }
 
 extension StringDocRef on String {
-  DocumentReference get ref => FirebaseFirestore.instance.doc(this);
+  /// Firebase-free: this getter is deprecated. Use the raw id/path.
+  dynamic get ref => throw UnsupportedError(
+      'Firestore reference no longer available — use .id instead.');
 }
 
 void setAppLanguage(BuildContext context, String language) {

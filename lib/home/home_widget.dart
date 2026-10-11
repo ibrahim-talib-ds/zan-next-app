@@ -5,6 +5,8 @@ import '/admin_category/admin_category_editor.dart';
 import '/admin_category/category_service.dart';
 import '/utils/responsive.dart';
 import '/backend/backend.dart';
+import '/models/category_config.dart';
+import '/repositories/category_repository.dart';
 import '/location_modal/location_modal_widget.dart';
 import '/flutter_flow/flutter_flow_animations.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
@@ -18,7 +20,6 @@ import '/index.dart';
 import 'package:badges/badges.dart' as badges;
 import 'package:smooth_page_indicator/smooth_page_indicator.dart'
     as smooth_page_indicator;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -26,6 +27,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'home_model.dart';
+import '/repositories/address_repository.dart';
+import '/models/address.dart';
+import '/components/shimmer.dart';
 export 'home_model.dart';
 
 /// ZanNext Home — professional e-commerce layout
@@ -50,6 +54,7 @@ class HomeWidget extends StatefulWidget {
 
 class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
   late HomeModel _model;
+  Future<List<CategoryConfig>>? _categoryConfigFuture;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -59,6 +64,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _model = createModel(context, () => HomeModel());
+    _categoryConfigFuture = CategoryRepository.list();
 
     logFirebaseEvent('screen_view', parameters: {'screen_name': 'Home'});
 
@@ -99,6 +105,15 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
   }
 
   @override
+  Future<List<Address>> _homeLocationFuture() async {
+    if (currentUserUid.isEmpty) return const <Address>[];
+    try {
+      return await AddressRepository.listForUser(currentUserUid);
+    } catch (_) {
+      return const <Address>[];
+    }
+  }
+
   Widget build(BuildContext context) {
     context.watch<FFAppState>();
 
@@ -253,7 +268,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                       : 6,
                           crossAxisSpacing: 4,
                           mainAxisSpacing: 4,
-                          childAspectRatio: 0.75,
+                          mainAxisExtent: 94,
                         ),
                         primary: false,
                         shrinkWrap: true,
@@ -501,19 +516,9 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                         ),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) {
-                            return Center(
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(vertical: 40),
-                                child: SizedBox(
-                                  width: 40,
-                                  height: 40,
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      theme.primary,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              child: ShimmerProductRow(height: 210),
                             );
                           }
                           final items = _shuffleList(snapshot.data!);
@@ -671,22 +676,15 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Flexible(
-                                      child: StreamBuilder<List<AddressRecord>>(
-                                        stream: queryAddressRecord(
-                                          queryBuilder: (r) => r.where('user',
-                                              isEqualTo: currentUserReference),
-                                          singleRecord: true,
-                                        ),
+                                      child: FutureBuilder<List<Address>>(
+                                        future: _homeLocationFuture(),
                                         builder: (context, snapshot) {
-                                          // Default fallback = Zanzibar
                                           String label = FFLocalizations.of(context).getText('home_default_location');
-                                          if (snapshot.hasData &&
-                                              snapshot.data!.isNotEmpty) {
+                                          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
                                             final a = snapshot.data!.first;
-                                            if (a.hasCity() &&
-                                                a.city.isNotEmpty &&
-                                                a.city != 'Set your city') {
-                                              label = a.city;
+                                            final city = (a.city ?? '').trim();
+                                            if (city.isNotEmpty && city != 'Set your city') {
+                                              label = city;
                                             }
                                           }
                                           return Text(
@@ -1011,9 +1009,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
               routeName,
               queryParameters: {
                 'inventoryRef': serializeParam(
-                  productRef,
-                  ParamType.DocumentReference,
-                ),
+                  productRef, ParamType.String),
               }.withoutNulls,
             );
           } else {
@@ -1203,15 +1199,19 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
             : FFLocalizations.of(context).getText(labelKey);
 
     // 🔄 Load admin override for this category (if any)
-    return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('category_config')
-          .doc(categoryValue)
-          .snapshots(),
+    return FutureBuilder<List<CategoryConfig>>(
+      future: _categoryConfigFuture,
       builder: (context, snap) {
-        final override = snap.data?.data() as Map<String, dynamic>?;
-        final overrideImage = override?['image_url'] as String?;
-        final overrideLabel = override?['label'] as String?;
+        final list = snap.data ?? const <CategoryConfig>[];
+        CategoryConfig? override;
+        for (final c in list) {
+          if (c.categoryKey == categoryValue) {
+            override = c;
+            break;
+          }
+        }
+        final overrideImage = override?.imageUrl;
+        final overrideLabel = override?.label;
         return _categoryTileInner(
           context: context,
           theme: theme,
@@ -1395,22 +1395,22 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               color: theme.secondary,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
               color: theme.primary,
-              size: 24,
+              size: 22,
             ),
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             label,
-            maxLines: 2,
+            maxLines: 1,
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
             style: theme.bodyMedium.override(
@@ -1423,7 +1423,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
               letterSpacing: 0.0,
               fontWeight: FontWeight.w600,
               fontStyle: theme.bodyMedium.fontStyle,
-              lineHeight: 1.15,
+              lineHeight: 1.1,
             ),
           ),
         ],
@@ -1454,8 +1454,8 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 58,
-            height: 58,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: theme.primary,
@@ -1962,10 +1962,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
             context.pushNamed(
               ProductDetailsWidget.routeName,
               queryParameters: {
-                'inventoryRef': serializeParam(
-                  record.reference,
-                  ParamType.DocumentReference,
-                ),
+                'inventoryRef': serializeParam( record.id, ParamType.String),
               }.withoutNulls,
               extra: <String, dynamic>{
                 '__transition_info__': TransitionInfo(
@@ -1997,19 +1994,22 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                         padding: EdgeInsets.all(4),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            valueOrDefault<String>(
-                              record.inventoryImages.firstOrNull,
-                              'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxz9T3n9wAdGgBp1oXZxkQMdECuc3cuvcOw&s',
+                          child: Hero(
+                            tag: 'product-image-${record.id}',
+                            child: Image.network(
+                              valueOrDefault<String>(
+                                record.inventoryImages.firstOrNull,
+                                'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyxz9T3n9wAdGgBp1oXZxkQMdECuc3cuvcOw&s',
+                              ),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.image_not_supported_outlined,
+                                  color: theme.secondaryText,
+                                  size: 28,
+                                );
+                              },
                             ),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.image_not_supported_outlined,
-                                color: theme.secondaryText,
-                                size: 28,
-                              );
-                            },
                           ),
                         ),
                       ),

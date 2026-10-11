@@ -1,23 +1,26 @@
 import '/auth/firebase_auth/auth_util.dart';
-import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
+import '/repositories/chat_repository.dart';
+import '/repositories/user_repository.dart';
+import '/models/chat.dart';
+import '/models/chat_message.dart';
+import '/models/user.dart' as zn_user;
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'chat_d_model.dart';
-import '/services/notification_sender.dart';
 export 'chat_d_model.dart';
 
 class ChatDWidget extends StatefulWidget {
   const ChatDWidget({
     super.key,
-    required this.receiveChats,
+    this.chatId,
   });
 
-  final DocumentReference? receiveChats;
+  final String? chatId;
 
   static String routeName = 'ChatD';
   static String routePath = '/chatD';
@@ -30,6 +33,9 @@ class _ChatDWidgetState extends State<ChatDWidget> {
   late ChatDModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final _scrollController = ScrollController();
+
+  /// Resolve the chat id from the string param.
+  String? get _effectiveChatId => widget.chatId;
 
   static const Color kGreen = Color(0xFF1B7A4E);
   static const Color kGreenDeep = Color(0xFF0A3A22);
@@ -66,14 +72,15 @@ class _ChatDWidgetState extends State<ChatDWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.receiveChats == null) {
+    final chatId = _effectiveChatId;
+    if (chatId == null || chatId.isEmpty) {
       return _scaffoldSimple(
         Center(child: Text(FFLocalizations.of(context).getText('cd_chat_not_found'))),
       );
     }
 
-    return StreamBuilder<ChatsRecord>(
-      stream: ChatsRecord.getDocument(widget.receiveChats!),
+    return FutureBuilder<Chat>(
+      future: ChatRepository.get(chatId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _scaffoldSimple(
@@ -96,8 +103,8 @@ class _ChatDWidgetState extends State<ChatDWidget> {
         }
 
         final chat = snapshot.data!;
-        final isMeBuyer = chat.buyerRef == currentUserReference;
-        final otherRef = isMeBuyer ? chat.sellerRef : chat.buyerRef;
+        final isMeBuyer = chat.buyerId == currentUserUid;
+        final otherId = isMeBuyer ? chat.sellerId : chat.buyerId;
 
         return GestureDetector(
           onTap: () {
@@ -111,7 +118,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
               top: false,
               child: Column(
                 children: [
-                  _buildHeader(chat, otherRef),
+                  _buildHeader(chat, otherId),
                   _buildProductBar(chat),
                   Expanded(child: _buildMessages()),
                   _buildInputBar(chat),
@@ -135,7 +142,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
   // ═══════════════════════════════════════════════════════════
   // HEADER
   // ═══════════════════════════════════════════════════════════
-  Widget _buildHeader(ChatsRecord chat, DocumentReference? otherRef) {
+  Widget _buildHeader(Chat chat, String otherId) {
     final topPad = MediaQuery.of(context).padding.top;
     return Container(
       padding: EdgeInsetsDirectional.fromSTEB(8, topPad + 8, 8, 12),
@@ -164,24 +171,28 @@ class _ChatDWidgetState extends State<ChatDWidget> {
           ),
           const SizedBox(width: 4),
           Expanded(
-            child: FutureBuilder<UsersRecord?>(
-              future: _getUserRecord(otherRef),
+            child: FutureBuilder<zn_user.User?>(
+              future: UserRepository.get(otherId).catchError((_) => zn_user.User(
+                    id: otherId,
+                    email: '',
+                    displayName: '',
+                    isAdmin: false,
+                    createdAt: null,
+                  )),
               builder: (context, snap) {
                 final user = snap.data;
-                final name = user?.displayName ?? FFLocalizations.of(context).getText('cd_chat_fallback');
+                final name = (user?.displayName?.isNotEmpty ?? false)
+                    ? user!.displayName!
+                    : FFLocalizations.of(context).getText('cd_chat_fallback');
                 final photo = user?.photoUrl ?? '';
                 final city = user?.city ?? '';
 
                 return GestureDetector(
                   onTap: () {
-                    if (otherRef == null) return;
                     context.pushNamed(
                       SellerDashbordWidget.routeName,
                       queryParameters: {
-                        'sellerRef': serializeParam(
-                          otherRef,
-                          ParamType.DocumentReference,
-                        ),
+                        'sellerRef': otherId,
                       }.withoutNulls,
                     );
                   },
@@ -266,8 +277,10 @@ class _ChatDWidgetState extends State<ChatDWidget> {
   // ═══════════════════════════════════════════════════════════
   // PRODUCT BAR
   // ═══════════════════════════════════════════════════════════
-  Widget _buildProductBar(ChatsRecord chat) {
-    final imageUrl = chat.itemsImages.firstOrNull;
+  Widget _buildProductBar(Chat chat) {
+    final imageUrl = (chat.itemImages != null && chat.itemImages!.isNotEmpty)
+        ? chat.itemImages!.first
+        : null;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -350,12 +363,9 @@ class _ChatDWidgetState extends State<ChatDWidget> {
   // MESSAGES
   // ═══════════════════════════════════════════════════════════
   Widget _buildMessages() {
-    return StreamBuilder<List<ChatMessagesRecord>>(
-      stream: queryChatMessagesRecord(
-        parent: widget.receiveChats,
-        queryBuilder: (r) => r.orderBy('timestamp', descending: true),
-        limit: 200,
-      ),
+    final chatId = _effectiveChatId ?? '';
+    return FutureBuilder<List<ChatMessage>>(
+      future: ChatRepository.messages(chatId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _errorState('${snapshot.error}');
@@ -417,8 +427,8 @@ class _ChatDWidgetState extends State<ChatDWidget> {
           itemCount: messages.length,
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
-            final msg = messages[index];
-            final isMine = msg.user == currentUserReference;
+            final msg = messages[messages.length - 1 - index];
+            final isMine = msg.senderId == currentUserUid;
             return _messageBubble(msg: msg, isMine: isMine);
           },
         );
@@ -427,7 +437,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
   }
 
   Widget _messageBubble({
-    required ChatMessagesRecord msg,
+    required ChatMessage msg,
     required bool isMine,
   }) {
     return Align(
@@ -453,7 +463,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                valueOrDefault<String>(msg.text, ''),
+                msg.text,
                 style: TextStyle(
                   color: isMine ? Colors.white : _text,
                   fontSize: 14,
@@ -464,11 +474,11 @@ class _ChatDWidgetState extends State<ChatDWidget> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (msg.timestamp != null)
+                  if (msg.createdAt != null)
                     Text(
                       dateTimeFormat(
                         'jm',
-                        msg.timestamp!,
+                        msg.createdAt!,
                         locale: FFLocalizations.of(context).languageCode,
                       ),
                       style: TextStyle(
@@ -496,7 +506,7 @@ class _ChatDWidgetState extends State<ChatDWidget> {
   // ═══════════════════════════════════════════════════════════
   // INPUT BAR
   // ═══════════════════════════════════════════════════════════
-  Widget _buildInputBar(ChatsRecord chat) {
+  Widget _buildInputBar(Chat chat) {
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 10),
       decoration: BoxDecoration(
@@ -575,45 +585,27 @@ class _ChatDWidgetState extends State<ChatDWidget> {
   // ═══════════════════════════════════════════════════════════
   // SEND
   // ═══════════════════════════════════════════════════════════
-  Future<void> _send(ChatsRecord chat) async {
+  Future<void> _send(Chat chat) async {
     final text = _model.textController!.text.trim();
     if (text.isEmpty || _model.isSending) return;
 
     safeSetState(() => _model.isSending = true);
 
     try {
-      // 1. Create the message doc
-      await ChatMessagesRecord.createDoc(widget.receiveChats!).set(
-        createChatMessagesRecordData(
-          user: currentUserReference,
-          text: text,
-          timestamp: getCurrentTimestamp,
-          nameSender: currentUserDisplayName,
-        ),
-      );
-
-      // 2. Update chat metadata — single atomic-ish update
-      await widget.receiveChats!.update({
-        'last_message': text,
-        'last_message_time': getCurrentTimestamp,
-        'last_message_seen_by': FieldValue.arrayUnion([currentUserReference]),
-      });
-
-      // 🔔 Push notify the other participant
-      final isMeBuyer = chat.buyerRef == currentUserReference;
-      final recipientRef = isMeBuyer ? chat.sellerRef : chat.buyerRef;
-      if (recipientRef != null) {
-        final preview = text.length > 60 ? '${text.substring(0, 60)}...' : text;
-        await NotificationSender.sendToUser(
-          userRef: recipientRef,
-          title: currentUserDisplayName,
-          body: preview,
-          data: {
-            'route': 'ChatD',
-            'chatId': widget.receiveChats!.id,
-          },
-        );
+      final chatId = _effectiveChatId;
+      if (chatId == null || chatId.isEmpty) {
+        throw Exception('no chat id');
       }
+
+      // 1. POST message to our backend (also updates chat metadata)
+      await ChatRepository.sendMessage(chatId, text);
+
+      // 🔔 Push notify — stubbed until NotificationSender is migrated.
+      // TODO(day-41): re-enable via /internal/fcm-tokens once that lands.
+      final isMeBuyer = chat.buyerId == currentUserUid;
+      final recipientId = isMeBuyer ? chat.sellerId : chat.buyerId;
+      // ignore: unused_local_variable
+      final _recipientPlaceholder = recipientId;
 
       _model.textController?.clear();
       if (mounted) safeSetState(() {});
@@ -642,15 +634,6 @@ class _ChatDWidgetState extends State<ChatDWidget> {
   // ═══════════════════════════════════════════════════════════
   // HELPERS
   // ═══════════════════════════════════════════════════════════
-  Future<UsersRecord?> _getUserRecord(DocumentReference? ref) async {
-    if (ref == null) return null;
-    try {
-      final snap = await ref.get();
-      if (snap.exists) return UsersRecord.fromSnapshot(snap);
-    } catch (_) {}
-    return null;
-  }
-
   Widget _errorState(String msg) => Center(
         child: Padding(
           padding: const EdgeInsets.all(32),

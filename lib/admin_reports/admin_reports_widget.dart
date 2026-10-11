@@ -1,10 +1,10 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'admin_reports_model.dart';
@@ -117,13 +117,10 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
           ),
           const Spacer(),
           // Pending count badge
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('reports')
-                .where('status', isEqualTo: 'pending')
-                .snapshots(),
+          FutureBuilder<Map<String, dynamic>>(
+            future: _loadPendingCount(),
             builder: (context, snap) {
-              final n = snap.data?.docs.length ?? 0;
+              final n = (snap.data?['pending'] as int?) ?? 0;
               if (n == 0) return const SizedBox(width: 44);
               return Container(
                 padding: const EdgeInsets.symmetric(
@@ -204,16 +201,8 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
   // LIST
   // ═══════════════════════════════════════════════════════════
   Widget _buildReportsList() {
-    // If 'all', no status filter
-    Query query =
-        FirebaseFirestore.instance.collection('reports');
-    if (_model.activeFilter != 'all') {
-      query = query.where('status', isEqualTo: _model.activeFilter);
-    }
-    query = query.orderBy('created_at', descending: true).limit(200);
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: query.snapshots(),
+    return FutureBuilder<List<dynamic>>(
+      future: _loadReports(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _state(Icons.error_outline_rounded,
@@ -233,7 +222,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
           );
         }
 
-        final docs = snapshot.data!.docs;
+        final docs = snapshot.data!;
         if (docs.isEmpty) {
           return _state(
             Icons.check_circle_outline_rounded,
@@ -264,8 +253,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
   // ═══════════════════════════════════════════════════════════
   // REPORT CARD
   // ═══════════════════════════════════════════════════════════
-  Widget _reportCard(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  Widget _reportCard(Map<String, dynamic> data) {
     final priority = (data['priority'] ?? 'low').toString();
     final status = (data['status'] ?? 'pending').toString();
     final reasonLabel = (data['reason_label'] ?? FFLocalizations.of(context).getText('ar_unknown')).toString();
@@ -274,7 +262,9 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
     final reporterName = (data['reporter_name'] ?? FFLocalizations.of(context).getText('ar_anonymous')).toString();
     final targetLabel = (data['target_label'] ?? FFLocalizations.of(context).getText('ar_unknown')).toString();
     final targetType = (data['target_type'] ?? 'product').toString();
-    final createdAt = (data['created_at'] as Timestamp?)?.toDate();
+    final createdAt = data['created_at'] != null
+        ? DateTime.tryParse(data['created_at'].toString())
+        : null;
 
     final priorityColor = priority == 'high'
         ? kRed
@@ -418,7 +408,7 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
                     icon: Icons.check_circle_outline_rounded,
                     label: FFLocalizations.of(context).getText('ar_action_resolve'),
                     color: kGreen,
-                    onTap: () => _resolve(doc, 'resolved'),
+                    onTap: () => _resolve(data['id'] as String, 'resolved'),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -427,14 +417,14 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
                     icon: Icons.close_rounded,
                     label: FFLocalizations.of(context).getText('ar_action_dismiss'),
                     color: kMuted,
-                    onTap: () => _resolve(doc, 'dismissed'),
+                    onTap: () => _resolve(data['id'] as String, 'dismissed'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 _iconAction(
                   icon: Icons.delete_outline_rounded,
                   color: kRed,
-                  onTap: () => _deleteTarget(doc),
+                  onTap: () => _deleteTarget(data['id'] as String, data),
                 ),
               ],
             ),
@@ -464,30 +454,28 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
   // ═══════════════════════════════════════════════════════════
   // ACTIONS
   // ═══════════════════════════════════════════════════════════
-  Future<void> _resolve(DocumentSnapshot doc, String newStatus) async {
+  Future<void> _resolve(String reportId, String newStatus) async {
     try {
-      await doc.reference.update({
-        'status': newStatus,
-        'resolved_at': FieldValue.serverTimestamp(),
-        'resolved_by': currentUserReference,
-        'action_taken': newStatus,
-      });
+      await zannext_api.ApiClient.patch(
+        '/admin/reports/$reportId',
+        body: {'status': newStatus},
+      );
       if (!mounted) return;
       _snack(newStatus == 'resolved'
           ? FFLocalizations.of(context).getText('ar_resolved')
           : FFLocalizations.of(context).getText('ar_dismissed'));
+      safeSetState(() {});
     } catch (e) {
       if (!mounted) return;
       _snack('${FFLocalizations.of(context).getText('ar_failed')}$e', error: true);
     }
   }
 
-  Future<void> _deleteTarget(DocumentSnapshot doc) async {
-    final data = doc.data() as Map<String, dynamic>;
-    final targetRef = data['target_ref'] as DocumentReference?;
+  Future<void> _deleteTarget(String reportId, Map<String, dynamic> data) async {
+    final targetId = data['target_id'] as String?;
     final targetType = (data['target_type'] ?? 'product').toString();
 
-    if (targetRef == null) {
+    if (targetId == null || targetId.isEmpty) {
       _snack(FFLocalizations.of(context).getText('ar_target_missing'), error: true);
       return;
     }
@@ -530,15 +518,10 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
     if (confirmed != true || !mounted) return;
 
     try {
-      await targetRef.delete();
-      await doc.reference.update({
-        'status': 'resolved',
-        'resolved_at': FieldValue.serverTimestamp(),
-        'resolved_by': currentUserReference,
-        'action_taken': 'deleted',
-      });
+      await zannext_api.ApiClient.delete('/admin/reports/$reportId/target');
       if (!mounted) return;
       _snack('$targetType${FFLocalizations.of(context).getText('ar_deleted_suffix')}');
+      safeSetState(() {});
     } catch (e) {
       if (!mounted) return;
       _snack('Failed: $e', error: true);
@@ -681,4 +664,27 @@ class _AdminReportsWidgetState extends State<AdminReportsWidget> {
       ),
     );
   }
+
+  Future<List<dynamic>> _loadReports() async {
+    try {
+      final filter = _model.activeFilter;
+      final path = (filter == 'all' || filter.isEmpty)
+          ? '/admin/reports'
+          : '/admin/reports?status=$filter';
+      final r = await zannext_api.ApiClient.get(path);
+      return r as List;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<Map<String, dynamic>> _loadPendingCount() async {
+    try {
+      final r = await zannext_api.ApiClient.get('/admin/reports/pending-count');
+      return (r as Map).cast<String, dynamic>();
+    } catch (_) {
+      return const {};
+    }
+  }
+
 }

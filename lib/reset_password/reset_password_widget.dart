@@ -1,5 +1,5 @@
 import '/flutter_flow/flutter_flow_util.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '/index.dart';
@@ -60,8 +60,7 @@ class _ResetPasswordWidgetState extends State<ResetPasswordWidget> {
 
   Future<void> _verifyCode() async {
     try {
-      final email = await FirebaseAuth.instance
-          .verifyPasswordResetCode(widget.oobCode);
+      final email = await AuthService.verifyResetToken(widget.oobCode);
       if (!mounted) return;
       setState(() {
         _email = email;
@@ -77,6 +76,13 @@ class _ResetPasswordWidgetState extends State<ResetPasswordWidget> {
   }
 
   String _friendlyError(String raw) {
+    // Backend error strings
+    if (raw.contains('invalid or expired token') ||
+        raw.contains('invalid token') ||
+        raw.contains('expired')) {
+      return 'This reset link is invalid or expired. Please request a new one.';
+    }
+    // Legacy Firebase strings (kept as fallback)
     if (raw.contains('expired-action-code')) {
       return 'This reset link has expired. Please request a new one.';
     }
@@ -100,8 +106,8 @@ class _ResetPasswordWidgetState extends State<ResetPasswordWidget> {
 
     setState(() => _model.isSaving = true);
     try {
-      await FirebaseAuth.instance.confirmPasswordReset(
-        code: widget.oobCode,
+      await AuthService.resetPassword(
+        token: widget.oobCode,
         newPassword: pw,
       );
       if (!mounted) return;
@@ -120,11 +126,41 @@ class _ResetPasswordWidgetState extends State<ResetPasswordWidget> {
   }
 
   void _snack(String msg, Color bg) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    final isSuccess = bg == kGreen;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: Row(
+          children: [
+            Icon(
+              isSuccess
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.error_outline_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                msg,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                  height: 1.35,
+                ),
+              ),
+            ),
+          ],
+        ),
         backgroundColor: bg,
         behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        duration: Duration(seconds: isSuccess ? 2 : 4),
+        elevation: 4,
       ),
     );
   }

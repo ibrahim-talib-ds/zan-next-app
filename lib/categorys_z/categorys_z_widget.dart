@@ -1,7 +1,8 @@
 import '/auth/firebase_auth/auth_util.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '/admin_category/admin_category_editor.dart';
 import '/backend/backend.dart';
+import '/models/category_config.dart';
+import '/repositories/category_repository.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -12,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'categorys_z_model.dart';
+import '/components/shimmer.dart';
 export 'categorys_z_model.dart';
 
 class CategorysZWidget extends StatefulWidget {
@@ -27,6 +29,7 @@ class CategorysZWidget extends StatefulWidget {
 class _CategorysZWidgetState extends State<CategorysZWidget>
     with TickerProviderStateMixin {
   late CategorysZModel _model;
+  Future<List<CategoryConfig>>? _categoriesFuture;
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   static const Color kGreen     = Color(0xFF1B7A4E);
@@ -111,10 +114,11 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
   void initState() {
     super.initState();
     _model = createModel(context, () => CategorysZModel());
+    _categoriesFuture = CategoryRepository.list();
 
     _trendingStream = queryInventoryRecord(limit: 50);
     _newStream = queryInventoryRecord(
-      queryBuilder: (r) => r.where('new_in', isEqualTo: true),
+      filterNewIn: true,
       limit: 50,
     );
 
@@ -331,26 +335,20 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
   Widget _buildCategoryTab() {
     return Container(
       color: kBg,
-      child: StreamBuilder<Map<String, Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance
-            .collection('category_config')
-            .snapshots()
-            .map((snap) {
-          final map = <String, Map<String, dynamic>>{};
-          for (final doc in snap.docs) {
-            map[doc.id] = doc.data();
-          }
-          return map;
-        }),
+      child: FutureBuilder<List<CategoryConfig>>(
+        future: _categoriesFuture,
         builder: (context, overrideSnap) {
-          final overrides = overrideSnap.data ?? {};
+          final overrides = <String, CategoryConfig>{};
+          for (final c in (overrideSnap.data ?? const <CategoryConfig>[])) {
+            overrides[c.categoryKey] = c;
+          }
           return _buildCategoryTabInner(overrides);
         },
       ),
     );
   }
 
-  Widget _buildCategoryTabInner(Map<String, Map<String, dynamic>> overrides) {
+  Widget _buildCategoryTabInner(Map<String, CategoryConfig> overrides) {
     return Container(
       color: kBg,
       child: RefreshIndicator(
@@ -374,8 +372,8 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
           // 🎨 Apply admin override if present
           final key = cat[2]; // categoryValue is the key
           final override = overrides[key];
-          final displayImage = (override?['image_url'] as String?) ?? cat[0];
-          final displayLabel = (override?['label'] as String?) ?? cat[1];
+          final displayImage = override?.imageUrl ?? cat[0];
+          final displayLabel = override?.label ?? cat[1];
           return InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () async {
@@ -486,15 +484,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
             return _errorState('${FFLocalizations.of(context).getText('catz_error_prefix')}\n${snapshot.error}');
           }
           if (!snapshot.hasData) {
-            return const Center(
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(kGreen),
-                ),
-              ),
-            );
+            return const ShimmerProductGrid(count: 6);
           }
           final items = snapshot.data!;
           if (items.isEmpty) return _emptyState(emptyMessage);
@@ -552,10 +542,7 @@ class _CategorysZWidgetState extends State<CategorysZWidget>
           context.pushNamed(
             ProductDetailsWidget.routeName,
             queryParameters: {
-              'inventoryRef': serializeParam(
-                record.reference,
-                ParamType.DocumentReference,
-              ),
+              'inventoryRef': serializeParam( record.id, ParamType.String),
             }.withoutNulls,
             extra: <String, dynamic>{
               '__transition_info__': TransitionInfo(

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -12,7 +13,6 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/upload_data.dart';
 import 'dart:ui';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -752,7 +752,7 @@ class _AddProductWidgetState extends State<AddProductWidget> {
       print('📸 Picked ${selectedMedia.length} photo(s)');
       for (final m in selectedMedia) {
         print('   → path: ${m.storagePath}');
-        print('   → bytes: ${m.bytes?.length ?? 0} bytes');
+        print('   → bytes: ${m.bytes.length} bytes');
         print('   → filename: ${m.storagePath.split('/').last}');
       }
 
@@ -767,8 +767,8 @@ class _AddProductWidgetState extends State<AddProductWidget> {
       final futures = <Future<String?>>[];
       for (final media in selectedMedia) {
         final bytes = media.bytes;
-        print('🔍 Processing: ${media.storagePath} — bytes: ${bytes?.length ?? 0}');
-        if (bytes == null || bytes.isEmpty) {
+        print('🔍 Processing: ${media.storagePath} — bytes: ${bytes.length}');
+        if (bytes.isEmpty) {
           print('   ❌ Skipping — bytes null or empty');
           continue;
         }
@@ -1191,6 +1191,32 @@ class _AddProductWidgetState extends State<AddProductWidget> {
       return;
     }
 
+    // ── Pre-flight: name + price (backend enforces these too) ──
+    final name = _model.productNameController!.text.trim();
+    if (name.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Product name is required — scroll up and fill the name field'),
+          backgroundColor: Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final price = double.tryParse(_model.priceController!.text.trim());
+    if (price == null || price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter a valid price (greater than 0)'),
+          backgroundColor: Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     if (_model.uploadedPhotoUrls.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Add at least 1 photo')),
@@ -1198,101 +1224,61 @@ class _AddProductWidgetState extends State<AddProductWidget> {
       return;
     }
 
-    if (currentUserReference == null) {
+    if (currentUserUid.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('You must be signed in')),
       );
       return;
     }
 
+    safeSetState(() => _model.isSubmitting = true);
+
     try {
-      logFirebaseEvent('ADD_PRODUCT_submit');
-
-      final docRef = InventoryRecord.collection.doc();
-
-      final price = double.tryParse(_model.priceController!.text.trim());
       final stock = int.tryParse(_model.stockController!.text.trim()) ?? 1;
 
-      await docRef.set({
-        'inventory_name': _model.productNameController!.text.trim(),
-        'inventory_description':
-            _model.productDescriptionController!.text.trim(),
-        'inventory_price': price ?? 0.0,
-        'inventory_images': _model.uploadedPhotoUrls,
-        'sellers_ref': currentUserReference,
-        'seller_name': currentUserDisplayName,
-
-        'categories': subCategory,
+      // Postgres (fix35): POST /products — seller = authenticated user.
+      final resp = await zannext_api.ApiClient.post('/products', body: {
+        'name': name,
+        'price': price,
+        'description': _model.productDescriptionController!.text.trim(),
+        'category': subCategory,
         'main_category': _extractMainCategory(subCategory),
-
+        'brand': _model.brandController!.text.trim(),
+        'condition': _model.conditionValue ?? '',
+        'gender': _model.genderValue ?? '',
+        'materials': _splitCsv(_model.materialController!.text),
         'available_colors': _splitCsv(_model.colorController!.text),
         'available_alphasize': _splitCsv(_model.sizeController!.text),
-        'materials': _splitCsv(_model.materialController!.text),
-        'brand': _model.brandController!.text.trim(),
-
-        'condition': _model.conditionValue,
-        'gender': _model.genderValue,
-
-        'shipping_days': _model.shippingDaysValue,
-        'location': _model.locationController!.text.trim(),
-
-        'seller_whatsap': _model.whatsappController!.text.trim(),
-        'seller_number': _model.callController!.text.trim(),
-
-        // Auto-managed — never trust seller self-flagging
-        'top_selling': false,           // computed later
-        'new_in': true,                 // always new at creation
-        'boosted': false,               // admin-controlled
-        'all_products': true,           // always in catalog
-
         'stock': stock,
-        'view_count': 0,
-        'rating': 0.0,
-        'reviews': 0,
-        'status': 'pending',
-        'created_at': getCurrentTimestamp,
-        'is_online': valueOrDefault<bool>(
-            currentUserDocument?.isOnline, false),
-        'last_active': currentUserDocument?.lastActive,
+        'shipping_days': _model.shippingDaysValue ?? '',
+        'images': _model.uploadedPhotoUrls,
+        'location': _model.locationController!.text.trim(),
+        'seller_whatsapp': _model.whatsappController!.text.trim(),
+        'seller_number': _model.callController!.text.trim(),
       });
 
-      // 💾 Save seller's location + contacts for next time
-      try {
-        await currentUserReference!.update({
-          'last_location': _model.locationController!.text.trim(),
-          'last_whatsapp': _model.whatsappController!.text.trim(),
-          'last_call': _model.callController!.text.trim(),
-        });
-      } catch (_) {}
-
-      logFirebaseEvent('ADD_PRODUCT_success');
-
       if (!mounted) return;
-
+      safeSetState(() => _model.isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('"${_model.productNameController!.text}" posted!'),
-          backgroundColor: themeOf(context).primary,
-          duration: const Duration(milliseconds: 2500),
+        const SnackBar(
+          content: Text('Product posted! Pending admin approval.'),
+          backgroundColor: Color(0xFF1B7A4E),
+          behavior: SnackBarBehavior.floating,
         ),
       );
 
-      FFAppState().categories = '';
-
-      context.pushNamed(
-        SellerDashbordWidget.routeName,
-        extra: <String, dynamic>{
-          '__transition_info__': TransitionInfo(
-            hasTransition: true,
-            transitionType: PageTransitionType.leftToRight,
-            duration: const Duration(milliseconds: 250),
-          ),
-        },
-      );
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (!mounted) return;
+      context.safePop();
     } catch (e) {
       if (!mounted) return;
+      safeSetState(() => _model.isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not post product: $e')),
+        SnackBar(
+          content: Text('Could not post product: $e'),
+          backgroundColor: const Color(0xFFDC0F0F),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }

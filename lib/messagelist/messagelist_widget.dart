@@ -1,10 +1,11 @@
 import '/auth/firebase_auth/auth_util.dart';
-import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
+import '/repositories/chat_repository.dart';
+import '/models/chat.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -55,7 +56,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (currentUserReference == null) {
+    if (currentUserUid.isEmpty) {
       return _scaffoldWithHeader(
         body: Center(
           child: Text(FFLocalizations.of(context).getText('msg_please_sign_in'), style: TextStyle(color: _muted)),
@@ -64,13 +65,8 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
     }
 
     return _scaffoldWithHeader(
-      body: StreamBuilder<List<ChatsRecord>>(
-        stream: queryChatsRecord(
-          queryBuilder: (r) => r
-              .where('users', arrayContains: currentUserReference)
-              .orderBy('last_message_time', descending: true),
-          limit: 100,
-        ),
+      body: FutureBuilder<List<Chat>>(
+        future: ChatRepository.listForUser(currentUserUid),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return _errorState('${snapshot.error}');
@@ -100,7 +96,7 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
               itemBuilder: (context, i) {
                 final chat = items[i];
                 return Dismissible(
-                  key: ValueKey('chat_${chat.reference.id}'),
+                  key: ValueKey('chat_${chat.id}'),
                   direction: DismissDirection.endToStart,
                   background: Container(
                     alignment: Alignment.centerRight,
@@ -228,15 +224,11 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
   // ═══════════════════════════════════════════════════════════
   // DELETE HELPERS
   // ═══════════════════════════════════════════════════════════
-  Future<bool> _confirmDeleteChat(ChatsRecord chat) async {
-    final names = chat.userName;
-    final isMeBuyer = chat.buyerRef == currentUserReference;
-    String otherName = 'this chat';
-    if (names.length >= 2) {
-      otherName = isMeBuyer ? names[1] : names[0];
-    } else if (names.isNotEmpty) {
-      otherName = names.first;
-    }
+  Future<bool> _confirmDeleteChat(Chat chat) async {
+    final isMeBuyer = chat.buyerId == currentUserUid;
+    final otherName = isMeBuyer
+        ? (chat.sellerName ?? 'this chat')
+        : (chat.buyerName ?? 'this chat');
 
     return await showDialog<bool>(
           context: context,
@@ -273,24 +265,10 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
         false;
   }
 
-  Future<void> _deleteChat(ChatsRecord chat) async {
+  Future<void> _deleteChat(Chat chat) async {
     try {
-      // 1. Delete all messages in this chat
-      final msgs = await FirebaseFirestore.instance
-          .collection('chat_messages')
-          .where('chat_ref', isEqualTo: chat.reference)
-          .get();
-
-      if (msgs.docs.isNotEmpty) {
-        final batch = FirebaseFirestore.instance.batch();
-        for (final d in msgs.docs) {
-          batch.delete(d.reference);
-        }
-        await batch.commit();
-      }
-
-      // 2. Delete the chat document
-      await chat.reference.delete();
+      // DELETE /chats/{id} cascades messages server-side.
+      await zannext_api.ApiClient.delete('/chats/${chat.id}');
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -347,14 +325,11 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
   }
 
   Future<void> _clearAllChats() async {
-    if (currentUserReference == null) return;
+    if (currentUserUid.isEmpty) return;
     try {
-      final chats = await FirebaseFirestore.instance
-          .collection('Chats')
-          .where('users', arrayContains: currentUserReference)
-          .get();
+      final chats = await ChatRepository.listForUser(currentUserUid);
 
-      if (chats.docs.isEmpty) {
+      if (chats.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(FFLocalizations.of(context).getText('msg_no_conversations'))),
@@ -362,25 +337,14 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
         return;
       }
 
-      for (final chat in chats.docs) {
-        final msgs = await FirebaseFirestore.instance
-            .collection('chat_messages')
-            .where('chat_ref', isEqualTo: chat.reference)
-            .get();
-        if (msgs.docs.isNotEmpty) {
-          final batch = FirebaseFirestore.instance.batch();
-          for (final d in msgs.docs) {
-            batch.delete(d.reference);
-          }
-          await batch.commit();
-        }
-        await chat.reference.delete();
+      for (final chat in chats) {
+        await zannext_api.ApiClient.delete('/chats/${chat.id}');
       }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${FFLocalizations.of(context).getText('msg_cleared_prefix')}${chats.docs.length}${FFLocalizations.of(context).getText('msg_cleared_suffix')}'),
+          content: Text('${FFLocalizations.of(context).getText('msg_cleared_prefix')}${chats.length}${FFLocalizations.of(context).getText('msg_cleared_suffix')}'),
           backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -401,25 +365,22 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
   // ═══════════════════════════════════════════════════════════
   // CHAT TILE
   // ═══════════════════════════════════════════════════════════
-  Widget _chatTile(ChatsRecord chat) {
-    // Names live in `User_name` as [buyer_name, seller_name].
-    // My index tells us which name to show (the other party).
-    final names = chat.userName;
-    final isMeBuyer = chat.buyerRef == currentUserReference;
-    String otherName = FFLocalizations.of(context).getText('msg_chat_fallback');
-    if (names.length >= 2) {
-      otherName = isMeBuyer ? names[1] : names[0];
-    } else if (names.isNotEmpty) {
-      otherName = names.first;
-    }
+  Widget _chatTile(Chat chat) {
+    final isMeBuyer = chat.buyerId == currentUserUid;
+    final otherName = (isMeBuyer
+            ? (chat.sellerName ?? '')
+            : (chat.buyerName ?? ''))
+        .trim()
+        .isEmpty
+        ? FFLocalizations.of(context).getText('msg_chat_fallback')
+        : (isMeBuyer ? chat.sellerName! : chat.buyerName!);
 
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: () => context.pushNamed(
         ChatDWidget.routeName,
         queryParameters: {
-          'receiveChats':
-              serializeParam(chat.reference, ParamType.DocumentReference),
+          'chatId': serializeParam(chat.id, ParamType.String),
         }.withoutNulls,
       ),
       child: Container(
@@ -442,10 +403,10 @@ class _MessagelistWidgetState extends State<MessagelistWidget> {
               ),
               clipBehavior: Clip.antiAlias,
               child: Image.network(
-                _imgUrl(valueOrDefault<String>(
-                  chat.itemsImages.firstOrNull,
-                  '',
-                )),
+                _imgUrl((chat.itemImages != null &&
+                        chat.itemImages!.isNotEmpty)
+                    ? chat.itemImages!.first
+                    : ''),
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => const Icon(
                   Icons.person_rounded,

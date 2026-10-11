@@ -1,12 +1,14 @@
 import '/components/product_bottom_info.dart';
+import '/components/product_badge.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
+import '/models/product.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/utils/responsive.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'wishlist_model.dart';
@@ -25,6 +27,7 @@ class WishlistWidget extends StatefulWidget {
 class _WishlistWidgetState extends State<WishlistWidget> {
   late WishlistModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  int _refreshTick = 0;
 
   static const Color kGreen = Color(0xFF1B7A4E);
   static const Color kGreenDeep = Color(0xFF0A3A22);
@@ -79,12 +82,12 @@ class _WishlistWidgetState extends State<WishlistWidget> {
       return _notLoggedInState();
     }
 
-    return StreamBuilder<List<InventoryRecord>>(
-      stream: queryInventoryRecord(
-        queryBuilder: (r) =>
-            r.where('product_liked_by', arrayContains: currentUserReference),
-        limit: 100,
-      ),
+    final uid = currentUserUid;
+    if (uid.isEmpty) return _notLoggedInState();
+
+    return FutureBuilder<List<InventoryRecord>>(
+      key: ValueKey(_refreshTick),
+      future: _fetchWishlist(uid),
       builder: (context, snapshot) {
         if (snapshot.hasError) return _errorState('${snapshot.error}');
         if (!snapshot.hasData) {
@@ -100,14 +103,7 @@ class _WishlistWidgetState extends State<WishlistWidget> {
           );
         }
 
-        final items = List<InventoryRecord>.from(snapshot.data!);
-        // Client-side sort by newest
-        items.sort((a, b) {
-          final at = a.createdAt ?? DateTime(1970);
-          final bt = b.createdAt ?? DateTime(1970);
-          return bt.compareTo(at);
-        });
-
+        final items = snapshot.data!;
         if (items.isEmpty) return _emptyState();
 
         return Column(
@@ -116,7 +112,9 @@ class _WishlistWidgetState extends State<WishlistWidget> {
             Expanded(
               child: RefreshIndicator(
                 color: kGreen,
-                onRefresh: () async => safeSetState(() {}),
+                onRefresh: () async {
+                  if (mounted) safeSetState(() => _refreshTick++);
+                },
                 child: GridView.builder(
                   padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
                   gridDelegate:
@@ -135,6 +133,32 @@ class _WishlistWidgetState extends State<WishlistWidget> {
         );
       },
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // FETCH — reads from our Postgres via /wishlist
+  // ═══════════════════════════════════════════════════════════
+  Future<List<InventoryRecord>> _fetchWishlist(String uid) async {
+    final raw = await zannext_api.ApiClient.get(
+      '/wishlist?user_id=$uid',
+    ) as List;
+    final records = <InventoryRecord>[];
+    for (final item in raw) {
+      final m = (item as Map).cast<String, dynamic>();
+      // Skip placeholder products (deleted)
+      if ((m['product_status'] as String?) == 'deleted') continue;
+      final product = Product(
+        id: (m['product_id'] ?? '') as String,
+        sellerId: '',
+        name: (m['product_name'] ?? '') as String,
+        price: ((m['product_price'] ?? 0) as num).toDouble(),
+        images: (m['product_images'] as List?)?.cast<String>(),
+        category: m['category'] as String?,
+      );
+      records.add(InventoryRecord.fromProduct(product));
+    }
+    // Sort by newest (already sorted by API, but keep it deterministic)
+    return records;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -228,10 +252,7 @@ class _WishlistWidgetState extends State<WishlistWidget> {
         context.pushNamed(
           ProductDetailsWidget.routeName,
           queryParameters: {
-            'inventoryRef': serializeParam(
-              item.reference,
-              ParamType.DocumentReference,
-            ),
+            'inventoryRef': serializeParam( item.id, ParamType.String),
           }.withoutNulls,
         );
       },
@@ -270,16 +291,22 @@ class _WishlistWidgetState extends State<WishlistWidget> {
                       ),
                     ),
                   ),
+                  if (productBadge(context, item) != null)
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: productBadge(context, item)!,
+                    ),
                   Positioned(
                     top: 4,
                     right: 4,
                     child: GestureDetector(
                       onTap: () async {
                         try {
-                          await item.reference.update({
-                            'product_liked_by':
-                                FieldValue.arrayRemove([currentUserReference]),
-                          });
+                          await zannext_api.ApiClient.delete(
+                            '/wishlist/${item.id}',
+                          );
+                          if (mounted) safeSetState(() => _refreshTick++);
                         } catch (e) {
                           debugPrint('Unsave failed: $e');
                         }
@@ -335,7 +362,7 @@ class _WishlistWidgetState extends State<WishlistWidget> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: kGreen,
+                      color: Color(0xFFDC0F0F),
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),

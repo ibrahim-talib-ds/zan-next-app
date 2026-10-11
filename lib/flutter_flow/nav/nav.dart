@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '/seller_reviews/seller_reviews_widget.dart';
 import 'dart:async';
 
@@ -146,11 +145,10 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             name: NotificationViewWidget.routeName,
             path: NotificationViewWidget.routePath,
             builder: (context, params) => NotificationViewWidget(
-              notificationRef: params.getParam(
-                'notificationRef',
-                ParamType.DocumentReference,
+              notificationId: params.getParam(
+                'notificationId',
+                ParamType.String,
                 isList: false,
-                collectionNamePath: ['notifications'],
               ),
             ),
         ),
@@ -167,16 +165,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             page: OrderDetailsWidget(),
           ),
         ),
-        FFRoute(
-          name: CartWidget.routeName,
-          path: CartWidget.routePath,
-          builder: (context, params) => CartWidget(),
-        ),
-        FFRoute(
-          name: CheckoutWidget.routeName,
-          path: CheckoutWidget.routePath,
-          builder: (context, params) => CheckoutWidget(),
-        ),
+
         FFRoute(
           name: OrderSuccessifulWidget.routeName,
           path: OrderSuccessifulWidget.routePath,
@@ -205,11 +194,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                   initialPage: '',
                   page: SearchWidget(),
                 )),
-        FFRoute(
-          name: SigninWidget.routeName,
-          path: SigninWidget.routePath,
-          builder: (context, params) => SigninWidget(),
-        ),
+
         FFRoute(
             name: SpecificCategoriesWidget.routeName,
             path: SpecificCategoriesWidget.routePath,
@@ -239,19 +224,14 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             builder: (context, params) => NavBarPage(
                   initialPage: '',
                   page: ProductDetailsWidget(
-                    inventoryRef: params.getParam(
+                    productId: params.getParam(
                       'inventoryRef',
-                      ParamType.DocumentReference,
+                      ParamType.String,
                       isList: false,
-                      collectionNamePath: ['Inventory'],
                     ),
                   ),
                 )),
-        FFRoute(
-          name: PaymnetMethodWidget.routeName,
-          path: PaymnetMethodWidget.routePath,
-          builder: (context, params) => PaymnetMethodWidget(),
-        ),
+
         FFRoute(
             name: TrendingProductWidget.routeName,
             path: TrendingProductWidget.routePath,
@@ -509,34 +489,13 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           builder: (context, params) => MessagelistWidget(),
         ),
         FFRoute(
-          name: Order1Widget.routeName,
-          path: Order1Widget.routePath,
-          asyncParams: {
-            'orderRef': getDoc(['orders'], OrdersRecord.fromSnapshot),
-          },
-          builder: (context, params) => Order1Widget(
-            orderRef: params.getParam(
-              'orderRef',
-              ParamType.Document,
-            ),
-          ),
-        ),
-        FFRoute(
-          name: SelectSellerWidget.routeName,
-          path: SelectSellerWidget.routePath,
-          builder: (context, params) => params.isEmpty
-              ? NavBarPage(initialPage: 'selectSeller')
-              : SelectSellerWidget(),
-        ),
-        FFRoute(
           name: ChatDWidget.routeName,
           path: ChatDWidget.routePath,
           builder: (context, params) => ChatDWidget(
-            receiveChats: params.getParam(
-              'receiveChats',
-              ParamType.DocumentReference,
+            chatId: params.getParam(
+              'chatId',
+              ParamType.String,
               isList: false,
-              collectionNamePath: ['Chats'],
             ),
           ),
         ),
@@ -664,11 +623,10 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: SellerReviewsWidget.routeName,
           path: SellerReviewsWidget.routePath,
           builder: (context, params) => SellerReviewsWidget(
-            sellerRef: params.getParam(
-              'sellerRef',
-              ParamType.DocumentReference,
+            sellerId: params.getParam(
+              'sellerId',
+              ParamType.String,
               isList: false,
-              collectionNamePath: ['users'],
             ),
           ),
         ),
@@ -680,7 +638,7 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
                   page: SellerDashbordWidget(
                     sellerRef: params.getParam(
                       'sellerRef',
-                      ParamType.DocumentReference,
+                      ParamType.String,
                       isList: false,
                       collectionNamePath: ['users'],
                     ),
@@ -817,11 +775,10 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
             builder: (context, params) => NavBarPage(
                   initialPage: '',
                   page: EditModeWidget(
-                    targetProduct: params.getParam(
-                      'targetProduct',
-                      ParamType.DocumentReference,
+                    productId: params.getParam(
+                      'productId',
+                      ParamType.String,
                       isList: false,
-                      collectionNamePath: ['Inventory'],
                     ),
                   ),
                 )),
@@ -1053,8 +1010,44 @@ class FFRoute {
                     child,
                   ),
                 )
-              : MaterialPage(
-                  key: state.pageKey, name: state.name, child: child);
+              : CustomTransitionPage(
+                  key: state.pageKey,
+                  name: state.name,
+                  child: child,
+                  transitionDuration: const Duration(milliseconds: 280),
+                  reverseTransitionDuration: const Duration(milliseconds: 240),
+                  transitionsBuilder:
+                      (context, animation, secondaryAnimation, child) {
+                    // Shared-axis X: incoming page slides in from the right
+                    // while fading, outgoing page slides out slightly left.
+                    final curved = CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                      reverseCurve: Curves.easeInCubic,
+                    );
+                    final secondaryCurved = CurvedAnimation(
+                      parent: secondaryAnimation,
+                      curve: Curves.easeOutCubic,
+                      reverseCurve: Curves.easeInCubic,
+                    );
+                    return FadeTransition(
+                      opacity: curved,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.06, 0),
+                          end: Offset.zero,
+                        ).animate(curved),
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: Offset.zero,
+                            end: const Offset(-0.03, 0),
+                          ).animate(secondaryCurved),
+                          child: child,
+                        ),
+                      ),
+                    );
+                  },
+                );
         },
         routes: routes,
       );

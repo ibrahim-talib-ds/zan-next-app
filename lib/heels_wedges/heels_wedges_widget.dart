@@ -13,7 +13,6 @@ import '/flutter_flow/upload_data.dart';
 import 'dart:ui';
 import '/index.dart';
 import 'package:sticky_headers/sticky_headers.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -3967,7 +3966,7 @@ class _HeelsWedgesWidgetState extends State<HeelsWedgesWidget> {
                                                 onChanged: (newValue) async {
                                                   safeSetState(() =>
                                                       _model.tredingValue =
-                                                          newValue!);
+                                                          newValue);
                                                 },
                                                 activeColor:
                                                     FlutterFlowTheme.of(context)
@@ -4139,7 +4138,7 @@ class _HeelsWedgesWidgetState extends State<HeelsWedgesWidget> {
                                                           (newValue) async {
                                                         safeSetState(() => _model
                                                                 .newArrivalValue =
-                                                            newValue!);
+                                                            newValue);
                                                       },
                                                       activeColor:
                                                           FlutterFlowTheme.of(
@@ -4249,7 +4248,7 @@ class _HeelsWedgesWidgetState extends State<HeelsWedgesWidget> {
                                                           (newValue) async {
                                                         safeSetState(() => _model
                                                                 .showinAllValue =
-                                                            newValue!);
+                                                            newValue);
                                                       },
                                                       activeColor:
                                                           FlutterFlowTheme.of(

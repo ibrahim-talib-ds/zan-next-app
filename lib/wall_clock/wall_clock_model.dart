@@ -12,7 +12,6 @@ import 'dart:ui';
 import '/index.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 import 'wall_clock_widget.dart' show WallClockWidget;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';

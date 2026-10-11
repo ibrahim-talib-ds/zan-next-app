@@ -10,15 +10,12 @@ export '/order_splash/order_splash_widget.dart' show OrderSplashWidget;
 export '/notification_details/notification_details_widget.dart'
     show NotificationDetailsWidget;
 export '/order_details/order_details_widget.dart' show OrderDetailsWidget;
-export '/cart/cart_widget.dart' show CartWidget;
-export '/checkout/checkout_widget.dart' show CheckoutWidget;
 export '/order_successiful/order_successiful_widget.dart'
     show OrderSuccessifulWidget;
 export '/wishlist/wishlist_widget.dart' show WishlistWidget;
 export '/splash/splash_widget.dart' show SplashWidget;
 export '/home/home_widget.dart' show HomeWidget;
 export '/search/search_widget.dart' show SearchWidget;
-export '/signin/signin_widget.dart' show SigninWidget;
 export '/specific_categories/specific_categories_widget.dart'
     show SpecificCategoriesWidget;
 export '/setting_payment/setting_payment_widget.dart' show SettingPaymentWidget;
@@ -27,7 +24,6 @@ export '/setting_add_pyment/setting_add_pyment_widget.dart'
 export '/shop_by_categories_search_filter_deals/shop_by_categories_search_filter_deals_widget.dart'
     show ShopByCategoriesSearchFilterDealsWidget;
 export '/product_details/product_details_widget.dart' show ProductDetailsWidget;
-export '/paymnet_method/paymnet_method_widget.dart' show PaymnetMethodWidget;
 export '/trending_product/trending_product_widget.dart'
     show TrendingProductWidget;
 export '/new_products/new_products_widget.dart' show NewProductsWidget;
@@ -65,8 +61,6 @@ export '/womens_wear/womens_wear_widget.dart' show WomensWearWidget;
 export '/heels_wedge/heels_wedge_widget.dart' show HeelsWedgeWidget;
 export '/cooling/cooling_widget.dart' show CoolingWidget;
 export '/messagelist/messagelist_widget.dart' show MessagelistWidget;
-export '/order1/order1_widget.dart' show Order1Widget;
-export '/select_seller/select_seller_widget.dart' show SelectSellerWidget;
 export '/chat_d/chat_d_widget.dart' show ChatDWidget;
 export '/kids_clothing/kids_clothing_widget.dart' show KidsClothingWidget;
 export '/underwear_socks/underwear_socks_widget.dart' show UnderwearSocksWidget;
@@ -139,7 +133,6 @@ export 'admin_sellers/admin_sellers_widget.dart';
 export 'admin_reports/admin_reports_widget.dart';
 export 'components/report_sheet_widget.dart';
 export 'components/buy_now_sheet_widget.dart';
-export 'order1/order1_widget.dart';
 export 'specific_categories/specific_categories_widget.dart';
 export 'notification_view/notification_view_widget.dart';
 export 'admin_users/admin_users_widget.dart';

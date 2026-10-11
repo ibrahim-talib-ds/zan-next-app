@@ -1,4 +1,5 @@
 import '/auth/firebase_auth/auth_util.dart';
+import '/repositories/address_repository.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -67,7 +68,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
     _model.landmarkTextController ??= TextEditingController();
     _model.landmarkFocusNode ??= FocusNode();
     _model.phoneTextController ??=
-        TextEditingController(text: currentPhoneNumber ?? '');
+        TextEditingController(text: currentPhoneNumber);
     _model.phoneFocusNode ??= FocusNode();
     _model.houseNoTextController ??= TextEditingController();
     _model.houseNoFocusNode ??= FocusNode();
@@ -91,7 +92,7 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
     ));
   }
 
-  Future<void> _save() async {
+    Future<void> _save() async {
     if (_model.isSaving) return;
     if (!(_model.formKey.currentState?.validate() ?? false)) return;
     if (_model.selectedLabel == null) {
@@ -105,18 +106,17 @@ class _AddNewadressWidgetState extends State<AddNewadressWidget> {
 
     safeSetState(() => _model.isSaving = true);
     try {
-      await AddressRecord.collection.doc().set(createAddressRecordData(
-            user: currentUserReference,
-            streetAddress: _model.streetTextController!.text.trim(),
-            phone: _model.phoneTextController!.text.trim(),
-            createdTime: getCurrentTimestamp,
-            label: _model.selectedLabel,
-            city: _model.selectedCity,
-            district: _model.districtTextController!.text.trim(),
-            landmark: _model.landmarkTextController!.text.trim(),
-            houseNo: _model.houseNoTextController!.text.trim(),
-            notes: _model.notesTextController!.text.trim(),
-          ));
+      await AddressRepository.create({
+        'user_id': currentUserUid,
+        'street_address': _model.streetTextController!.text.trim(),
+        'phone': _model.phoneTextController!.text.trim(),
+        'label': _model.selectedLabel,
+        'city': _model.selectedCity,
+        'district': _model.districtTextController!.text.trim(),
+        'landmark': _model.landmarkTextController!.text.trim(),
+        'house_no': _model.houseNoTextController!.text.trim(),
+        'notes': _model.notesTextController!.text.trim(),
+      });
       if (!mounted) return;
       _snack(FFLocalizations.of(context).getText('ana_saved'));
       await Future.delayed(const Duration(milliseconds: 600));

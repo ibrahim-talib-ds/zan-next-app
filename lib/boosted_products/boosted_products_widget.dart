@@ -1,5 +1,6 @@
 import 'dart:math';
 import '/components/product_bottom_info.dart';
+import '/components/product_badge.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/utils/responsive.dart';
@@ -65,7 +66,7 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
             Expanded(
               child: StreamBuilder<List<InventoryRecord>>(
                 stream: queryInventoryRecord(
-                  queryBuilder: (r) => r.where('boosted', isEqualTo: true),
+                  filterBoosted: true,
                   limit: 100,
                 ),
                 builder: (context, snap) {
@@ -154,7 +155,7 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
         onTap: () => context.pushNamed(
           ProductDetailsWidget.routeName,
           queryParameters: {
-            'inventoryRef': serializeParam(record.reference, ParamType.DocumentReference),
+            'inventoryRef': serializeParam( record.id, ParamType.String),
           }.withoutNulls,
         ),
         child: Padding(
@@ -181,21 +182,11 @@ class _BoostedProductsWidgetState extends State<BoostedProductsWidget> {
                         ),
                       ),
                     ),
-                    Positioned(
-                      top: 4, left: 4,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: kAmber,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(FFLocalizations.of(context).getText('bp_badge'),
-                          style: const TextStyle(
-                            color: Colors.white, fontSize: 8.5,
-                            fontWeight: FontWeight.w900, letterSpacing: 0.4,
-                          )),
+                    if (productBadge(context, record) != null)
+                      Positioned(
+                        top: 4, left: 4,
+                        child: productBadge(context, record)!,
                       ),
-                    ),
                   ],
                 ),
               ),

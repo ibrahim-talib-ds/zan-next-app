@@ -3,6 +3,13 @@ import '/components/write_review_sheet.dart';
 import '/components/report_sheet_widget.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/repositories/chat_repository.dart';
+import '/repositories/product_repository.dart';
+import '/repositories/review_repository.dart';
+import '/models/chat.dart';
+import '/components/product_bottom_info.dart';
+import '/components/product_badge.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
@@ -10,7 +17,6 @@ import '/flutter_flow/custom_functions.dart' as functions;
 import '/index.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart'
     as smooth_page_indicator;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -25,9 +31,9 @@ import 'product_details_model.dart';
 export 'product_details_model.dart';
 
 class ProductDetailsWidget extends StatefulWidget {
-  const ProductDetailsWidget({super.key, required this.inventoryRef});
+  const ProductDetailsWidget({super.key, this.productId});
 
-  final DocumentReference? inventoryRef;
+  final String? productId;
 
   static String routeName = 'Product_Details';
   static String routePath = '/productDetails';
@@ -59,32 +65,11 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   // views this product. Uses a subcollection `viewers`.
   // ═══════════════════════════════════════════════════════════
   Future<void> _registerView() async {
-    if (widget.inventoryRef == null) return;
-    if (currentUserReference == null) return;
-
+    final pid = widget.productId;
+    if (pid == null || pid.isEmpty) return;
     try {
-      final viewerRef = widget.inventoryRef!
-          .collection('viewers')
-          .doc(currentUserReference!.id);
-
-      final viewerSnap = await viewerRef.get();
-      if (viewerSnap.exists) {
-        // Already viewed by this user — do nothing
-        return;
-      }
-
-      // First time — record the viewer and increment the count
-      await viewerRef.set({
-        'user_ref': currentUserReference,
-        'viewed_at': FieldValue.serverTimestamp(),
-      });
-
-      await widget.inventoryRef!.update({
-        'view_count': FieldValue.increment(1),
-      });
-    } catch (e) {
-      debugPrint('View registration failed: $e');
-    }
+      await ProductRepository.recordView(pid);
+    } catch (_) {}
   }
 
   String _imgUrl(String? url) {
@@ -114,7 +99,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   // ═══════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
-    if (widget.inventoryRef == null) {
+    if (widget.productId == null || widget.productId!.isEmpty) {
       return Scaffold(
         backgroundColor: _bg,
         body: Center(
@@ -125,7 +110,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     }
 
     return StreamBuilder<InventoryRecord>(
-      stream: InventoryRecord.getDocument(widget.inventoryRef!),
+      stream: InventoryRecord.getByIdStream(widget.productId!),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Scaffold(
@@ -265,7 +250,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   // ═══════════════════════════════════════════════════════════
   Widget _buildReportBtn(InventoryRecord p) {
     // Owners can't report their own product
-    if (p.sellersRef == currentUserReference) {
+    if (p.sellersId == currentUserReference) {
       return const SizedBox.shrink();
     }
 
@@ -274,53 +259,43 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       return const SizedBox.shrink();
     }
 
-    // Live check: has the current user already reported this product?
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('reports')
-          .where('reporter_ref', isEqualTo: currentUserReference)
-          .where('target_ref', isEqualTo: p.reference)
-          .limit(1)
-          .snapshots(),
-      builder: (context, snap) {
-        final alreadyReported =
-            (snap.data?.docs.isNotEmpty ?? false);
+    // Live check replaced with static state — no Firestore.
+    // TODO (later): swap for GET /products/{id}/has-reported.
+    const alreadyReported = false;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: alreadyReported
-                ? kAmber.withOpacity(0.12)
-                : _card,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: alreadyReported ? kAmber : _border,
-              width: alreadyReported ? 1.5 : 1,
-            ),
-          ),
-          child: FlutterFlowIconButton(
-            borderRadius: 22,
-            buttonSize: 42,
-            fillColor: Colors.transparent,
-            icon: Icon(
-              alreadyReported
-                  ? Icons.flag_rounded
-                  : Icons.flag_outlined,
-              color: alreadyReported ? kAmber : _text,
-              size: 20,
-            ),
-            onPressed: alreadyReported
-                ? () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(FFLocalizations.of(context).getText('pd_already_reported')),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                : () => _openReportSheet(p),
-          ),
-        );
-      },
+    return Container(
+      decoration: BoxDecoration(
+        color: alreadyReported
+            ? kAmber.withOpacity(0.12)
+            : _card,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: alreadyReported ? kAmber : _border,
+          width: alreadyReported ? 1.5 : 1,
+        ),
+      ),
+      child: FlutterFlowIconButton(
+        borderRadius: 22,
+        buttonSize: 42,
+        fillColor: Colors.transparent,
+        icon: Icon(
+          alreadyReported
+              ? Icons.flag_rounded
+              : Icons.flag_outlined,
+          color: alreadyReported ? kAmber : _text,
+          size: 20,
+        ),
+        onPressed: alreadyReported
+            ? () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(FFLocalizations.of(context).getText('pd_already_reported')),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            : () => _openReportSheet(p),
+      ),
     );
   }
 
@@ -331,58 +306,74 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       backgroundColor: Colors.transparent,
       builder: (context) => ReportSheetWidget(
         targetType: 'product',
-        targetRef: p.reference,
+        targetId: p.id,
         targetLabel: valueOrDefault<String>(p.inventoryName, FFLocalizations.of(context).getText('pd_product_fallback')),
       ),
     );
   }
 
+  bool _liked = false;
+  bool _likeLoaded = false;
+
+  Future<void> _loadLikeState(String productId) async {
+    final uid = currentUserUid;
+    if (uid.isEmpty) {
+      if (mounted) safeSetState(() => _likeLoaded = true);
+      return;
+    }
+    try {
+      final raw = await zannext_api.ApiClient.get(
+        '/wishlist?user_id=$uid',
+      ) as List;
+      final liked = raw.any((item) =>
+          (item as Map)['product_id']?.toString() == productId);
+      if (mounted) {
+        safeSetState(() {
+          _liked = liked;
+          _likeLoaded = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) safeSetState(() => _likeLoaded = true);
+    }
+  }
+
+  Future<void> _toggleLike(String productId) async {
+    if (currentUserUid.isEmpty) return;
+    try {
+      if (_liked) {
+        await zannext_api.ApiClient.delete('/wishlist/$productId');
+      } else {
+        await zannext_api.ApiClient.post('/wishlist/$productId');
+      }
+      if (mounted) safeSetState(() => _liked = !_liked);
+    } catch (e) {
+      debugPrint('Wishlist toggle failed: $e');
+    }
+  }
+
   Widget _buildWishlistBtn(InventoryRecord p) {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: p.reference.snapshots(),
-      builder: (context, snapshot) {
-        bool liked = false;
-        if (snapshot.hasData) {
-          final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
-          final list = (data['product_liked_by'] as List?) ?? [];
-          liked = list.contains(currentUserReference);
-        }
-        return Container(
-          decoration: BoxDecoration(
-            color: _card,
-            shape: BoxShape.circle,
-            border: Border.all(color: _border),
-          ),
-          child: FlutterFlowIconButton(
-            borderRadius: 22,
-            buttonSize: 42,
-            fillColor: Colors.transparent,
-            icon: Icon(
-              liked ? Icons.favorite_rounded : Icons.favorite_border,
-              color: liked ? const Color(0xFFDC0F0F) : _text,
-              size: 20,
-            ),
-            onPressed: () async {
-              if (currentUserReference == null) return;
-              try {
-                if (liked) {
-                  await p.reference.update({
-                    'product_liked_by':
-                        FieldValue.arrayRemove([currentUserReference]),
-                  });
-                } else {
-                  await p.reference.update({
-                    'product_liked_by':
-                        FieldValue.arrayUnion([currentUserReference]),
-                  });
-                }
-              } catch (e) {
-                debugPrint('Wishlist toggle failed: $e');
-              }
-            },
-          ),
-        );
-      },
+    // Trigger load once per product
+    if (!_likeLoaded) {
+      _loadLikeState(p.id);
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: _card,
+        shape: BoxShape.circle,
+        border: Border.all(color: _border),
+      ),
+      child: FlutterFlowIconButton(
+        borderRadius: 22,
+        buttonSize: 42,
+        fillColor: Colors.transparent,
+        icon: Icon(
+          _liked ? Icons.favorite_rounded : Icons.favorite_border,
+          color: _liked ? const Color(0xFFDC0F0F) : _text,
+          size: 20,
+        ),
+        onPressed: () => _toggleLike(p.id),
+      ),
     );
   }
 
@@ -410,21 +401,36 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
               return GestureDetector(
                 onTap: () => _openFullScreen(images, i),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(8),
                   child: Container(
                     decoration: BoxDecoration(
                       color: _soft,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    padding: const EdgeInsets.all(12),
-                    child: Image.network(
-                      _imgUrl(images[i]),
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Icon(
-                        Icons.image_not_supported_outlined,
-                        color: _muted,
-                        size: 40,
-                      ),
+                    padding: const EdgeInsets.all(6),
+                    child: Center(
+                      child: i == 0
+                          ? Hero(
+                              tag: 'product-image-${p.id}',
+                              child: Image.network(
+                                _imgUrl(images[i]),
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  Icons.image_not_supported_outlined,
+                                  color: _muted,
+                                  size: 40,
+                                ),
+                              ),
+                            )
+                          : Image.network(
+                              _imgUrl(images[i]),
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.image_not_supported_outlined,
+                                color: _muted,
+                                size: 40,
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -838,30 +844,16 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   }
 
   Future<void> _sendQuickMessage(InventoryRecord p, String message) async {
-    if (p.sellersRef == currentUserReference) return;
+    if (p.sellersId == currentUserReference) return;
     try {
-      final chatRef = await _ensureChat(p);
-      // Send the message
-      await ChatMessagesRecord.createDoc(chatRef).set(
-        createChatMessagesRecordData(
-          user: currentUserReference,
-          text: message,
-          timestamp: getCurrentTimestamp,
-          nameSender: currentUserDisplayName,
-        ),
-      );
-      await chatRef.update({
-        'last_message': message,
-        'last_message_time': getCurrentTimestamp,
-        'last_message_seen_by': FieldValue.arrayUnion([currentUserReference]),
-      });
+      final chat = await _ensureChat(p);
+      await ChatRepository.sendMessage(chat.id, message);
 
       if (!mounted) return;
       context.pushNamed(
         ChatDWidget.routeName,
         queryParameters: {
-          'receiveChats':
-              serializeParam(chatRef, ParamType.DocumentReference),
+          'chatId': serializeParam(chat.id, ParamType.String),
         }.withoutNulls,
       );
     } catch (e) {
@@ -872,51 +864,24 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     }
   }
 
-  Future<DocumentReference> _ensureChat(InventoryRecord p) async {
+  Future<Chat> _ensureChat(InventoryRecord p) async {
     // 🚫 Block self-chat — seller cannot chat with themselves
-    if (p.sellersRef == currentUserReference) {
+    if (p.sellersId == currentUserReference) {
       throw Exception(FFLocalizations.of(context).getText('pd_cannot_message_self'));
     }
-    // Look for existing chat for this product + this buyer
-    final existing = await FirebaseFirestore.instance
-        .collection('Chats')
-        .where('product_ref', isEqualTo: p.reference)
-        .where('buyer_ref', isEqualTo: currentUserReference)
-        .limit(1)
-        .get();
-
-    if (existing.docs.isNotEmpty) return existing.docs.first.reference;
-
-    // Create a new one
-    final newDoc = ChatsRecord.collection.doc();
-    await newDoc.set({
-      ...createChatsRecordData(
-        lastMessage: '',
-        lastMessageTime: getCurrentTimestamp,
-        productRef: p.reference,
-        buyerRef: currentUserReference,
-        sellerRef: p.sellersRef,
-        productName: p.inventoryName,
-        price: p.inventoryPrice,
-      ),
-      ...mapToFirestore({
-        'users': functions.generatelistofusers(
-          currentUserReference!,
-          p.sellersRef!,
-        ),
-        'User_name': functions.generatelistofnames(
-          currentUserDisplayName,
-          valueOrDefault<String>(p.sellerName, FFLocalizations.of(context).getText('pd_section_seller')),
-        ),
-        'items_images': [
-          valueOrDefault<String>(
-            p.inventoryImages.elementAtOrNull(0),
-            'https://static.thenounproject.com/png/4974686-200.png',
-          )
-        ],
-      }),
+    // Backend /chats does find-or-create on buyer+seller+product.
+    return ChatRepository.create({
+      'seller_id': p.sellersId,
+      'product_id': p.id,
+      'product_name': p.inventoryName,
+      'price': p.inventoryPrice,
+      'item_images': [
+        valueOrDefault<String>(
+          p.inventoryImages.elementAtOrNull(0),
+          'https://static.thenounproject.com/png/4974686-200.png',
+        )
+      ],
     });
-    return newDoc;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -927,14 +892,12 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GestureDetector(
         onTap: () {
-          if (p.sellersRef == null) return;
+          if (p.sellersId.isEmpty) return;
           context.pushNamed(
             SellerDashbordWidget.routeName,
             queryParameters: {
               'sellerRef': serializeParam(
-                p.sellersRef,
-                ParamType.DocumentReference,
-              ),
+                p.sellersId, ParamType.String),
             }.withoutNulls,
           );
         },
@@ -946,7 +909,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
         ),
         padding: const EdgeInsets.all(14),
         child: FutureBuilder<UsersRecord?>(
-          future: _getSeller(p.sellersRef),
+          future: _getSeller(p.sellersId),
           builder: (context, snap) {
             final user = snap.data;
             final photo = user?.photoUrl ?? '';
@@ -1012,13 +975,12 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => _ensureChat(p).then((ref) {
+                  onTap: () => _ensureChat(p).then((chat) {
                     if (!mounted) return;
                     context.pushNamed(
                       ChatDWidget.routeName,
                       queryParameters: {
-                        'receiveChats': serializeParam(
-                            ref, ParamType.DocumentReference),
+                        'chatId': serializeParam(chat.id, ParamType.String),
                       }.withoutNulls,
                     );
                   }),
@@ -1046,13 +1008,13 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     );
   }
 
-  Future<UsersRecord?> _getSeller(DocumentReference? ref) async {
-    if (ref == null) return null;
+  Future<UsersRecord?> _getSeller(String? sellerId) async {
+    if (sellerId == null || sellerId.isEmpty) return null;
     try {
-      final snap = await ref.get();
-      if (snap.exists) return UsersRecord.fromSnapshot(snap);
-    } catch (_) {}
-    return null;
+      return await UsersRecord.getByIdOnce(sellerId);
+    } catch (_) {
+      return null;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1089,96 +1051,110 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
             ),
           ),
         ),
-        if (p.sellersRef != null)
-          StreamBuilder<List<ReviewsRecord>>(
-            stream: queryReviewsRecord(
-              queryBuilder: (r) =>
-                  r.where('product_ref', isEqualTo: p.reference),
-              limit: 20,
-            ),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(kGreen),
-                      ),
-                    ),
-                  ),
-                );
-              }
-              final items = snapshot.data!;
-              if (items.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: _card,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _border),
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(Icons.reviews_outlined,
-                              color: _muted, size: 32),
-                          const SizedBox(height: 8),
-                          Text(FFLocalizations.of(context).getText('pd_no_reviews'),
-                              style: TextStyle(
-                                  color: _muted, fontSize: 13)),
-                          const SizedBox(height: 4),
-                          Text(FFLocalizations.of(context).getText('pd_be_first_review'),
-                              style: TextStyle(
-                                  color: kGreen,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }
+        FutureBuilder<List<dynamic>>(
+          future: _fetchReviews(p.id),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: items.map((r) => _reviewCard(r, p)).toList(),
+                child: Text(
+                    '${FFLocalizations.of(context).getText('pd_could_not_load')}\n${snapshot.error}',
+                    style: TextStyle(color: _muted, fontSize: 12)),
+              );
+            }
+            if (!snapshot.hasData) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(kGreen),
+                    ),
+                  ),
                 ),
               );
-            },
-          ),
+            }
+            final items = snapshot.data!;
+            if (items.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _card,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _border),
+                  ),
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.reviews_outlined, color: _muted, size: 32),
+                        const SizedBox(height: 8),
+                        Text(FFLocalizations.of(context).getText('pd_no_reviews'),
+                            style: TextStyle(color: _muted, fontSize: 13)),
+                        const SizedBox(height: 4),
+                        Text(
+                            FFLocalizations.of(context)
+                                .getText('pd_be_first_review'),
+                            style: TextStyle(
+                                color: kGreen,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: items
+                    .map((r) => _reviewCard(r as Map<String, dynamic>, p))
+                    .toList(),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
 
+  Future<List<dynamic>> _fetchReviews(String productId) async {
+    try {
+      final raw = await zannext_api.ApiClient.get('/products/$productId/reviews');
+      return (raw as List).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<void> _openWriteReview(InventoryRecord p) async {
-    if (currentUserReference == null) {
+    if (currentUserUid.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(FFLocalizations.of(context).getText('pd_sign_in_to_review')),
+          content:
+              Text(FFLocalizations.of(context).getText('pd_sign_in_to_review')),
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    // Check if user already has a review
-    ReviewsRecord? myReview;
+    Map<String, dynamic>? myReview;
     try {
-      final snap = await FirebaseFirestore.instance
-          .collection('reviews')
-          .where('product_ref', isEqualTo: p.reference)
-          .where('reviewer_ref', isEqualTo: currentUserReference)
-          .limit(1)
-          .get();
-      if (snap.docs.isNotEmpty) {
-        myReview = ReviewsRecord.fromSnapshot(snap.docs.first);
+      final raw =
+          await zannext_api.ApiClient.get('/products/${p.id}/reviews') as List;
+      for (final item in raw) {
+        final m = Map<String, dynamic>.from(item as Map);
+        final rid = (m['reviewer_id'] ?? m['reviewerId'] ?? '').toString();
+        if (rid == currentUserUid) {
+          myReview = m;
+          break;
+        }
       }
     } catch (_) {}
 
@@ -1188,8 +1164,12 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => WriteReviewSheet(
-        product: p,
-        existingReview: myReview,
+        productId: p.id,
+        productName: p.inventoryName,
+        existingReviewId: myReview?['id']?.toString(),
+        existingRating: myReview?['rating'] as num?,
+        existingMessage:
+            (myReview?['message'] ?? myReview?['reviews_message'] ?? '').toString(),
       ),
     );
 
@@ -1198,7 +1178,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     }
   }
 
-  Future<bool> _confirmDeleteReview(ReviewsRecord r) async {
+  Future<bool> _confirmDeleteReview(Map<String, dynamic> r) async {
     return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -1234,33 +1214,14 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
         false;
   }
 
-  Future<void> _deleteReview(ReviewsRecord r, InventoryRecord p) async {
+  Future<void> _deleteReview(Map<String, dynamic> r, InventoryRecord p) async {
     try {
-      await r.reference.delete();
-
-      // Recalc product rating
-      final snap = await FirebaseFirestore.instance
-          .collection('reviews')
-          .where('product_ref', isEqualTo: p.reference)
-          .get();
-      if (snap.docs.isEmpty) {
-        await p.reference.update({'rating': 0.0, 'reviews': 0});
-      } else {
-        double total = 0;
-        for (final d in snap.docs) {
-          final rating = d.data()['rating'];
-          if (rating is num) total += rating.toDouble();
-        }
-        await p.reference.update({
-          'rating': total / snap.docs.length,
-          'reviews': snap.docs.length,
-        });
-      }
-
+      await ReviewRepository.delete((r['id'] ?? '').toString());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(FFLocalizations.of(context).getText('pd_review_deleted')),
+          content:
+              Text(FFLocalizations.of(context).getText('pd_review_deleted')),
           backgroundColor: kGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1270,7 +1231,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${FFLocalizations.of(context).getText('pd_delete_failed')}$e'),
+          content: Text(
+              '${FFLocalizations.of(context).getText('pd_delete_failed')}$e'),
           backgroundColor: const Color(0xFFDC0F0F),
           behavior: SnackBarBehavior.floating,
         ),
@@ -1278,12 +1240,17 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
     }
   }
 
-  Widget _reviewCard(ReviewsRecord r, InventoryRecord p) {
-    final isMine = r.reviewerRef == currentUserReference;
-    final isAdmin = valueOrDefault<bool>(
-            currentUserDocument?.isAdmin, false) ==
-        true;
+  Widget _reviewCard(Map<String, dynamic> r, InventoryRecord p) {
+    final rid = (r['reviewer_id'] ?? r['reviewerId'] ?? '').toString();
+    final isMine = rid.isNotEmpty && rid == currentUserUid;
+    final isAdmin =
+        valueOrDefault<bool>(currentUserDocument?.isAdmin, false) == true;
     final canDelete = isMine || isAdmin;
+    final name = (r['reviewers_name'] ?? r['reviewersName'] ?? 'User').toString();
+    final img = (r['reviewers_image'] ?? r['reviewersImage'] ?? '').toString();
+    final msg = (r['message'] ?? r['reviews_message'] ?? '').toString();
+    final rating = (r['rating'] as num?)?.toDouble() ?? 0;
+    final when = DateTime.tryParse((r['created_at'] ?? r['date'] ?? '').toString());
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1310,7 +1277,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Image.network(
-                  _imgUrl(r.reviewersImage),
+                  _imgUrl(img),
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Icon(
                       Icons.person_rounded,
@@ -1328,8 +1295,8 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                         Flexible(
                           child: Text(
                             isMine
-                                ? '${r.reviewersName}${FFLocalizations.of(context).getText('pd_you_suffix')}'
-                                : r.reviewersName,
+                                ? '$name${FFLocalizations.of(context).getText('pd_you_suffix')}'
+                                : name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -1348,8 +1315,10 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                               color: kAmber.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text(FFLocalizations.of(context).getText('pd_admin_view'),
-                                style: const TextStyle(
+                            child: Text(
+                                FFLocalizations.of(context)
+                                    .getText('pd_admin_view'),
+                                style: TextStyle(
                                   color: kAmber,
                                   fontSize: 8.5,
                                   fontWeight: FontWeight.w900,
@@ -1361,7 +1330,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                     ),
                     const SizedBox(height: 3),
                     RatingBarIndicator(
-                      rating: r.rating.toDouble(),
+                      rating: rating,
                       itemSize: 13,
                       itemCount: 5,
                       itemBuilder: (_, __) => const Icon(
@@ -1372,19 +1341,19 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                   ],
                 ),
               ),
-              if (r.date != null)
+              if (when != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: Text(
-                    _timeAgo(r.date!),
+                    _timeAgo(when),
                     style: TextStyle(color: _muted, fontSize: 11),
                   ),
                 ),
               if (canDelete)
                 GestureDetector(
                   onTap: () async {
-                    final ok = await _confirmDeleteReview(r);
-                    if (ok) await _deleteReview(r, p);
+                    final okr = await _confirmDeleteReview(r);
+                    if (okr) await _deleteReview(r, p);
                   },
                   child: Container(
                     width: 32,
@@ -1402,10 +1371,10 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                 ),
             ],
           ),
-          if (r.reviewsMessage.isNotEmpty) ...[
+          if (msg.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
-              r.reviewsMessage,
+              msg,
               style: TextStyle(
                 color: _text.withOpacity(0.85),
                 fontSize: 13,
@@ -1435,14 +1404,13 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: StreamBuilder<List<InventoryRecord>>(
         stream: queryInventoryRecord(
-          queryBuilder: (r) =>
-              r.where('categories', isEqualTo: p.categories),
+          filterCategory: p.categories,
           limit: 10,
         ),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const SizedBox.shrink();
           final items = snapshot.data!
-              .where((i) => i.reference != p.reference)
+              .where((i) => i.id != p.id)
               .take(6)
               .toList();
           if (items.isEmpty) return const SizedBox.shrink();
@@ -1472,8 +1440,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       onTap: () => context.pushNamed(
         ProductDetailsWidget.routeName,
         queryParameters: {
-          'inventoryRef': serializeParam(
-              item.reference, ParamType.DocumentReference),
+          'inventoryRef': serializeParam( item.id, ParamType.String),
         }.withoutNulls,
       ),
       child: Container(
@@ -1487,23 +1454,33 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: _soft,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.all(6),
-                child: Image.network(
-                  _imgUrl(valueOrDefault<String>(
-                      item.inventoryImages.firstOrNull, '')),
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Icon(
-                    Icons.image_not_supported_outlined,
-                    color: _muted,
-                    size: 24,
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: _soft,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    child: Image.network(
+                      _imgUrl(valueOrDefault<String>(
+                          item.inventoryImages.firstOrNull, '')),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.image_not_supported_outlined,
+                        color: _muted,
+                        size: 24,
+                      ),
+                    ),
                   ),
-                ),
+                  if (productBadge(context, item) != null)
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: productBadge(context, item)!,
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 6),
@@ -1530,14 +1507,24 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                 'TZS 0',
               ),
               style: const TextStyle(
-                color: kGreen,
+                color: Color(0xFFDC0F0F),
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
               ),
             ),
+            const SizedBox(height: 2),
+            _pbBottomRow(item),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _pbBottomRow(InventoryRecord r) {
+    return ProductBottomInfo(
+      sellerName: r.sellerName,
+      shippingDays: r.shippingDays,
+      createdAt: r.createdAt,
     );
   }
 
@@ -1576,7 +1563,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
           _iconBarBtn(
             icon: Icons.chat_rounded,
             onTap: () async {
-              if (p.sellersRef == currentUserReference) {
+              if (p.sellersId == currentUserReference) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(FFLocalizations.of(context).getText('pd_cant_chat_self')),
@@ -1585,13 +1572,12 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
                 return;
               }
               try {
-                final ref = await _ensureChat(p);
+                final chat = await _ensureChat(p);
                 if (!mounted) return;
                 context.pushNamed(
                   ChatDWidget.routeName,
                   queryParameters: {
-                    'receiveChats':
-                        serializeParam(ref, ParamType.DocumentReference),
+                    'chatId': serializeParam(chat.id, ParamType.String),
                   }.withoutNulls,
                 );
               } catch (e) {
@@ -1639,7 +1625,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
   // BOTTOM BAR — Buy Now (primary, wide)
   // ═══════════════════════════════════════════════════════════
   Widget _buyNowBtn(BuildContext context, InventoryRecord p) {
-    final isOwner = p.sellersRef == currentUserReference;
+    final isOwner = p.sellersId == currentUserReference;
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: isOwner
@@ -1739,7 +1725,7 @@ class _ProductDetailsWidgetState extends State<ProductDetailsWidget> {
       final ext = imageUrl.contains('.')
           ? imageUrl.split('.').last.split('?').first
           : 'jpg';
-      final file = File('${tmp.path}/zannext_share_${p.reference.id}.$ext');
+      final file = File('${tmp.path}/zannext_share_${p.id}.$ext');
       await file.writeAsBytes(resp.bodyBytes);
 
       final box = context.findRenderObject() as RenderBox?;

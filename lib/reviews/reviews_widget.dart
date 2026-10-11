@@ -1,5 +1,6 @@
 import '/backend/backend.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '/models/review.dart';
+import '/repositories/review_repository.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -28,6 +29,7 @@ class ReviewsWidget extends StatefulWidget {
 
 class _ReviewsWidgetState extends State<ReviewsWidget> {
   late ReviewsModel _model;
+  Future<List<Review>>? _reviewsFuture;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -51,6 +53,7 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => ReviewsModel());
+    _reviewsFuture = ReviewRepository.list();
     _model.textController ??= TextEditingController();
     _model.textFieldFocusNode ??= FocusNode();
   }
@@ -97,11 +100,8 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
           safeSetState(() {});
           await Future.delayed(const Duration(milliseconds: 500));
         },
-        child: StreamBuilder<List<ReviewsRecord>>(
-          stream: queryReviewsRecord(
-            queryBuilder: (r) => r.orderBy('date', descending: true),
-            limit: 100,
-          ),
+        child: FutureBuilder<List<Review>>(
+          future: _reviewsFuture,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return Center(
@@ -139,7 +139,7 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
                     if (!isAdmin) return _reviewRow(r);
 
                     return Dismissible(
-                      key: ValueKey(r.reference.id),
+                      key: ValueKey(r.id),
                       direction: DismissDirection.endToStart,
                       background: Container(
                         margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
@@ -180,13 +180,13 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
   // ════════════════════════════════════════════════════════
   // FILTER
   // ════════════════════════════════════════════════════════
-  List<ReviewsRecord> _filterReviews(List<ReviewsRecord> src) {
+  List<Review> _filterReviews(List<Review> src) {
     final q = (_model.textController?.text ?? '').trim().toLowerCase();
     var out = src;
     if (q.isNotEmpty) {
       out = out.where((r) {
-        final name = r.reviewersName.toLowerCase();
-        final msg = r.reviewsMessage.toLowerCase();
+        final name = (r.reviewersName ?? '').toLowerCase();
+        final msg = (r.message ?? '').toLowerCase();
         return name.contains(q) || msg.contains(q);
       }).toList();
     }
@@ -196,7 +196,7 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
   // ════════════════════════════════════════════════════════
   // SUMMARY CARD (real numbers, no fakes)
   // ════════════════════════════════════════════════════════
-  Widget _buildSummaryCard(List<ReviewsRecord> reviews) {
+  Widget _buildSummaryCard(List<Review> reviews) {
     final total = reviews.length;
     double avg = 0;
     if (total > 0) {
@@ -431,30 +431,14 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
         false;
   }
 
-  Future<void> _deleteReview(ReviewsRecord r) async {
+  Future<void> _deleteReview(Review r) async {
     try {
-      await r.reference.delete();
-
-      // Recalc product rating if product_ref exists
-      final prodRef = r.productRef;
-      if (prodRef != null) {
-        final snap = await FirebaseFirestore.instance
-            .collection('reviews')
-            .where('product_ref', isEqualTo: prodRef)
-            .get();
-        if (snap.docs.isEmpty) {
-          await prodRef.update({'rating': 0.0, 'reviews': 0});
-        } else {
-          double total = 0;
-          for (final d in snap.docs) {
-            final rating = d.data()['rating'];
-            if (rating is num) total += rating.toDouble();
-          }
-          await prodRef.update({
-            'rating': total / snap.docs.length,
-            'reviews': snap.docs.length,
-          });
-        }
+      await ReviewRepository.delete(r.id);
+      // Backend recalculates product.rating + reviews_count server-side.
+      if (mounted) {
+        safeSetState(() {
+          _reviewsFuture = ReviewRepository.list();
+        });
       }
 
       if (!mounted) return;
@@ -478,9 +462,9 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
     }
   }
 
-  Widget _reviewRow(ReviewsRecord r) {
-    final isMine = r.reviewerRef == currentUserReference;
-    final hasReply = (r.sellerReply ?? '').isNotEmpty;
+  Widget _reviewRow(Review r) {
+    final isMine = r.reviewerId == currentUserUid;
+    final hasReply = false /* sellerReply not in Review model yet */;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
@@ -504,10 +488,10 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
                 decoration:
                     BoxDecoration(color: _soft, shape: BoxShape.circle),
                 clipBehavior: Clip.antiAlias,
-                child: r.reviewersImage.isEmpty
+                child: (r.reviewersImage ?? '').isEmpty
                     ? Icon(Icons.person_rounded, color: _muted, size: 22)
                     : Image.network(
-                        r.reviewersImage,
+                        r.reviewersImage ?? '',
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Icon(
                             Icons.person_rounded,
@@ -522,8 +506,8 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
                   children: [
                     Text(
                       isMine
-                          ? '${r.reviewersName} (You)'
-                          : r.reviewersName,
+                          ? '${r.reviewersName ?? 'User'} (You)'
+                          : (r.reviewersName ?? 'User'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -545,9 +529,9 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        if (r.date != null)
+                        if (r.createdAt != null)
                           Text(
-                            _timeAgo(r.date!),
+                            _timeAgo(r.createdAt!),
                             style: TextStyle(
                                 color: _muted, fontSize: 11),
                           ),
@@ -558,10 +542,10 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
               ),
             ],
           ),
-          if (r.reviewsMessage.isNotEmpty) ...[
+          if ((r.message ?? '').isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
-              r.reviewsMessage,
+              r.message ?? '',
               style: TextStyle(
                 color: _text.withOpacity(0.85),
                 fontSize: 13.5,
@@ -596,25 +580,9 @@ class _ReviewsWidgetState extends State<ReviewsWidget> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      if (r.sellerReplyDate != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          _timeAgo(r.sellerReplyDate!),
-                          style: TextStyle(
-                              color: _muted, fontSize: 10.5),
-                        ),
-                      ],
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    r.sellerReply ?? '',
-                    style: TextStyle(
-                      color: _text.withOpacity(0.85),
-                      fontSize: 12.5,
-                      height: 1.4,
-                    ),
-                  ),
+                  // sellerReply: not in Review model yet (backend task).
                 ],
               ),
             ),

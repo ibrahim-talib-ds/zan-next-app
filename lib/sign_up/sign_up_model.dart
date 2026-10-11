@@ -29,6 +29,9 @@ class SignUpModel extends FlutterFlowModel<SignUpWidget> {
   // State field(s) for Checkbox widget.
   bool? checkboxValue;
 
+  // Submit state
+  bool isSubmitting = false;
+
   @override
   void initState(BuildContext context) {
     textPassortVisibility = false;

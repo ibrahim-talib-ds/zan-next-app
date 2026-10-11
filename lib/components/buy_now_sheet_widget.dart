@@ -1,10 +1,12 @@
 import '/auth/firebase_auth/auth_util.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/backend/backend.dart';
+import '/models/address.dart';
+import '/repositories/address_repository.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'buy_now_sheet_model.dart';
@@ -24,6 +26,7 @@ class BuyNowSheetWidget extends StatefulWidget {
 
 class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
   late BuyNowSheetModel _model;
+  Future<List<Address>>? _addressesFuture;
 
   static const Color kGreen = Color(0xFF1B7A4E);
   static const Color kGreenDeep = Color(0xFF0A3A22);
@@ -48,6 +51,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => BuyNowSheetModel());
+    _addressesFuture = AddressRepository.listForUser(currentUserUid);
     _model.phoneController ??=
         TextEditingController(text: currentPhoneNumber);
     _model.phoneFocusNode ??= FocusNode();
@@ -247,11 +251,8 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
       children: [
         _sectionTitle(FFLocalizations.of(context).getText('bn_delivery_address')),
         const SizedBox(height: 10),
-        StreamBuilder<List<AddressRecord>>(
-          stream: queryAddressRecord(
-            queryBuilder: (r) => r.where('user',
-                isEqualTo: currentUserReference),
-          ),
+        FutureBuilder<List<Address>>(
+          future: _addressesFuture,
           builder: (context, snap) {
             if (!snap.hasData) {
               return Container(
@@ -308,7 +309,11 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
                       onPressed: () async {
                         await context
                             .pushNamed(AddNewadressWidget.routeName);
-                        safeSetState(() {});
+                        if (!mounted) return;
+                        safeSetState(() {
+                          _addressesFuture = AddressRepository
+                              .listForUser(currentUserUid);
+                        });
                       },
                       child: Text(FFLocalizations.of(context).getText('bn_add'),
                           style: const TextStyle(
@@ -328,8 +333,7 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
 
             return Column(
               children: addresses.map((a) {
-                final selected = _model.selectedAddress?.reference ==
-                    a.reference;
+                final selected = _model.selectedAddress?.id == a.id;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: GestureDetector(
@@ -396,10 +400,10 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
                                 const SizedBox(height: 4),
                                 Text(
                                   [
-                                    a.city,
-                                    a.district,
-                                    a.streetAddress,
-                                    a.houseNo,
+                                    a.city ?? '',
+                                    a.district ?? '',
+                                    a.streetAddress ?? '',
+                                    a.houseNo ?? '',
                                   ]
                                       .where((s) => s.isNotEmpty)
                                       .join(', '),
@@ -693,101 +697,68 @@ class _BuyNowSheetWidgetState extends State<BuyNowSheetWidget> {
       final address = _model.selectedAddress!;
 
       // Build full address string
-      final addressString = [
-        address.houseNo,
-        address.streetAddress,
-        address.district,
-        address.city,
+      final addressString = <String>[
+        address.houseNo ?? '',
+        address.streetAddress ?? '',
+        address.district ?? '',
+        address.city ?? '',
       ].where((s) => s.isNotEmpty).join(', ');
 
-      // 1. Create the order
-      final orderRef = OrdersRecord.collection.doc();
-      await orderRef.set({
-        ...createOrdersRecordData(
-          buyer: currentUserReference,
-          seller: p.sellersRef,
-          productRef: p.reference,
-          productName: p.inventoryName,
-          price: p.inventoryPrice,
-          status: 'Pending',
-          date: getCurrentTimestamp,
-          address: addressString,
-        ),
-        ...mapToFirestore({
-          'Item_images': [
-            valueOrDefault<String>(
-              p.inventoryImages.firstOrNull,
-              'https://static.thenounproject.com/png/4974686-200.png',
-            )
-          ],
-          'buyer_phone': phone,
-          'buyer_notes': _model.notesController?.text.trim() ?? '',
-          'buyer_name': currentUserDisplayName,
-          'seller_name': p.sellerName,
-          'status_history': [
-            {
-              'status': 'Pending',
-              'timestamp': DateTime.now().toIso8601String(),
-              'note': 'Order placed',
-            }
-          ],
-        }),
-      });
-
-      // 2. Notify the seller (in-app + push)
-      if (p.sellersRef != null) {
-        await NotificationsRecord.collection.doc().set({
-          ...createNotificationsRecordData(
-            title: FFLocalizations.of(context).getText('bn_new_order_title'),
-            notificationText:
-                '${currentUserDisplayName}${FFLocalizations.of(context).getText('bn_ordered_prefix')}${p.inventoryName}${FFLocalizations.of(context).getText('bn_ordered_suffix')}',
-            userRef: p.sellersRef,
-            isRead: false,
-            date: getCurrentTimestamp,
-            createdTime: getCurrentTimestamp,
-            avater: currentUserPhoto,
-            productId: orderRef.id,
+      // 1. Create the order in Postgres
+      final orderResp = await zannext_api.ApiClient.post('/orders', body: {
+        'seller_id': p.sellersId,
+        if (p.id.isNotEmpty) 'product_id': p.id,
+        'product_name': p.inventoryName,
+        'price': p.inventoryPrice,
+        'address': addressString,
+        'status': 'pending',
+        'item_images': [
+          valueOrDefault<String>(
+            p.inventoryImages.firstOrNull,
+            'https://static.thenounproject.com/png/4974686-200.png',
           ),
-        });
+        ],
+        'buyer_phone': phone,
+        'buyer_notes': _model.notesController?.text.trim() ?? '',
+        'buyer_name': currentUserDisplayName,
+        'seller_name': p.sellerName,
+      });
+      final orderId = ((orderResp as Map)['id'] ?? '').toString();
 
-        // 🔔 Push notification via Cloudflare Worker
-        await NotificationSender.sendToUser(
-          userRef: p.sellersRef,
-          title: 'New Order Received',
-          body: '${currentUserDisplayName}${FFLocalizations.of(context).getText('bn_ordered_prefix')}${p.inventoryName}${FFLocalizations.of(context).getText('bn_ordered_suffix')}',
-          data: {'route': 'Order_details', 'orderId': orderRef.id},
-        );
+      // 2. Notify the seller (in-app + FCM push, handled backend-side)
+      if (p.sellersId.isNotEmpty) {
+        try {
+          await zannext_api.ApiClient.post('/internal/notify', body: {
+            'user_id': p.sellersId,
+            'title': FFLocalizations.of(context).getText('bn_new_order_title'),
+            'body':
+                '${currentUserDisplayName}${FFLocalizations.of(context).getText('bn_ordered_prefix')}${p.inventoryName}${FFLocalizations.of(context).getText('bn_ordered_suffix')}',
+            'type': 'system',
+            'product_id': orderId,
+          });
+        } catch (_) {}
       }
 
-      // 3. Also notify the buyer
-      await NotificationsRecord.collection.doc().set({
-        ...createNotificationsRecordData(
-          title: FFLocalizations.of(context).getText('bn_order_placed_title'),
-          notificationText:
+      // 3. Notify the buyer
+      try {
+        await zannext_api.ApiClient.post('/internal/notify', body: {
+          'user_id': currentUserUid,
+          'title': FFLocalizations.of(context).getText('bn_order_placed_title'),
+          'body':
               '${FFLocalizations.of(context).getText('bn_order_placed_body_prefix')}${p.inventoryName}${FFLocalizations.of(context).getText('bn_order_placed_body_suffix')}',
-          userRef: currentUserReference,
-          isRead: false,
-          date: getCurrentTimestamp,
-          createdTime: getCurrentTimestamp,
-          avater: '',
-          productId: orderRef.id,
-        ),
-      });
+          'type': 'system',
+          'product_id': orderId,
+        });
+      } catch (_) {}
 
       if (!mounted) return;
 
-      // 4. Success → navigate to tracking screen
+      // 4. Success -> open the Postgres orders screen
       Navigator.pop(context); // close sheet
       await Future.delayed(const Duration(milliseconds: 200));
       if (!mounted) return;
 
-      context.pushNamed(
-        Order1Widget.routeName,
-        queryParameters: {
-          'orderRef':
-              serializeParam(orderRef, ParamType.DocumentReference),
-        }.withoutNulls,
-      );
+      context.pushNamed(OrderDetailsWidget.routeName);
     } catch (e) {
       if (!mounted) return;
       safeSetState(() => _model.isPlacing = false);

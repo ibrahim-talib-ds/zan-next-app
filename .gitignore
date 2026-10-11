@@ -53,3 +53,35 @@ secret*.json
 functions/node_modules/
 functions/.env
 node_modules/
+
+# Dart backup files (our patches create many)
+*.dart.bak*
+*.dart.broken*
+
+# DB dumps (contain real data)
+*.dump
+migration/*.dump
+
+# Secrets
+.env
+.env.*
+firebase-keys/
+**/service-account.json
+
+# Archive / backup folders
+*_backup_*/
+flutter_backup_*/
+zannext_backend_backup_*/
+
+# Nested venvs (migration folder has its own)
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.env
+**/.env.*
+
+# DB dumps (production data)
+*.dump
+**/*.dump

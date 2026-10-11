@@ -1,96 +1,96 @@
+// ZanNext — ChatMessagesRecord Shim
+//
+// Full API compatibility with the original Firestore ChatMessagesRecord.
+// Backed by our ChatMessage model (Postgres).
+
 import 'dart:async';
 
-import 'package:collection/collection.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'
+    show DocumentReference, Query, DocumentSnapshot, FirebaseFirestore;
 
-import '/backend/schema/util/firestore_util.dart';
-import '/backend/schema/util/schema_util.dart';
+import '../../models/chat_message.dart';
+import '../../repositories/chat_repository.dart';
 
-import 'index.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+class ChatMessagesRecord {
+  ChatMessagesRecord._(this._msg, DocumentReference? explicitRef)
+      : _explicitRef = explicitRef;
 
-/// Create this inside the chats collection
-class ChatMessagesRecord extends FirestoreRecord {
-  ChatMessagesRecord._(
-    DocumentReference reference,
-    Map<String, dynamic> data,
-  ) : super(reference, data) {
-    _initializeFields();
-  }
+  final ChatMessage? _msg;
+  final DocumentReference? _explicitRef;
 
-  // "user" field.
-  DocumentReference? _user;
-  DocumentReference? get user => _user;
-  bool hasUser() => _user != null;
+  String get id => _msg?.id ?? '';
 
-  // "text" field.
-  String? _text;
-  String get text => _text ?? '';
-  bool hasText() => _text != null;
+  DocumentReference get reference =>
+      _explicitRef ??
+      FirebaseFirestore.instance.collection('Chats').doc(_msg?.chatId ?? 'unknown')
+          .collection('chat_messages').doc(_msg?.id ?? 'unknown');
 
-  // "timestamp" field.
-  DateTime? _timestamp;
-  DateTime? get timestamp => _timestamp;
-  bool hasTimestamp() => _timestamp != null;
+  DocumentReference get syntheticRef => reference;
 
-  // "chat" field.
-  DocumentReference? _chat;
-  DocumentReference? get chat => _chat;
-  bool hasChat() => _chat != null;
+  ChatMessage? get msg => _msg;
 
-  // "name_sender" field.
-  String? _nameSender;
-  String get nameSender => _nameSender ?? '';
-  bool hasNameSender() => _nameSender != null;
+  DocumentReference? get user => _msg?.senderId != null
+      ? FirebaseFirestore.instance.collection('users').doc(_msg!.senderId)
+      : null;
+  bool hasUser() => _msg?.senderId != null && _msg!.senderId.isNotEmpty;
+
+  String get text => _msg?.text ?? '';
+  bool hasText() => (_msg?.text ?? '').isNotEmpty;
+
+  DateTime? get timestamp => _msg?.createdAt;
+  bool hasTimestamp() => _msg?.createdAt != null;
+
+  DocumentReference? get chat => _msg?.chatId != null
+      ? FirebaseFirestore.instance.collection('Chats').doc(_msg!.chatId)
+      : null;
+  bool hasChat() => _msg?.chatId != null;
+
+  String get nameSender => _msg?.senderName ?? '';
+  bool hasNameSender() => (_msg?.senderName ?? '').isNotEmpty;
 
   DocumentReference get parentReference => reference.parent.parent!;
 
-  void _initializeFields() {
-    _user = snapshotData['user'] as DocumentReference?;
-    _text = snapshotData['text'] as String?;
-    _timestamp = snapshotData['timestamp'] as DateTime?;
-    _chat = snapshotData['chat'] as DocumentReference?;
-    _nameSender = snapshotData['name_sender'] as String?;
+  // ---- Raw snapshot data for compat ----
+  Map<String, dynamic> get snapshotData {
+    final m = _msg;
+    if (m == null) return <String, dynamic>{};
+    return <String, dynamic>{
+      'user': m.senderId,
+      'text': m.text,
+      'timestamp': m.createdAt,
+      'chat': m.chatId,
+      'name_sender': m.senderName,
+    };
   }
 
-  static Query<Map<String, dynamic>> collection([DocumentReference? parent]) =>
-      parent != null
-          ? parent.collection('chat_messages')
-          : FirebaseFirestore.instance.collectionGroup('chat_messages');
+  // ---- Static factory methods ----
+  static Query<Map<String, dynamic>> collection([DocumentReference? parent]) {
+    final fs = FirebaseFirestore.instance;
+    return parent != null
+        ? parent.collection('chat_messages')
+        : fs.collectionGroup('chat_messages');
+  }
 
-  static DocumentReference createDoc(DocumentReference parent, {String? id}) =>
-      parent.collection('chat_messages').doc(id);
+  static DocumentReference createDoc(DocumentReference parent, {String? id}) {
+    return parent.collection('chat_messages').doc(id);
+  }
 
   static Stream<ChatMessagesRecord> getDocument(DocumentReference ref) =>
-      ref.snapshots().map((s) => ChatMessagesRecord.fromSnapshot(s));
-
-  static Future<ChatMessagesRecord> getDocumentOnce(DocumentReference ref) =>
-      ref.get().then((s) => ChatMessagesRecord.fromSnapshot(s));
+      const Stream<ChatMessagesRecord>.empty();
 
   static ChatMessagesRecord fromSnapshot(DocumentSnapshot snapshot) =>
-      ChatMessagesRecord._(
-        snapshot.reference,
-        mapFromFirestore(snapshot.data() as Map<String, dynamic>),
-      );
+      ChatMessagesRecord._(null, snapshot.reference);
 
-  static ChatMessagesRecord getDocumentFromData(
-    Map<String, dynamic> data,
-    DocumentReference reference,
-  ) =>
-      ChatMessagesRecord._(reference, mapFromFirestore(data));
+  static ChatMessagesRecord fromMessage(ChatMessage msg) =>
+      ChatMessagesRecord._(msg, null);
 
   @override
-  String toString() =>
-      'ChatMessagesRecord(reference: ${reference.path}, data: $snapshotData)';
-
-  @override
-  int get hashCode => reference.path.hashCode;
-
-  @override
-  bool operator ==(other) =>
-      other is ChatMessagesRecord &&
-      reference.path.hashCode == other.reference.path.hashCode;
+  String toString() => 'ChatMessagesRecord(id: ${_msg?.id})';
 }
 
+// =====================================================================
+// Compatibility: createChatMessagesRecordData
+// =====================================================================
 Map<String, dynamic> createChatMessagesRecordData({
   DocumentReference? user,
   String? text,
@@ -98,36 +98,11 @@ Map<String, dynamic> createChatMessagesRecordData({
   DocumentReference? chat,
   String? nameSender,
 }) {
-  final firestoreData = mapToFirestore(
-    <String, dynamic>{
-      'user': user,
-      'text': text,
-      'timestamp': timestamp,
-      'chat': chat,
-      'name_sender': nameSender,
-    }.withoutNulls,
-  );
-
-  return firestoreData;
-}
-
-class ChatMessagesRecordDocumentEquality
-    implements Equality<ChatMessagesRecord> {
-  const ChatMessagesRecordDocumentEquality();
-
-  @override
-  bool equals(ChatMessagesRecord? e1, ChatMessagesRecord? e2) {
-    return e1?.user == e2?.user &&
-        e1?.text == e2?.text &&
-        e1?.timestamp == e2?.timestamp &&
-        e1?.chat == e2?.chat &&
-        e1?.nameSender == e2?.nameSender;
-  }
-
-  @override
-  int hash(ChatMessagesRecord? e) => const ListEquality()
-      .hash([e?.user, e?.text, e?.timestamp, e?.chat, e?.nameSender]);
-
-  @override
-  bool isValidKey(Object? o) => o is ChatMessagesRecord;
+  return <String, dynamic>{
+    'user': user,
+    'text': text,
+    'timestamp': timestamp,
+    'chat': chat,
+    'name_sender': nameSender,
+  };
 }

@@ -1,5 +1,7 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/repositories/order_repository.dart';
+import '/models/order.dart';
 import '/components/logout_widget.dart';
 import '/components/dark_light_switch_small_widget.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
@@ -16,6 +18,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 
 import 'profile_model.dart';
+import '/repositories/user_repository.dart';
+import '/models/user.dart';
 export 'profile_model.dart';
 
 class ProfileWidget extends StatefulWidget {
@@ -30,6 +34,7 @@ class ProfileWidget extends StatefulWidget {
 
 class _ProfileWidgetState extends State<ProfileWidget> {
   late ProfileModel _model;
+  Future<List<Order>>? _ordersFuture;
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   static const Color kGreen = Color(0xFF1B7A4E);
@@ -53,6 +58,10 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => ProfileModel());
+    _profileFuture = _loadProfile();
+    if (currentUserUid.isNotEmpty) {
+      _ordersFuture = OrderRepository.listForUser(currentUserUid);
+    }
   }
 
   @override
@@ -65,6 +74,25 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   // BUILD
   // ═══════════════════════════════════════════════════════════
   @override
+  // ─── Profile refresh ───────────────────────────────
+  Future<User?>? _profileFuture;
+
+  Future<User?> _loadProfile() async {
+    if (currentUserUid.isEmpty) return null;
+    try {
+      return await UserRepository.get(currentUserUid);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _reloadProfile() {
+    if (!mounted) return;
+    safeSetState(() {
+      _profileFuture = _loadProfile();
+    });
+  }
+
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
@@ -282,104 +310,206 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   Widget _buildUserCard() {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: _card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _border),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 68,
-              height: 68,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [kGreen, kGreenDeep],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(2.5),
-              child: Container(
-                decoration: BoxDecoration(color: _card, shape: BoxShape.circle),
-                padding: const EdgeInsets.all(2),
-                child: AuthUserStreamWidget(
-                  builder: (context) => ClipOval(
-                    child: Image.network(
-                      _imgUrl(valueOrDefault<String>(
-                        currentUserPhoto,
-                        '',
-                      )),
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(
-                        Icons.person_rounded,
-                        color: _muted,
-                        size: 30,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+      child: FutureBuilder<User?>(
+        future: _profileFuture,
+        builder: (context, snap) {
+          final u = snap.data;
+          final photo = _imgUrl(u?.photoUrl ?? currentUserPhoto);
+          final name = (u?.displayName ?? currentUserDisplayName).trim().isEmpty
+              ? FFLocalizations.of(context).getText('profile_user_fallback')
+              : (u?.displayName ?? currentUserDisplayName);
+          final email = (u?.email ?? currentUserEmail);
+          final phone = (u?.phoneNumber ?? currentPhoneNumber);
+          final city = (u?.city ?? '').trim();
+          final created = u?.createdAt;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: _card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _border),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AuthUserStreamWidget(
-                    builder: (context) => Text(
-                      currentUserDisplayName.isEmpty
-                          ? FFLocalizations.of(context).getText('profile_user_fallback')
-                          : currentUserDisplayName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: _text,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Top row: avatar + info + edit button ──
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [kGreen, kGreenDeep],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(2.5),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            color: _card, shape: BoxShape.circle),
+                        padding: const EdgeInsets.all(2),
+                        child: ClipOval(
+                          child: photo.isEmpty
+                              ? Icon(Icons.person_rounded,
+                                  color: _muted, size: 32)
+                              : Image.network(
+                                  photo,
+                                  width: 62,
+                                  height: 62,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Icon(
+                                    Icons.person_rounded,
+                                    color: _muted,
+                                    size: 32,
+                                  ),
+                                ),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    valueOrDefault<String>(currentUserEmail, FFLocalizations.of(context).getText('profile_no_email')),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: _muted, fontSize: 12.5),
-                  ),
-                  AuthUserStreamWidget(
-                    builder: (context) => Text(
-                      valueOrDefault<String>(currentPhoneNumber, ''),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: _muted, fontSize: 12.5),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _text,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.email_outlined,
+                                  color: _muted, size: 12),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  email.isEmpty
+                                      ? FFLocalizations.of(context)
+                                          .getText('profile_no_email')
+                                      : email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      color: _muted, fontSize: 12.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (phone.trim().isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Row(
+                              children: [
+                                Icon(Icons.phone_outlined,
+                                    color: _muted, size: 12),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    phone,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: _muted, fontSize: 12.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if (city.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Row(
+                              children: [
+                                Icon(Icons.location_on_outlined,
+                                    color: _muted, size: 12),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    city,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: _muted, fontSize: 12.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () async {
+                        await context.pushNamed(ProfileEditWidget.routeName);
+                        _reloadProfile();
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: kGreen.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.edit_rounded,
+                            color: kGreen, size: 18),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // ── Join date row ──
+                if (created != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: kGreen.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.calendar_today_rounded,
+                            color: kGreen, size: 12),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Member since ${_monthName(created.month)} ${created.year}',
+                          style: const TextStyle(
+                            color: kGreen,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
+              ],
             ),
-            GestureDetector(
-              onTap: () => context.pushNamed(ProfileEditWidget.routeName),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: kGreen.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.edit_rounded, color: kGreen, size: 18),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
+  }
+
+  String _monthName(int m) {
+    const names = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return names[(m - 1).clamp(0, 11)];
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -476,17 +606,12 @@ class _ProfileWidgetState extends State<ProfileWidget> {
   // DELIVERY STATUS — real latest order for current user
   // ═══════════════════════════════════════════════════════════
   Widget _buildDeliveryStatus() {
-    if (currentUserReference == null) return const SizedBox.shrink();
+    if (currentUserUid.isEmpty) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: StreamBuilder<List<OrdersRecord>>(
-        stream: queryOrdersRecord(
-          queryBuilder: (q) => q
-              .where('buyer', isEqualTo: currentUserReference)
-              .orderBy('date', descending: true),
-          limit: 1,
-        ),
+      child: FutureBuilder<List<Order>>(
+        future: _ordersFuture,
         builder: (context, snap) {
           // No order yet → show empty hint
           if (!snap.hasData || snap.data!.isEmpty) {
@@ -537,7 +662,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
           }
 
           final order = snap.data!.first;
-          final status = (order.status ?? 'Pending');
+          final status = order.status;
 
           // Status color + icon
           Color statusColor = kGreen;

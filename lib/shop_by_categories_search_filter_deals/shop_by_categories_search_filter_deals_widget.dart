@@ -113,15 +113,7 @@ class _ShopByCategoriesSearchFilterDealsWidgetState
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 0.0, 0.0),
                   child: StreamBuilder<List<InventoryRecord>>(
                     stream: queryInventoryRecord(
-                      queryBuilder: (inventoryRecord) => inventoryRecord
-                          .where(
-                            'deal',
-                            isEqualTo: true,
-                          )
-                          .where(
-                            'inventory_name',
-                            isEqualTo: FFAppState().deal,
-                          ),
+                      limit: 200,
                     ),
                     builder: (context, snapshot) {
                       // Customize what your widget looks like when it's loading.

@@ -1,5 +1,4 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
@@ -11,6 +10,8 @@ import 'package:provider/provider.dart';
 
 import 'select_ad_model.dart';
 import '/auth/firebase_auth/auth_util.dart';
+import '/models/category_config.dart';
+import '/repositories/category_repository.dart';
 import '/admin_category/admin_category_editor.dart';
 export 'select_ad_model.dart';
 
@@ -26,6 +27,7 @@ class SelectAdWidget extends StatefulWidget {
 
 class _SelectAdWidgetState extends State<SelectAdWidget> {
   late SelectAdModel _model;
+  Future<List<CategoryConfig>>? _categoriesFuture;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -141,6 +143,7 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => SelectAdModel());
+    _categoriesFuture = CategoryRepository.list();
     logFirebaseEvent('screen_view', parameters: {'screen_name': 'SelectAd'});
     WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
   }
@@ -216,19 +219,13 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
                 ),
               ),
               Expanded(
-                child: StreamBuilder<Map<String, Map<String, dynamic>>>(
-                  stream: FirebaseFirestore.instance
-                      .collection('category_config')
-                      .snapshots()
-                      .map((snap) {
-                    final map = <String, Map<String, dynamic>>{};
-                    for (final doc in snap.docs) {
-                      map[doc.id] = doc.data();
-                    }
-                    return map;
-                  }),
+                child: FutureBuilder<List<CategoryConfig>>(
+                  future: _categoriesFuture,
                   builder: (context, overrideSnap) {
-                    final overrides = overrideSnap.data ?? {};
+                    final overrides = <String, CategoryConfig>{};
+                    for (final c in (overrideSnap.data ?? const [])) {
+                      overrides[c.categoryKey] = c;
+                    }
                     return ListView.separated(
                       padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 24),
                       itemCount: _categories.length,
@@ -239,8 +236,8 @@ class _SelectAdWidgetState extends State<SelectAdWidget> {
                         return _categoryTile(
                           context,
                           cat,
-                          overrideImage: override?['image_url'] as String?,
-                          overrideLabel: override?['label'] as String?,
+                          overrideImage: override?.imageUrl,
+                          overrideLabel: override?.label,
                         );
                       },
                     );

@@ -109,6 +109,13 @@ class UsersRecord extends FirestoreRecord {
   static Stream<UsersRecord> getDocument(DocumentReference ref) =>
       ref.snapshots().map((s) => UsersRecord.fromSnapshot(s));
 
+  static Future<UsersRecord> getByIdOnce(String id) =>
+      getDocumentOnce(FirebaseFirestore.instance.collection('users').doc(id));
+
+  static Stream<UsersRecord> getByIdStream(String id) async* {
+    yield await getByIdOnce(id);
+  }
+
   static Future<UsersRecord> getDocumentOnce(DocumentReference ref) =>
       ref.get().then((s) => UsersRecord.fromSnapshot(s));
 

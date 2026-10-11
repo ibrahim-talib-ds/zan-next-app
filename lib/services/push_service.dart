@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '/auth/firebase_auth/auth_util.dart';
+import '/repositories/user_repository.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/nav/nav.dart';
 import '/index.dart';
@@ -104,7 +104,7 @@ class PushService with WidgetsBindingObserver {
   /// Saves the current FCM token to the now-logged-in user's doc.
   /// Without this, users who log in AFTER app start never get a token.
   Future<void> syncTokenToCurrentUser() async {
-    if (currentUserReference == null) return;
+    if (currentUserUid.isEmpty) return;
     // Small delay to let Firestore user doc settle
     await Future.delayed(const Duration(milliseconds: 500));
     await _saveToken();
@@ -114,10 +114,10 @@ class PushService with WidgetsBindingObserver {
   /// Removes the FCM token from the outgoing user's doc so their device
   /// stops receiving pushes meant for the account.
   Future<void> clearTokenFromUser() async {
-    final user = currentUserReference;
-    if (user == null) return;
+    final uid = currentUserUid;
+    if (uid.isEmpty) return;
     try {
-      await user.update({'fcm_token': FieldValue.delete()});
+      await UserRepository.update(uid, {'fcm_token': ''});
       debugPrint('🔔 Token cleared from user doc');
     } catch (e) {
       debugPrint('🔔 Token clear error: $e');
@@ -153,10 +153,10 @@ class PushService with WidgetsBindingObserver {
   }
 
   Future<void> _updateUserToken(String token) async {
-    final user = currentUserReference;
-    if (user == null) return;
+    final uid = currentUserUid;
+    if (uid.isEmpty) return;
     try {
-      await user.update({'fcm_token': token});
+      await UserRepository.update(uid, {'fcm_token': token});
     } catch (e) {
       debugPrint('🔔 Token save error: $e');
     }
@@ -266,7 +266,7 @@ class PushService with WidgetsBindingObserver {
       // ── CHAT ──────────────────────────────────────────────
       if (route == 'ChatD' && chatId != null && chatId.isNotEmpty) {
         final chatRef =
-            FirebaseFirestore.instance.collection('Chats').doc(chatId);
+            null; // Chat deep-link resolved via API in _handleTap
         GoRouter.of(ctx).pushNamed(
           ChatDWidget.routeName,
           queryParameters: {
@@ -294,7 +294,7 @@ class PushService with WidgetsBindingObserver {
         final orderId = data['orderId'] as String?;
         if (orderId != null && orderId.isNotEmpty) {
           final orderRef =
-              FirebaseFirestore.instance.collection('orders').doc(orderId);
+              null; // Order deep-link resolved via API in _handleTap
           GoRouter.of(ctx).pushNamed(
             OrderDetailsWidget.routeName,
             queryParameters: {

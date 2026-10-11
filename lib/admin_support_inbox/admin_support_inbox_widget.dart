@@ -1,8 +1,8 @@
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '/services/api_client.dart' as zannext_api;
 
 import 'admin_support_inbox_model.dart';
 export 'admin_support_inbox_model.dart';
@@ -119,12 +119,8 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
   }
 
   Widget _buildBody() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('support_chats')
-          .orderBy('last_message_at', descending: true)
-          .limit(100)
-          .snapshots(),
+    return FutureBuilder<List<dynamic>>(
+      future: _fetchThreads(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _state(Icons.error_outline_rounded,
@@ -143,7 +139,7 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
           );
         }
 
-        final docs = snapshot.data!.docs;
+        final docs = snapshot.data!;
         if (docs.isEmpty) {
           return _state(
             Icons.inbox_outlined,
@@ -155,7 +151,7 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
 
         int totalUnread = 0;
         for (final d in docs) {
-          final data = d.data() as Map<String, dynamic>;
+          final data = d as Map<String, dynamic>;
           totalUnread += (data['unread_for_admin'] as num?)?.toInt() ?? 0;
         }
 
@@ -172,9 +168,9 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
                   itemCount: docs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, i) {
-                    final doc = docs[i];
+                    final d = docs[i] as Map<String, dynamic>;
                     return Dismissible(
-                      key: ValueKey(doc.id),
+                      key: ValueKey(d['id']),
                       direction: DismissDirection.endToStart,
                       background: Container(
                         decoration: BoxDecoration(
@@ -199,8 +195,8 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
                         ),
                       ),
                       confirmDismiss: (_) => _confirmDeleteThread(),
-                      onDismissed: (_) => _deleteThread(doc),
-                      child: _chatTile(doc),
+                      onDismissed: (_) => _deleteThreadById(d['id'] as String),
+                      child: _chatTile(d),
                     );
                   },
                 ),
@@ -303,21 +299,10 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
         false;
   }
 
-  Future<void> _deleteThread(DocumentSnapshot doc) async {
+  Future<void> _deleteThreadById(String threadId) async {
     try {
-      // Delete all messages in the subcollection first (batch)
-      final messagesSnap =
-          await doc.reference.collection('messages').get();
-      if (messagesSnap.docs.isNotEmpty) {
-        final batch = FirebaseFirestore.instance.batch();
-        for (final m in messagesSnap.docs) {
-          batch.delete(m.reference);
-        }
-        await batch.commit();
-      }
-
-      // Then delete the parent thread
-      await doc.reference.delete();
+      // Cascade delete handles messages automatically (FK ON DELETE CASCADE)
+      await zannext_api.ApiClient.delete('/admin/support/$threadId');
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -340,24 +325,27 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
     }
   }
 
-  Widget _chatTile(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  Widget _chatTile(Map<String, dynamic> data) {
     final name = (data['user_name'] ?? 'User').toString();
     final email = (data['user_email'] ?? '').toString();
     final photo = _imgUrl((data['user_photo'] ?? '').toString());
     final lastMessage = (data['last_message'] ?? '').toString();
     final unread = (data['unread_for_admin'] as num?)?.toInt() ?? 0;
-    final lastAt = (data['last_message_at'] as Timestamp?)?.toDate();
-    final status = (data['status'] ?? 'open').toString();
+    final lastAt = (data['last_chat_time'] != null
+        ? DateTime.tryParse(data['last_chat_time'].toString())
+        : null);
+    final status = (data['is_active'] == true ? 'open' : 'closed');
 
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: () {
-        doc.reference.update({'unread_for_admin': 0}).catchError((_) {});
+        final tid = data['id'] as String;
+        zannext_api.ApiClient.patch('/admin/support/$tid/read')
+            .catchError((_) => {});
         context.pushNamed(
           SupportChatWidget.routeName,
           queryParameters: {
-            'threadId': serializeParam(doc.id, ParamType.String),
+            'threadId': tid,
           }.withoutNulls,
         );
       },
@@ -555,4 +543,14 @@ class _AdminSupportInboxWidgetState extends State<AdminSupportInboxWidget> {
       ),
     );
   }
+
+  Future<List<dynamic>> _fetchThreads() async {
+    try {
+      final r = await zannext_api.ApiClient.get('/admin/support');
+      return r as List;
+    } catch (_) {
+      return const [];
+    }
+  }
+
 }

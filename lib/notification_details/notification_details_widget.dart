@@ -1,19 +1,16 @@
 import '/auth/firebase_auth/auth_util.dart';
-import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 
 import 'notification_details_model.dart';
 export 'notification_details_model.dart';
 
+/// Notification details — Postgres version.
+/// Shows the latest message-type and order-type notification,
+/// plus a compact list. Replaces the old Firestore boilerplate.
 class NotificationDetailsWidget extends StatefulWidget {
   const NotificationDetailsWidget({super.key});
 
@@ -27,1527 +24,325 @@ class NotificationDetailsWidget extends StatefulWidget {
 
 class _NotificationDetailsWidgetState extends State<NotificationDetailsWidget> {
   late NotificationDetailsModel _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  static const Color kGreen = Color(0xFF1B7A4E);
+
+  List<Map<String, dynamic>> _all = const [];
+  bool _loading = true;
+
+  Map<String, dynamic> _asMap(dynamic d) => Map<String, dynamic>.from(d as Map);
+  String _s(Map m, List<String> keys, [String fb = '']) {
+    for (final k in keys) {
+      final v = m[k];
+      if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+    }
+    return fb;
+  }
+  bool _b(Map m, List<String> keys) {
+    for (final k in keys) {
+      final v = m[k];
+      if (v != null) return v == true || v.toString() == 'true';
+    }
+    return false;
+  }
+  DateTime? _d(Map m, List<String> keys) {
+    for (final k in keys) {
+      final p = DateTime.tryParse((m[k] ?? '').toString());
+      if (p != null) return p;
+    }
+    return null;
+  }
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _bg     => _isDark ? const Color(0xFF121212) : const Color(0xFFF5F7F8);
+  Color get _card   => _isDark ? const Color(0xFF1E1E1E) : Colors.white;
+  Color get _text   => _isDark ? Colors.white : const Color(0xFF111827);
+  Color get _muted  => _isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280);
+  Color get _border => _isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE5E7EB);
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => NotificationDetailsModel());
-
-    logFirebaseEvent('screen_view',
-        parameters: {'screen_name': 'notification_details'});
-    WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
+    _load();
   }
 
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
+  }
+
+  Future<void> _load() async {
+    if (currentUserUid.isEmpty) {
+      if (mounted) safeSetState(() => _loading = false);
+      return;
+    }
+    try {
+      dynamic raw;
+      try {
+        raw = await zannext_api.ApiClient.get('/notifications?user_id=$currentUserUid');
+      } catch (_) {
+        raw = await zannext_api.ApiClient.get('/notifications');
+      }
+      final list = (raw as List).map(_asMap).toList();
+      list.sort((a, b) {
+        final at = _d(a, ['created_at', 'date']) ?? DateTime(1970);
+        final bt = _d(b, ['created_at', 'date']) ?? DateTime(1970);
+        return bt.compareTo(at);
+      });
+      _all = list;
+    } catch (_) {}
+    if (mounted) safeSetState(() => _loading = false);
+  }
+
+  Map<String, dynamic>? _latest(List<String> keywords) {
+    for (final n in _all) {
+      final hay = (_s(n, ['title']) + ' ' + _s(n, ['body', 'notification_text'])).toLowerCase();
+      if (keywords.any(hay.contains)) return n;
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<int>(
-      future: queryNotificationsRecordCount(
-        queryBuilder: (notificationsRecord) => notificationsRecord.where(
-          'user_ref',
-          isEqualTo: currentUserReference,
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
+        key: scaffoldKey,
+        backgroundColor: _bg,
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: _loading
+                    ? const Center(
+                        child: SizedBox(
+                          width: 40, height: 40,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(kGreen),
+                            strokeWidth: 3),
+                        ),
+                      )
+                    : _buildContent(),
+              ),
+            ],
+          ),
         ),
       ),
-      builder: (context, snapshot) {
-        // Customize what your widget looks like when it's loading.
-        if (!snapshot.hasData) {
-          return Scaffold(
-            backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-            body: Center(
-              child: SizedBox(
-                width: 50,
-                height: 50,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    FlutterFlowTheme.of(context).primary,
-                  ),
-                ),
-              ),
+    );
+  }
+
+  Widget _buildHeader() {
+    final topPad = MediaQuery.of(context).padding.top;
+    return Container(
+      padding: EdgeInsetsDirectional.fromSTEB(0, topPad + 8, 0, 14),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [kGreen, Color(0xFF0A3A22)],
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24), bottomRight: Radius.circular(24)),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 12, 0),
+        child: Row(
+          children: [
+            FlutterFlowIconButton(
+              borderColor: Colors.transparent,
+              borderRadius: 24,
+              borderWidth: 1,
+              buttonSize: 44,
+              fillColor: Colors.white.withOpacity(0.18),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 22),
+              onPressed: () => context.safePop(),
             ),
-          );
-        }
-        int notificationDetailsCount = snapshot.data!;
+            const SizedBox(width: 6),
+            const Expanded(
+              child: Text('Notifications',
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+            ),
+            TextButton(
+              onPressed: () => context.pushNamed(NotificationWidget.routeName),
+              child: const Text('See all',
+                  style: TextStyle(
+                      color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-        return GestureDetector(
-          onTap: () {
-            FocusScope.of(context).unfocus();
-            FocusManager.instance.primaryFocus?.unfocus();
-          },
-          child: Scaffold(
-            key: scaffoldKey,
-            backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-            appBar: responsiveVisibility(
-              context: context,
-              tabletLandscape: false,
-              desktop: false,
-            )
-                ? PreferredSize(
-                    preferredSize: Size.fromHeight(50),
-                    child: AppBar(
-                      backgroundColor:
-                          FlutterFlowTheme.of(context).secondaryBackground,
-                      automaticallyImplyLeading: false,
-                      leading: FlutterFlowIconButton(
-                        borderColor: Colors.transparent,
-                        borderRadius: 30,
-                        borderWidth: 1,
-                        buttonSize: 55,
-                        icon: Icon(
-                          Icons.arrow_back_rounded,
-                          color: FlutterFlowTheme.of(context).secondaryText,
-                          size: 25,
-                        ),
-                        onPressed: () async {
-                          logFirebaseEvent(
-                              'NOTIFICATION_DETAILS_arrow_back_rounded_');
-                          logFirebaseEvent('IconButton_navigate_back');
-                          context.pop();
-                        },
-                      ),
-                      actions: [],
-                      flexibleSpace: FlexibleSpaceBar(
-                        title: Align(
-                          alignment: AlignmentDirectional(0, 1),
-                          child: Text(
-                            FFLocalizations.of(context).getText(
-                              'v1ndpjsw' /* Notifications */,
-                            ),
-                            style: FlutterFlowTheme.of(context)
-                                .headlineSmall
-                                .override(
-                                  font: GoogleFonts.interTight(
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .headlineSmall
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .headlineSmall
-                                        .fontStyle,
-                                  ),
-                                  color:
-                                      FlutterFlowTheme.of(context).primaryText,
-                                  fontSize: 20,
-                                  letterSpacing: 0.0,
-                                  fontWeight: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .fontStyle,
-                                ),
-                          ),
-                        ),
-                        centerTitle: false,
-                        expandedTitleScale: 1.0,
-                      ),
-                      elevation: 2,
-                    ),
-                  )
-                : null,
-            body: SafeArea(
-              top: true,
-              child: Stack(
+  Widget _buildContent() {
+    if (_all.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80, height: 80,
+                decoration: BoxDecoration(
+                    color: kGreen.withOpacity(0.12), shape: BoxShape.circle),
+                child: const Icon(Icons.notifications_off_outlined,
+                    color: kGreen, size: 38),
+              ),
+              const SizedBox(height: 16),
+              Text('No notifications yet',
+                  style: TextStyle(
+                      color: _text, fontSize: 16, fontWeight: FontWeight.w700)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final msg = _latest(['message', 'chat', 'replied']);
+    final order = _latest(['order', 'ship', 'deliver']);
+    final rest = _all
+        .where((n) => !(identical(n, msg) || identical(n, order)))
+        .take(20)
+        .toList();
+
+    return ListView(
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 24),
+      children: [
+        if (msg != null) _featureCard(msg, Icons.chat_bubble_rounded,
+            const Color(0xFF2563EB), () => context.pushNamed(MessagelistWidget.routeName)),
+        if (order != null) ...[
+          const SizedBox(height: 10),
+          _featureCard(order, Icons.local_shipping_rounded,
+              const Color(0xFF1B7A4E), () => context.pushNamed(OrderDetailsWidget.routeName)),
+        ],
+        const SizedBox(height: 18),
+        Text('Earlier',
+            style: TextStyle(
+                color: _text, fontSize: 15, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        ...rest.map((n) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _simpleTile(n),
+            )),
+      ],
+    );
+  }
+
+  Widget _featureCard(Map<String, dynamic> n, IconData icon, Color color,
+      VoidCallback onTap) {
+    final title = _s(n, ['title'], 'Notification');
+    final body = _s(n, ['body', 'notification_text']);
+    final when = _d(n, ['created_at', 'date']);
+    final unread = !_b(n, ['is_read', 'isRead']);
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: _card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: unread ? color.withOpacity(0.4) : _border,
+              width: unread ? 1.4 : 1),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        if (notificationDetailsCount > 0)
-                          Flexible(
-                            child: StreamBuilder<List<NotificationsRecord>>(
-                              stream: queryNotificationsRecord(),
-                              builder: (context, snapshot) {
-                                // Customize what your widget looks like when it's loading.
-                                if (!snapshot.hasData) {
-                                  return Center(
-                                    child: SizedBox(
-                                      width: 50,
-                                      height: 50,
-                                      child: CircularProgressIndicator(
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                          FlutterFlowTheme.of(context).primary,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                List<NotificationsRecord>
-                                    listViewNotificationsRecordList =
-                                    snapshot.data!;
-
-                                return ListView.builder(
-                                  padding: EdgeInsets.zero,
-                                  shrinkWrap: true,
-                                  scrollDirection: Axis.vertical,
-                                  itemCount:
-                                      listViewNotificationsRecordList.length,
-                                  itemBuilder: (context, listViewIndex) {
-                                    final listViewNotificationsRecord =
-                                        listViewNotificationsRecordList[
-                                            listViewIndex];
-                                    return Visibility(
-                                      visible: notificationDetailsCount > 0,
-                                      child: Padding(
-                                        padding: EdgeInsetsDirectional.fromSTEB(
-                                            0, 10, 0, 0),
-                                        child: StreamBuilder<
-                                            List<NotificationsRecord>>(
-                                          stream: queryNotificationsRecord(
-                                            queryBuilder:
-                                                (notificationsRecord) =>
-                                                    notificationsRecord
-                                                        .where(
-                                                          'user_ref',
-                                                          isEqualTo:
-                                                              currentUserReference,
-                                                        )
-                                                        .where(
-                                                          'type',
-                                                          isEqualTo: 'chat',
-                                                        )
-                                                        .orderBy('date',
-                                                            descending: true),
-                                            singleRecord: true,
-                                          ),
-                                          builder: (context, snapshot) {
-                                            // Customize what your widget looks like when it's loading.
-                                            if (!snapshot.hasData) {
-                                              return Center(
-                                                child: SizedBox(
-                                                  width: 50,
-                                                  height: 50,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    valueColor:
-                                                        AlwaysStoppedAnimation<
-                                                            Color>(
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .primary,
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                            List<NotificationsRecord>
-                                                listViewChatNotificationsRecordList =
-                                                snapshot.data!;
-                                            // Return an empty Container when the item does not exist.
-                                            if (snapshot.data!.isEmpty) {
-                                              return Container();
-                                            }
-                                            final listViewChatNotificationsRecord =
-                                                listViewChatNotificationsRecordList
-                                                        .isNotEmpty
-                                                    ? listViewChatNotificationsRecordList
-                                                        .first
-                                                    : null;
-
-                                            return ListView(
-                                              padding: EdgeInsets.zero,
-                                              primary: false,
-                                              shrinkWrap: true,
-                                              scrollDirection: Axis.vertical,
-                                              children: [
-                                                Padding(
-                                                  padding: EdgeInsetsDirectional
-                                                      .fromSTEB(16, 0, 16, 8),
-                                                  child: Container(
-                                                    width: double.infinity,
-                                                    decoration: BoxDecoration(
-                                                      color: FlutterFlowTheme
-                                                              .of(context)
-                                                          .primaryBackground,
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          blurRadius: 4,
-                                                          color: FlutterFlowTheme
-                                                                  .of(context)
-                                                              .primary,
-                                                          offset: Offset(
-                                                            0.0,
-                                                            1,
-                                                          ),
-                                                        )
-                                                      ],
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
-                                                    ),
-                                                    alignment:
-                                                        AlignmentDirectional(
-                                                            0, 0),
-                                                    child: Padding(
-                                                      padding:
-                                                          EdgeInsetsDirectional
-                                                              .fromSTEB(
-                                                                  12, 8, 8, 8),
-                                                      child: Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.max,
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          Container(
-                                                            width: 40,
-                                                            height: 40,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              image:
-                                                                  DecorationImage(
-                                                                fit: BoxFit
-                                                                    .cover,
-                                                                image: Image
-                                                                    .network(
-                                                                  getCORSProxyUrl(
-                                                                    valueOrDefault<
-                                                                        String>(
-                                                                      listViewChatNotificationsRecord
-                                                                          ?.avater,
-                                                                      'https://t3.ftcdn.net/jpg/06/33/54/78/360_F_633547842_AugYzexTpMJ9z1YcpTKUBoqBF0CUCk10.jpg',
-                                                                    ),
-                                                                  ),
-                                                                ).image,
-                                                              ),
-                                                              shape: BoxShape
-                                                                  .circle,
-                                                            ),
-                                                          ),
-                                                          Expanded(
-                                                            child: Padding(
-                                                              padding:
-                                                                  EdgeInsetsDirectional
-                                                                      .fromSTEB(
-                                                                          12,
-                                                                          0,
-                                                                          0,
-                                                                          0),
-                                                              child: Column(
-                                                                mainAxisSize:
-                                                                    MainAxisSize
-                                                                        .max,
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment
-                                                                        .center,
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .start,
-                                                                children: [
-                                                                  Text(
-                                                                    valueOrDefault<
-                                                                        String>(
-                                                                      listViewChatNotificationsRecord
-                                                                          ?.title,
-                                                                      'Ahmed sent you a message',
-                                                                    ),
-                                                                    textAlign:
-                                                                        TextAlign
-                                                                            .justify,
-                                                                    style: FlutterFlowTheme.of(
-                                                                            context)
-                                                                        .titleLarge
-                                                                        .override(
-                                                                          font:
-                                                                              GoogleFonts.plusJakartaSans(
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                            fontStyle:
-                                                                                FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                          ),
-                                                                          color:
-                                                                              FlutterFlowTheme.of(context).primaryText,
-                                                                          fontSize:
-                                                                              14,
-                                                                          letterSpacing:
-                                                                              0.0,
-                                                                          fontWeight:
-                                                                              FontWeight.bold,
-                                                                          fontStyle: FlutterFlowTheme.of(context)
-                                                                              .titleLarge
-                                                                              .fontStyle,
-                                                                        ),
-                                                                  ),
-                                                                  Opacity(
-                                                                    opacity:
-                                                                        0.6,
-                                                                    child: Text(
-                                                                      listViewChatNotificationsRecord!
-                                                                          .notificationText,
-                                                                      textAlign:
-                                                                          TextAlign
-                                                                              .start,
-                                                                      maxLines:
-                                                                          2,
-                                                                      style: FlutterFlowTheme.of(
-                                                                              context)
-                                                                          .titleLarge
-                                                                          .override(
-                                                                            font:
-                                                                                GoogleFonts.plusJakartaSans(
-                                                                              fontWeight: FontWeight.w500,
-                                                                              fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                            ),
-                                                                            color:
-                                                                                Color(0xFFA5E5CF),
-                                                                            fontSize:
-                                                                                12,
-                                                                            letterSpacing:
-                                                                                0.0,
-                                                                            fontWeight:
-                                                                                FontWeight.w500,
-                                                                            fontStyle:
-                                                                                FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                          ),
-                                                                    ),
-                                                                  ),
-                                                                  Row(
-                                                                    mainAxisSize:
-                                                                        MainAxisSize
-                                                                            .max,
-                                                                    mainAxisAlignment:
-                                                                        MainAxisAlignment
-                                                                            .start,
-                                                                    children: [
-                                                                      Opacity(
-                                                                        opacity:
-                                                                            0.7,
-                                                                        child:
-                                                                            Text(
-                                                                          valueOrDefault<
-                                                                              String>(
-                                                                            dateTimeFormat(
-                                                                              "relative",
-                                                                              listViewChatNotificationsRecord?.date,
-                                                                              locale: FFLocalizations.of(context).languageCode,
-                                                                            ),
-                                                                            '1 hours ago',
-                                                                          ),
-                                                                          textAlign:
-                                                                              TextAlign.justify,
-                                                                          style: FlutterFlowTheme.of(context)
-                                                                              .titleLarge
-                                                                              .override(
-                                                                                font: GoogleFonts.plusJakartaSans(
-                                                                                  fontWeight: FontWeight.w600,
-                                                                                  fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                ),
-                                                                                color: FlutterFlowTheme.of(context).primaryText,
-                                                                                fontSize: 13,
-                                                                                letterSpacing: 0.0,
-                                                                                fontWeight: FontWeight.w600,
-                                                                                fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                              ),
-                                                                        ),
-                                                                      ),
-                                                                      if (listViewChatNotificationsRecord
-                                                                              ?.isRead ==
-                                                                          false)
-                                                                        Padding(
-                                                                          padding: EdgeInsetsDirectional.fromSTEB(
-                                                                              5,
-                                                                              0,
-                                                                              0,
-                                                                              0),
-                                                                          child:
-                                                                              Container(
-                                                                            width:
-                                                                                10,
-                                                                            height:
-                                                                                10,
-                                                                            decoration:
-                                                                                BoxDecoration(
-                                                                              color: Color(0xFF53EB08),
-                                                                              shape: BoxShape.circle,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                    ],
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                if (notificationDetailsCount >
-                                                    0)
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsetsDirectional
-                                                            .fromSTEB(
-                                                                0, 10, 0, 0),
-                                                    child: StreamBuilder<
-                                                        List<
-                                                            NotificationsRecord>>(
-                                                      stream:
-                                                          queryNotificationsRecord(
-                                                        queryBuilder:
-                                                            (notificationsRecord) =>
-                                                                notificationsRecord
-                                                                    .where(
-                                                                      'user_ref',
-                                                                      isEqualTo:
-                                                                          currentUserReference,
-                                                                    )
-                                                                    .where(
-                                                                      'type',
-                                                                      isEqualTo:
-                                                                          'order',
-                                                                    )
-                                                                    .orderBy(
-                                                                        'date',
-                                                                        descending:
-                                                                            true),
-                                                        singleRecord: true,
-                                                      ),
-                                                      builder:
-                                                          (context, snapshot) {
-                                                        // Customize what your widget looks like when it's loading.
-                                                        if (!snapshot.hasData) {
-                                                          return Center(
-                                                            child: SizedBox(
-                                                              width: 50,
-                                                              height: 50,
-                                                              child:
-                                                                  CircularProgressIndicator(
-                                                                valueColor:
-                                                                    AlwaysStoppedAnimation<
-                                                                        Color>(
-                                                                  FlutterFlowTheme.of(
-                                                                          context)
-                                                                      .primary,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          );
-                                                        }
-                                                        List<NotificationsRecord>
-                                                            listViewOrderNotificationsRecordList =
-                                                            snapshot.data!;
-                                                        // Return an empty Container when the item does not exist.
-                                                        if (snapshot
-                                                            .data!.isEmpty) {
-                                                          return Container();
-                                                        }
-                                                        final listViewOrderNotificationsRecord =
-                                                            listViewOrderNotificationsRecordList
-                                                                    .isNotEmpty
-                                                                ? listViewOrderNotificationsRecordList
-                                                                    .first
-                                                                : null;
-
-                                                        return ListView(
-                                                          padding:
-                                                              EdgeInsets.zero,
-                                                          primary: false,
-                                                          shrinkWrap: true,
-                                                          scrollDirection:
-                                                              Axis.vertical,
-                                                          children: [
-                                                            Padding(
-                                                              padding:
-                                                                  EdgeInsetsDirectional
-                                                                      .fromSTEB(
-                                                                          16,
-                                                                          0,
-                                                                          16,
-                                                                          8),
-                                                              child: InkWell(
-                                                                splashColor: Colors
-                                                                    .transparent,
-                                                                focusColor: Colors
-                                                                    .transparent,
-                                                                hoverColor: Colors
-                                                                    .transparent,
-                                                                highlightColor:
-                                                                    Colors
-                                                                        .transparent,
-                                                                onTap:
-                                                                    () async {
-                                                                  logFirebaseEvent(
-                                                                      'NOTIFICATION_DETAILS_PAGE_order_ON_TAP');
-                                                                  logFirebaseEvent(
-                                                                      'order_navigate_to');
-
-                                                                  context.pushNamed(
-                                                                      OrderDetailsWidget
-                                                                          .routeName);
-
-                                                                  logFirebaseEvent(
-                                                                      'order_backend_call');
-
-                                                                  await listViewOrderNotificationsRecord!
-                                                                      .reference
-                                                                      .update(
-                                                                          createNotificationsRecordData(
-                                                                    isRead:
-                                                                        true,
-                                                                  ));
-                                                                },
-                                                                child:
-                                                                    Container(
-                                                                  width: double
-                                                                      .infinity,
-                                                                  decoration:
-                                                                      BoxDecoration(
-                                                                    color: FlutterFlowTheme.of(
-                                                                            context)
-                                                                        .primaryBackground,
-                                                                    boxShadow: [
-                                                                      BoxShadow(
-                                                                        blurRadius:
-                                                                            4,
-                                                                        color: FlutterFlowTheme.of(context)
-                                                                            .primary,
-                                                                        offset:
-                                                                            Offset(
-                                                                          0.0,
-                                                                          1,
-                                                                        ),
-                                                                      )
-                                                                    ],
-                                                                    borderRadius:
-                                                                        BorderRadius
-                                                                            .circular(8),
-                                                                  ),
-                                                                  alignment:
-                                                                      AlignmentDirectional(
-                                                                          0, 0),
-                                                                  child:
-                                                                      Padding(
-                                                                    padding: EdgeInsetsDirectional
-                                                                        .fromSTEB(
-                                                                            12,
-                                                                            8,
-                                                                            8,
-                                                                            8),
-                                                                    child: Row(
-                                                                      mainAxisSize:
-                                                                          MainAxisSize
-                                                                              .max,
-                                                                      mainAxisAlignment:
-                                                                          MainAxisAlignment
-                                                                              .spaceBetween,
-                                                                      children: [
-                                                                        Container(
-                                                                          decoration:
-                                                                              BoxDecoration(),
-                                                                          child:
-                                                                              Container(
-                                                                            width:
-                                                                                40,
-                                                                            height:
-                                                                                40,
-                                                                            clipBehavior:
-                                                                                Clip.antiAlias,
-                                                                            decoration:
-                                                                                BoxDecoration(
-                                                                              shape: BoxShape.circle,
-                                                                            ),
-                                                                            child:
-                                                                                Image.network(
-                          
-                                                                                'https://cdn-icons-png.flaticon.com/512/13089/13089206.png',
-                                                                              fit: BoxFit.cover,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        Expanded(
-                                                                          child:
-                                                                              Padding(
-                                                                            padding: EdgeInsetsDirectional.fromSTEB(
-                                                                                12,
-                                                                                0,
-                                                                                0,
-                                                                                0),
-                                                                            child:
-                                                                                Column(
-                                                                              mainAxisSize: MainAxisSize.max,
-                                                                              mainAxisAlignment: MainAxisAlignment.center,
-                                                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                                                              children: [
-                                                                                Text(
-                                                                                  valueOrDefault<String>(
-                                                                                    listViewOrderNotificationsRecord?.title,
-                                                                                    'Ahmed sent you a message',
-                                                                                  ),
-                                                                                  textAlign: TextAlign.justify,
-                                                                                  style: FlutterFlowTheme.of(context).titleLarge.override(
-                                                                                        font: GoogleFonts.plusJakartaSans(
-                                                                                          fontWeight: FontWeight.bold,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                        ),
-                                                                                        color: FlutterFlowTheme.of(context).primaryText,
-                                                                                        fontSize: 14,
-                                                                                        letterSpacing: 0.0,
-                                                                                        fontWeight: FontWeight.bold,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                      ),
-                                                                                ),
-                                                                                Opacity(
-                                                                                  opacity: 0.6,
-                                                                                  child: Text(
-                                                                                    listViewOrderNotificationsRecord!.notificationText,
-                                                                                    textAlign: TextAlign.start,
-                                                                                    maxLines: 2,
-                                                                                    style: FlutterFlowTheme.of(context).titleLarge.override(
-                                                                                          font: GoogleFonts.plusJakartaSans(
-                                                                                            fontWeight: FontWeight.w500,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                          ),
-                                                                                          color: Color(0xFFA5E5CF),
-                                                                                          fontSize: 12,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FontWeight.w500,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ),
-                                                                                Row(
-                                                                                  mainAxisSize: MainAxisSize.max,
-                                                                                  mainAxisAlignment: MainAxisAlignment.start,
-                                                                                  children: [
-                                                                                    Opacity(
-                                                                                      opacity: 0.7,
-                                                                                      child: Text(
-                                                                                        valueOrDefault<String>(
-                                                                                          dateTimeFormat(
-                                                                                            "relative",
-                                                                                            listViewOrderNotificationsRecord?.date,
-                                                                                            locale: FFLocalizations.of(context).languageCode,
-                                                                                          ),
-                                                                                          '1 hours ago',
-                                                                                        ),
-                                                                                        textAlign: TextAlign.justify,
-                                                                                        style: FlutterFlowTheme.of(context).titleLarge.override(
-                                                                                              font: GoogleFonts.plusJakartaSans(
-                                                                                                fontWeight: FontWeight.w600,
-                                                                                                fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                              ),
-                                                                                              color: FlutterFlowTheme.of(context).primaryText,
-                                                                                              fontSize: 13,
-                                                                                              letterSpacing: 0.0,
-                                                                                              fontWeight: FontWeight.w600,
-                                                                                              fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                            ),
-                                                                                      ),
-                                                                                    ),
-                                                                                    if (listViewOrderNotificationsRecord?.isRead == false)
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(5, 0, 0, 0),
-                                                                                        child: Container(
-                                                                                          width: 10,
-                                                                                          height: 10,
-                                                                                          decoration: BoxDecoration(
-                                                                                            color: Color(0xFF53EB08),
-                                                                                            shape: BoxShape.circle,
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                  ],
-                                                                                ),
-                                                                              ],
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                                if (notificationDetailsCount >
-                                                    0)
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsetsDirectional
-                                                            .fromSTEB(
-                                                                0, 10, 0, 0),
-                                                    child: StreamBuilder<
-                                                        List<
-                                                            NotificationsRecord>>(
-                                                      stream:
-                                                          queryNotificationsRecord(
-                                                        queryBuilder:
-                                                            (notificationsRecord) =>
-                                                                notificationsRecord
-                                                                    .where(
-                                                                      'user_ref',
-                                                                      isEqualTo:
-                                                                          currentUserReference,
-                                                                    )
-                                                                    .where(
-                                                                      'type',
-                                                                      isEqualTo:
-                                                                          'product',
-                                                                    )
-                                                                    .orderBy(
-                                                                        'date',
-                                                                        descending:
-                                                                            true),
-                                                        singleRecord: true,
-                                                      ),
-                                                      builder:
-                                                          (context, snapshot) {
-                                                        // Customize what your widget looks like when it's loading.
-                                                        if (!snapshot.hasData) {
-                                                          return Center(
-                                                            child: SizedBox(
-                                                              width: 50,
-                                                              height: 50,
-                                                              child:
-                                                                  CircularProgressIndicator(
-                                                                valueColor:
-                                                                    AlwaysStoppedAnimation<
-                                                                        Color>(
-                                                                  FlutterFlowTheme.of(
-                                                                          context)
-                                                                      .primary,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          );
-                                                        }
-                                                        List<NotificationsRecord>
-                                                            listViewProductNotificationsRecordList =
-                                                            snapshot.data!;
-                                                        // Return an empty Container when the item does not exist.
-                                                        if (snapshot
-                                                            .data!.isEmpty) {
-                                                          return Container();
-                                                        }
-                                                        final listViewProductNotificationsRecord =
-                                                            listViewProductNotificationsRecordList
-                                                                    .isNotEmpty
-                                                                ? listViewProductNotificationsRecordList
-                                                                    .first
-                                                                : null;
-
-                                                        return ListView(
-                                                          padding:
-                                                              EdgeInsets.zero,
-                                                          primary: false,
-                                                          shrinkWrap: true,
-                                                          scrollDirection:
-                                                              Axis.vertical,
-                                                          children: [
-                                                            Padding(
-                                                              padding:
-                                                                  EdgeInsetsDirectional
-                                                                      .fromSTEB(
-                                                                          16,
-                                                                          0,
-                                                                          16,
-                                                                          8),
-                                                              child: InkWell(
-                                                                splashColor: Colors
-                                                                    .transparent,
-                                                                focusColor: Colors
-                                                                    .transparent,
-                                                                hoverColor: Colors
-                                                                    .transparent,
-                                                                highlightColor:
-                                                                    Colors
-                                                                        .transparent,
-                                                                onTap:
-                                                                    () async {
-                                                                  logFirebaseEvent(
-                                                                      'NOTIFICATION_DETAILS_PAGE_product_ON_TAP');
-                                                                  logFirebaseEvent(
-                                                                      'product_backend_call');
-
-                                                                  await listViewProductNotificationsRecord!
-                                                                      .reference
-                                                                      .update(
-                                                                          createNotificationsRecordData(
-                                                                    isRead:
-                                                                        true,
-                                                                  ));
-                                                                  logFirebaseEvent(
-                                                                      'product_navigate_to');
-
-                                                                  context
-                                                                      .pushNamed(
-                                                                    ProductDetailsWidget
-                                                                        .routeName,
-                                                                    queryParameters:
-                                                                        {
-                                                                      'inventoryRef':
-                                                                          serializeParam(
-                                                                        listViewProductNotificationsRecord
-                                                                            ?.productId,
-                                                                        ParamType
-                                                                            .DocumentReference,
-                                                                      ),
-                                                                    }.withoutNulls,
-                                                                  );
-                                                                },
-                                                                child:
-                                                                    Container(
-                                                                  width: double
-                                                                      .infinity,
-                                                                  decoration:
-                                                                      BoxDecoration(
-                                                                    color: FlutterFlowTheme.of(
-                                                                            context)
-                                                                        .primaryBackground,
-                                                                    boxShadow: [
-                                                                      BoxShadow(
-                                                                        blurRadius:
-                                                                            4,
-                                                                        color: FlutterFlowTheme.of(context)
-                                                                            .primary,
-                                                                        offset:
-                                                                            Offset(
-                                                                          0.0,
-                                                                          1,
-                                                                        ),
-                                                                      )
-                                                                    ],
-                                                                    borderRadius:
-                                                                        BorderRadius
-                                                                            .circular(8),
-                                                                  ),
-                                                                  alignment:
-                                                                      AlignmentDirectional(
-                                                                          0, 0),
-                                                                  child:
-                                                                      Padding(
-                                                                    padding: EdgeInsetsDirectional
-                                                                        .fromSTEB(
-                                                                            12,
-                                                                            8,
-                                                                            8,
-                                                                            8),
-                                                                    child: Row(
-                                                                      mainAxisSize:
-                                                                          MainAxisSize
-                                                                              .max,
-                                                                      mainAxisAlignment:
-                                                                          MainAxisAlignment
-                                                                              .spaceBetween,
-                                                                      children: [
-                                                                        Container(
-                                                                          decoration:
-                                                                              BoxDecoration(),
-                                                                          child:
-                                                                              Container(
-                                                                            width:
-                                                                                40,
-                                                                            height:
-                                                                                40,
-                                                                            clipBehavior:
-                                                                                Clip.antiAlias,
-                                                                            decoration:
-                                                                                BoxDecoration(
-                                                                              shape: BoxShape.circle,
-                                                                            ),
-                                                                            child:
-                                                                                Image.network(
-                          
-                                                                                'https://png.pngtree.com/png-clipart/20231206/original/pngtree-new-product-green-internet-icon-promotion-photo-png-image_13785035.png',
-                                                                              fit: BoxFit.cover,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        Expanded(
-                                                                          child:
-                                                                              Padding(
-                                                                            padding: EdgeInsetsDirectional.fromSTEB(
-                                                                                12,
-                                                                                0,
-                                                                                0,
-                                                                                0),
-                                                                            child:
-                                                                                Column(
-                                                                              mainAxisSize: MainAxisSize.max,
-                                                                              mainAxisAlignment: MainAxisAlignment.center,
-                                                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                                                              children: [
-                                                                                Text(
-                                                                                  valueOrDefault<String>(
-                                                                                    listViewProductNotificationsRecord?.title,
-                                                                                    'Ahmed sent you a message',
-                                                                                  ),
-                                                                                  textAlign: TextAlign.justify,
-                                                                                  style: FlutterFlowTheme.of(context).titleLarge.override(
-                                                                                        font: GoogleFonts.plusJakartaSans(
-                                                                                          fontWeight: FontWeight.bold,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                        ),
-                                                                                        color: FlutterFlowTheme.of(context).primaryText,
-                                                                                        fontSize: 14,
-                                                                                        letterSpacing: 0.0,
-                                                                                        fontWeight: FontWeight.bold,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                      ),
-                                                                                ),
-                                                                                Opacity(
-                                                                                  opacity: 0.6,
-                                                                                  child: Text(
-                                                                                    listViewProductNotificationsRecord!.notificationText,
-                                                                                    textAlign: TextAlign.start,
-                                                                                    maxLines: 2,
-                                                                                    style: FlutterFlowTheme.of(context).titleLarge.override(
-                                                                                          font: GoogleFonts.plusJakartaSans(
-                                                                                            fontWeight: FontWeight.w500,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                          ),
-                                                                                          color: Color(0xFFA5E5CF),
-                                                                                          fontSize: 12,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FontWeight.w500,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ),
-                                                                                Row(
-                                                                                  mainAxisSize: MainAxisSize.max,
-                                                                                  mainAxisAlignment: MainAxisAlignment.start,
-                                                                                  children: [
-                                                                                    Opacity(
-                                                                                      opacity: 0.7,
-                                                                                      child: Text(
-                                                                                        valueOrDefault<String>(
-                                                                                          dateTimeFormat(
-                                                                                            "relative",
-                                                                                            listViewProductNotificationsRecord?.date,
-                                                                                            locale: FFLocalizations.of(context).languageCode,
-                                                                                          ),
-                                                                                          '1 hours ago',
-                                                                                        ),
-                                                                                        textAlign: TextAlign.justify,
-                                                                                        style: FlutterFlowTheme.of(context).titleLarge.override(
-                                                                                              font: GoogleFonts.plusJakartaSans(
-                                                                                                fontWeight: FontWeight.w600,
-                                                                                                fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                              ),
-                                                                                              color: FlutterFlowTheme.of(context).primaryText,
-                                                                                              fontSize: 13,
-                                                                                              letterSpacing: 0.0,
-                                                                                              fontWeight: FontWeight.w600,
-                                                                                              fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                            ),
-                                                                                      ),
-                                                                                    ),
-                                                                                    if (listViewProductNotificationsRecord?.isRead == false)
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(5, 0, 0, 0),
-                                                                                        child: Container(
-                                                                                          width: 10,
-                                                                                          height: 10,
-                                                                                          decoration: BoxDecoration(
-                                                                                            color: Color(0xFF53EB08),
-                                                                                            shape: BoxShape.circle,
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                  ],
-                                                                                ),
-                                                                              ],
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            if (notificationDetailsCount >
-                                                                0)
-                                                              Padding(
-                                                                padding:
-                                                                    EdgeInsetsDirectional
-                                                                        .fromSTEB(
-                                                                            0,
-                                                                            10,
-                                                                            0,
-                                                                            0),
-                                                                child: StreamBuilder<
-                                                                    List<
-                                                                        NotificationsRecord>>(
-                                                                  stream:
-                                                                      queryNotificationsRecord(
-                                                                    queryBuilder: (notificationsRecord) => notificationsRecord
-                                                                        .where(
-                                                                          'user_ref',
-                                                                          isEqualTo:
-                                                                              currentUserReference,
-                                                                        )
-                                                                        .where(
-                                                                          'type',
-                                                                          isEqualTo:
-                                                                              'other',
-                                                                        )
-                                                                        .orderBy('date', descending: true),
-                                                                    singleRecord:
-                                                                        true,
-                                                                  ),
-                                                                  builder: (context,
-                                                                      snapshot) {
-                                                                    // Customize what your widget looks like when it's loading.
-                                                                    if (!snapshot
-                                                                        .hasData) {
-                                                                      return Center(
-                                                                        child:
-                                                                            SizedBox(
-                                                                          width:
-                                                                              50,
-                                                                          height:
-                                                                              50,
-                                                                          child:
-                                                                              CircularProgressIndicator(
-                                                                            valueColor:
-                                                                                AlwaysStoppedAnimation<Color>(
-                                                                              FlutterFlowTheme.of(context).primary,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      );
-                                                                    }
-                                                                    List<NotificationsRecord>
-                                                                        listViewProductNotificationsRecordList =
-                                                                        snapshot
-                                                                            .data!;
-                                                                    // Return an empty Container when the item does not exist.
-                                                                    if (snapshot
-                                                                        .data!
-                                                                        .isEmpty) {
-                                                                      return Container();
-                                                                    }
-                                                                    final listViewProductNotificationsRecord = listViewProductNotificationsRecordList
-                                                                            .isNotEmpty
-                                                                        ? listViewProductNotificationsRecordList
-                                                                            .first
-                                                                        : null;
-
-                                                                    return ListView(
-                                                                      padding:
-                                                                          EdgeInsets
-                                                                              .zero,
-                                                                      primary:
-                                                                          false,
-                                                                      shrinkWrap:
-                                                                          true,
-                                                                      scrollDirection:
-                                                                          Axis.vertical,
-                                                                      children: [
-                                                                        Padding(
-                                                                          padding: EdgeInsetsDirectional.fromSTEB(
-                                                                              16,
-                                                                              0,
-                                                                              16,
-                                                                              8),
-                                                                          child:
-                                                                              InkWell(
-                                                                            splashColor:
-                                                                                Colors.transparent,
-                                                                            focusColor:
-                                                                                Colors.transparent,
-                                                                            hoverColor:
-                                                                                Colors.transparent,
-                                                                            highlightColor:
-                                                                                Colors.transparent,
-                                                                            onTap:
-                                                                                () async {
-                                                                              logFirebaseEvent('NOTIFICATION_DETAILS_PAGE_product_ON_TAP');
-                                                                              logFirebaseEvent('product_backend_call');
-
-                                                                              await listViewProductNotificationsRecord!.reference.update(createNotificationsRecordData(
-                                                                                isRead: true,
-                                                                              ));
-                                                                            },
-                                                                            child:
-                                                                                Container(
-                                                                              width: double.infinity,
-                                                                              decoration: BoxDecoration(
-                                                                                color: FlutterFlowTheme.of(context).primaryBackground,
-                                                                                boxShadow: [
-                                                                                  BoxShadow(
-                                                                                    blurRadius: 4,
-                                                                                    color: FlutterFlowTheme.of(context).primary,
-                                                                                    offset: Offset(
-                                                                                      0.0,
-                                                                                      1,
-                                                                                    ),
-                                                                                  )
-                                                                                ],
-                                                                                borderRadius: BorderRadius.circular(8),
-                                                                              ),
-                                                                              alignment: AlignmentDirectional(0, 0),
-                                                                              child: Padding(
-                                                                                padding: EdgeInsetsDirectional.fromSTEB(12, 8, 8, 8),
-                                                                                child: Row(
-                                                                                  mainAxisSize: MainAxisSize.max,
-                                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                  children: [
-                                                                                    Container(
-                                                                                      width: 40,
-                                                                                      height: 40,
-                                                                                      decoration: BoxDecoration(
-                                                                                        image: DecorationImage(
-                                                                                          fit: BoxFit.cover,
-                                                                                          image: Image.asset(
-                                                                                            'assets/images/zannext_logo.png',
-                                                                                          ).image,
-                                                                                        ),
-                                                                                        shape: BoxShape.circle,
-                                                                                      ),
-                                                                                    ),
-                                                                                    Expanded(
-                                                                                      child: Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(12, 0, 0, 0),
-                                                                                        child: Column(
-                                                                                          mainAxisSize: MainAxisSize.max,
-                                                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                          children: [
-                                                                                            Text(
-                                                                                              valueOrDefault<String>(
-                                                                                                listViewProductNotificationsRecord?.title,
-                                                                                                'Ahmed sent you a message',
-                                                                                              ),
-                                                                                              textAlign: TextAlign.justify,
-                                                                                              style: FlutterFlowTheme.of(context).titleLarge.override(
-                                                                                                    font: GoogleFonts.plusJakartaSans(
-                                                                                                      fontWeight: FontWeight.bold,
-                                                                                                      fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                                    ),
-                                                                                                    color: FlutterFlowTheme.of(context).primaryText,
-                                                                                                    fontSize: 14,
-                                                                                                    letterSpacing: 0.0,
-                                                                                                    fontWeight: FontWeight.bold,
-                                                                                                    fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                                  ),
-                                                                                            ),
-                                                                                            Opacity(
-                                                                                              opacity: 0.6,
-                                                                                              child: Text(
-                                                                                                listViewProductNotificationsRecord!.notificationText,
-                                                                                                textAlign: TextAlign.start,
-                                                                                                maxLines: 2,
-                                                                                                style: FlutterFlowTheme.of(context).titleLarge.override(
-                                                                                                      font: GoogleFonts.plusJakartaSans(
-                                                                                                        fontWeight: FontWeight.w500,
-                                                                                                        fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                                      ),
-                                                                                                      color: Color(0xFFA5E5CF),
-                                                                                                      fontSize: 12,
-                                                                                                      letterSpacing: 0.0,
-                                                                                                      fontWeight: FontWeight.w500,
-                                                                                                      fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                                    ),
-                                                                                              ),
-                                                                                            ),
-                                                                                            Row(
-                                                                                              mainAxisSize: MainAxisSize.max,
-                                                                                              mainAxisAlignment: MainAxisAlignment.start,
-                                                                                              children: [
-                                                                                                Opacity(
-                                                                                                  opacity: 0.7,
-                                                                                                  child: Text(
-                                                                                                    valueOrDefault<String>(
-                                                                                                      dateTimeFormat(
-                                                                                                        "relative",
-                                                                                                        listViewProductNotificationsRecord?.date,
-                                                                                                        locale: FFLocalizations.of(context).languageCode,
-                                                                                                      ),
-                                                                                                      '1 hours ago',
-                                                                                                    ),
-                                                                                                    textAlign: TextAlign.justify,
-                                                                                                    style: FlutterFlowTheme.of(context).titleLarge.override(
-                                                                                                          font: GoogleFonts.plusJakartaSans(
-                                                                                                            fontWeight: FontWeight.w600,
-                                                                                                            fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                                          ),
-                                                                                                          color: FlutterFlowTheme.of(context).primaryText,
-                                                                                                          fontSize: 13,
-                                                                                                          letterSpacing: 0.0,
-                                                                                                          fontWeight: FontWeight.w600,
-                                                                                                          fontStyle: FlutterFlowTheme.of(context).titleLarge.fontStyle,
-                                                                                                        ),
-                                                                                                  ),
-                                                                                                ),
-                                                                                                if (listViewProductNotificationsRecord?.isRead == false)
-                                                                                                  Padding(
-                                                                                                    padding: EdgeInsetsDirectional.fromSTEB(5, 0, 0, 0),
-                                                                                                    child: Container(
-                                                                                                      width: 10,
-                                                                                                      height: 10,
-                                                                                                      decoration: BoxDecoration(
-                                                                                                        color: Color(0xFF53EB08),
-                                                                                                        shape: BoxShape.circle,
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                              ],
-                                                                                            ),
-                                                                                          ],
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    );
-                                                                  },
-                                                                ),
-                                                              ),
-                                                          ],
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                              ],
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                        if (notificationDetailsCount == 0)
-                          Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.max,
-                                children: [
-                                  Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        0, 200, 0, 0),
-                                    child: Container(
-                                      width: 100,
-                                      height: 100,
-                                      decoration: BoxDecoration(
-                                        color: FlutterFlowTheme.of(context)
-                                            .secondaryBackground,
-                                      ),
-                                      child: Icon(
-                                        Icons.notifications_active,
-                                        color: FlutterFlowTheme.of(context)
-                                            .primary,
-                                        size: 100,
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        0, 10, 0, 0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Flexible(
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0, 0),
-                                            child: Text(
-                                              FFLocalizations.of(context)
-                                                  .getText(
-                                                's0y1u2ce' /* No notifications yet */,
-                                              ),
-                                              style:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontStyle,
-                                                        ),
-                                                        fontSize: 16,
-                                                        letterSpacing: 0.0,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontStyle:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontStyle,
-                                                      ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        0, 10, 0, 0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Flexible(
-                                          child: Align(
-                                            alignment:
-                                                AlignmentDirectional(0, 0),
-                                            child: Text(
-                                              FFLocalizations.of(context)
-                                                  .getText(
-                                                'u91zg21y' /* Your notifications will appear... */,
-                                              ),
-                                              style:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontStyle,
-                                                        ),
-                                                        fontSize: 16,
-                                                        letterSpacing: 0.0,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontStyle:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontStyle,
-                                                      ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        0, 10, 0, 0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      children: [
-                                        Flexible(
-                                          child: Padding(
-                                            padding:
-                                                EdgeInsetsDirectional.fromSTEB(
-                                                    50, 20, 50, 0),
-                                            child: FFButtonWidget(
-                                              onPressed: () async {
-                                                logFirebaseEvent(
-                                                    'NOTIFICATION_DETAILS_DISCOVER_CATEGORIES');
-                                                logFirebaseEvent(
-                                                    'Button_navigate_to');
-
-                                                context.pushNamed(
-                                                  HomeWidget.routeName,
-                                                  extra: <String, dynamic>{
-                                                    '__transition_info__':
-                                                        TransitionInfo(
-                                                      hasTransition: true,
-                                                      transitionType:
-                                                          PageTransitionType
-                                                              .leftToRight,
-                                                      duration: Duration(
-                                                          milliseconds: 250),
-                                                    ),
-                                                  },
-                                                );
-                                              },
-                                              text: FFLocalizations.of(context)
-                                                  .getText(
-                                                '3xc36p8o' /* Discover categories */,
-                                              ),
-                                              options: FFButtonOptions(
-                                                width: double.infinity,
-                                                height: 50,
-                                                padding: EdgeInsets.all(4),
-                                                iconPadding:
-                                                    EdgeInsetsDirectional
-                                                        .fromSTEB(0, 0, 0, 0),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .primary,
-                                                textStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .titleSmall
-                                                        .override(
-                                                          font: GoogleFonts
-                                                              .interTight(
-                                                            fontWeight:
-                                                                FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .titleSmall
-                                                                    .fontWeight,
-                                                            fontStyle:
-                                                                FlutterFlowTheme.of(
-                                                                        context)
-                                                                    .titleSmall
-                                                                    .fontStyle,
-                                                          ),
-                                                          color: Colors.white,
-                                                          letterSpacing: 0.0,
-                                                          fontWeight:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .titleSmall
-                                                                  .fontWeight,
-                                                          fontStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .titleSmall
-                                                                  .fontStyle,
-                                                        ),
-                                                borderRadius:
-                                                    BorderRadius.circular(24),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                  Text(title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: _text,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700)),
+                  if (body.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: _muted, fontSize: 12)),
+                  ],
                 ],
               ),
             ),
-          ),
-        );
-      },
+            if (when != null)
+              Text(_timeAgo(when),
+                  style: TextStyle(color: _muted, fontSize: 11)),
+          ],
+        ),
+      ),
     );
+  }
+
+  Widget _simpleTile(Map<String, dynamic> n) {
+    final title = _s(n, ['title'], 'Notification');
+    final when = _d(n, ['created_at', 'date']);
+    final unread = !_b(n, ['is_read', 'isRead']);
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => context.pushNamed(NotificationWidget.routeName),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _border),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            if (unread)
+              Container(
+                width: 8, height: 8,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: const BoxDecoration(
+                    color: kGreen, shape: BoxShape.circle),
+              ),
+            Expanded(
+              child: Text(title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: _text,
+                      fontSize: 13.5,
+                      fontWeight:
+                          unread ? FontWeight.w700 : FontWeight.w500)),
+            ),
+            Text(_timeAgo(when),
+                style: TextStyle(color: _muted, fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _timeAgo(DateTime? when) {
+    if (when == null) return '';
+    final d = DateTime.now().difference(when);
+    if (d.inSeconds < 60) return 'now';
+    if (d.inMinutes < 60) return '${d.inMinutes}m';
+    if (d.inHours < 24) return '${d.inHours}h';
+    if (d.inDays < 7) return '${d.inDays}d';
+    return '${when.day}/${when.month}';
   }
 }

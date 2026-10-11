@@ -3,7 +3,6 @@ import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 import 'dart:ui';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -53,7 +52,7 @@ class _DeletepromtWidgetState extends State<DeletepromtWidget> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         StreamBuilder<CartRecord>(
-          stream: CartRecord.getDocument(widget!.cartRef!),
+          stream: CartRecord.getDocument(widget.cartRef!),
           builder: (context, snapshot) {
             // Customize what your widget looks like when it's loading.
             if (!snapshot.hasData) {
@@ -221,7 +220,7 @@ class _DeletepromtWidgetState extends State<DeletepromtWidget> {
                                 alignment: AlignmentDirectional(0.0, -1.0),
                                 child: FFButtonWidget(
                                   onPressed: () async {
-                                    await widget!.cartRef!.delete();
+                                    await widget.cartRef!.delete();
                                     FFAppState().grandTotal = FFAppState()
                                             .grandTotal +
                                         (-1 *

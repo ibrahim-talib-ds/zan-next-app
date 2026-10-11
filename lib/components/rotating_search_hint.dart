@@ -51,18 +51,18 @@ class _RotatingSearchHintState extends State<RotatingSearchHint> {
   Future<List<String>> _loadNames() async {
     try {
       final boosted = await queryInventoryRecordOnce(
-        queryBuilder: (r) => r.where('boosted', isEqualTo: true),
+        filterBoosted: true,
         limit: widget.maxNames,
       );
       final trending = await queryInventoryRecordOnce(
-        queryBuilder: (r) => r.where('top_selling', isEqualTo: true),
+        filterTopSelling: true,
         limit: widget.maxNames,
       );
 
       final seen = <String>{};
       final items = <InventoryRecord>[];
       for (final r in [...boosted, ...trending]) {
-        if (seen.add(r.reference.id)) items.add(r);
+        if (seen.add(r.id)) items.add(r);
       }
 
       DateTime stamp(InventoryRecord r) {

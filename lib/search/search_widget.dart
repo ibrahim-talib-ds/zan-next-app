@@ -2,11 +2,12 @@ import 'dart:async';
 
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
+import '/models/product.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'search_model.dart';
@@ -92,18 +93,16 @@ class _SearchWidgetState extends State<SearchWidget> {
   // SIDE DATA
   // ═══════════════════════════════════════════════════════════
   Future<void> _loadRecentSearches() async {
-    if (currentUserReference == null) return;
+    final uid = currentUserUid;
+    if (uid.isEmpty) return;
     try {
-      final snap = await FirebaseFirestore.instance
-          .collection('search_history')
-          .where('user_ref', isEqualTo: currentUserReference)
-          .orderBy('timestamp', descending: true)
-          .limit(20)
-          .get();
+      final raw = await zannext_api.ApiClient.get(
+        '/search/history?user_id=$uid',
+      ) as List;
       final seen = <String>{};
       final list = <String>[];
-      for (final d in snap.docs) {
-        final t = (d.data()['search_term'] ?? '').toString().trim();
+      for (final item in raw) {
+        final t = ((item as Map)['search_term'] ?? '').toString().trim();
         if (t.isEmpty) continue;
         if (seen.add(t.toLowerCase())) list.add(t);
         if (list.length >= 10) break;
@@ -114,14 +113,12 @@ class _SearchWidgetState extends State<SearchWidget> {
 
   Future<void> _loadTrendingSearches() async {
     try {
-      final snap = await FirebaseFirestore.instance
-          .collection('search_history')
-          .orderBy('timestamp', descending: true)
-          .limit(200)
-          .get();
+      final raw = await zannext_api.ApiClient.get(
+        '/search/history/all?limit=200',
+      ) as List;
       final counts = <String, int>{};
-      for (final d in snap.docs) {
-        final t = (d.data()['search_term'] ?? '').toString().trim();
+      for (final item in raw) {
+        final t = item.toString().trim();
         if (t.isEmpty) continue;
         final key = t.toLowerCase();
         counts[key] = (counts[key] ?? 0) + 1;
@@ -165,42 +162,14 @@ class _SearchWidgetState extends State<SearchWidget> {
     });
 
     try {
-      // Firestore range query: prefix on inventory_name
-      // Firestore supports "starts with" using \uf8ff as upper bound
-      final upper = q + '\uf8ff';
-      final snap = await FirebaseFirestore.instance
-          .collection('Inventory')
-          .where('inventory_name', isGreaterThanOrEqualTo: q)
-          .where('inventory_name', isLessThan: upper)
-          .limit(100)
-          .get();
-
-      // Client-side pass: also match description contains
-      final lower = q.toLowerCase();
+      // Query our backend search endpoint.
+      final encoded = Uri.encodeComponent(q);
+      final raw = await zannext_api.ApiClient.get('/search?q=$encoded') as List;
       final all = <InventoryRecord>[];
-
-      for (final doc in snap.docs) {
-        all.add(InventoryRecord.fromSnapshot(doc));
-      }
-
-      // Second query for description matches (only if not enough results)
-      if (all.length < 20) {
-        final fallbackSnap = await FirebaseFirestore.instance
-            .collection('Inventory')
-            .orderBy('inventory_name')
-            .limit(200)
-            .get();
-        final seenIds = all.map((r) => r.reference.id).toSet();
-        for (final doc in fallbackSnap.docs) {
-          if (seenIds.contains(doc.id)) continue;
-          final data = doc.data();
-          final name = (data['inventory_name'] ?? '').toString().toLowerCase();
-          final desc =
-              (data['inventory_description'] ?? '').toString().toLowerCase();
-          if (name.contains(lower) || desc.contains(lower)) {
-            all.add(InventoryRecord.fromSnapshot(doc));
-          }
-        }
+      for (final item in raw) {
+        final map = (item as Map).cast<String, dynamic>();
+        // Rebuild a Product from the JSON, then wrap as InventoryRecord
+        all.add(InventoryRecord.fromProduct(_productFromSearchJson(map)));
       }
 
       if (mounted) {
@@ -224,35 +193,19 @@ class _SearchWidgetState extends State<SearchWidget> {
   }
 
   Future<void> _saveSearchHistory(String term) async {
-    if (currentUserReference == null) return;
+    if (currentUserUid.isEmpty) return;
     try {
-      // Prevent duplicates: delete older identical entries first
-      final existing = await FirebaseFirestore.instance
-          .collection('search_history')
-          .where('user_ref', isEqualTo: currentUserReference)
-          .where('search_term', isEqualTo: term)
-          .get();
-      for (final d in existing.docs) {
-        await d.reference.delete();
-      }
-      await FirebaseFirestore.instance.collection('search_history').add({
-        'user_ref': currentUserReference,
-        'search_term': term,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      await zannext_api.ApiClient.post(
+        '/search/history',
+        body: {'search_term': term},
+      );
     } catch (_) {}
   }
 
   void _clearHistory() async {
-    if (currentUserReference == null) return;
+    if (currentUserUid.isEmpty) return;
     try {
-      final snap = await FirebaseFirestore.instance
-          .collection('search_history')
-          .where('user_ref', isEqualTo: currentUserReference)
-          .get();
-      for (final d in snap.docs) {
-        await d.reference.delete();
-      }
+      await zannext_api.ApiClient.delete('/search/history');
       if (mounted) safeSetState(() => _model.recentSearches = []);
     } catch (_) {}
   }
@@ -817,7 +770,7 @@ class _SearchWidgetState extends State<SearchWidget> {
         ProductDetailsWidget.routeName,
         queryParameters: {
           'inventoryRef':
-              serializeParam(r.reference, ParamType.DocumentReference),
+              serializeParam( r.id, ParamType.String),
         }.withoutNulls,
       ),
       child: Container(
@@ -1009,3 +962,42 @@ class _SearchWidgetState extends State<SearchWidget> {
 }
 
 const Color kMutedDark = Color(0xFF6B7280);
+
+
+// ═══════════════════════════════════════════════════════════
+// Helper: convert /search JSON map → Product model
+// The backend returns the same shape as /products/{id}.
+// ═══════════════════════════════════════════════════════════
+Product _productFromSearchJson(Map<String, dynamic> j) {
+  return Product(
+    id: (j['id'] ?? '') as String,
+    sellerId: (j['seller_id'] ?? '') as String,
+    sellerName: j['seller_name'] as String?,
+    sellerNumber: j['seller_number'] as String?,
+    sellerWhatsapp: j['seller_whatsapp'] as String?,
+    name: (j['name'] ?? '') as String,
+    description: j['description'] as String?,
+    price: ((j['price'] ?? 0) as num).toDouble(),
+    category: j['category'] as String?,
+    mainCategory: j['main_category'] as String?,
+    brand: j['brand'] as String?,
+    condition: j['condition'] as String?,
+    gender: j['gender'] as String?,
+    materials: (j['materials'] as List?)?.cast<String>(),
+    availableColors: (j['available_colors'] as List?)?.cast<String>(),
+    availableAlphasize: (j['available_alphasize'] as List?)?.cast<String>(),
+    stock: (j['stock'] as int?) ?? 0,
+    shippingDays: j['shipping_days'] as String?,
+    images: (j['images'] as List?)?.cast<String>(),
+    location: j['location'] as String?,
+    rating: ((j['rating'] ?? 0) as num).toDouble(),
+    reviewsCount: (j['reviews_count'] as int?) ?? 0,
+    viewCount: (j['view_count'] as int?) ?? 0,
+    allProducts: (j['all_products'] as bool?) ?? true,
+    boosted: (j['boosted'] as bool?) ?? false,
+    newIn: (j['new_in'] as bool?) ?? false,
+    topSelling: (j['top_selling'] as bool?) ?? false,
+    isOnline: (j['is_online'] as bool?) ?? true,
+    status: j['status'] as String?,
+  );
+}

@@ -1,10 +1,10 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'admin_dashboard_model.dart';
@@ -219,13 +219,13 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
             ],
           ),
           const Spacer(),
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('reports')
-                .where('status', isEqualTo: 'pending')
-                .snapshots(),
+          StreamBuilder<int>(
+            stream: Stream<int>.fromFuture(zannext_api.ApiClient
+                .get('/admin/reports/pending-count')
+                .then((v) => (v is num) ? v.toInt() : 0)
+                .catchError((_) => 0)),
             builder: (context, snap) {
-              final n = snap.data?.docs.length ?? 0;
+              final n = snap.data ?? 0;
               if (n == 0) {
                 return Container(
                   padding: const EdgeInsets.symmetric(
@@ -293,242 +293,135 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
   Widget _buildStatsGrid() {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 0),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _statCountCard(
-                  icon: Icons.people_alt_outlined,
-                  color: kBlue,
-                  label: FFLocalizations.of(context).getText('ad_total_users'),
-                  stream: FirebaseFirestore.instance
-                      .collection('users')
-                      .snapshots(),
-                  onTap: () => context.pushNamed(AdminUsersWidget.routeName),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _statCountCard(
-                  icon: Icons.inventory_2_outlined,
-                  color: kAmber,
-                  label: FFLocalizations.of(context).getText('ad_products'),
-                  stream: FirebaseFirestore.instance
-                      .collection('Inventory')
-                      .snapshots(),
-                  onTap: () => context.pushNamed(AdminProductsWidget.routeName),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _statCountCard(
-                  icon: Icons.shopping_bag_outlined,
-                  color: kGreen,
-                  label: FFLocalizations.of(context).getText('ad_orders'),
-                  stream: FirebaseFirestore.instance
-                      .collection('orders')
-                      .snapshots(),
-                  onTap: () => context.pushNamed(AdminOrdersWidget.routeName),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('support_chats')
-                      .where('unread_for_admin', isGreaterThan: 0)
-                      .snapshots(),
-                  builder: (context, snap) {
-                    final unread = snap.data?.docs.length ?? 0;
-                    return _statCountCard(
-                      icon: Icons.support_agent_outlined,
-                      color: unread > 0 ? kRed : kPurple,
-                      label: unread > 0
-                          ? '${FFLocalizations.of(context).getText('ad_support_new')} ($unread${FFLocalizations.of(context).getText('ad_support_new_suffix')})'
-                          : FFLocalizations.of(context).getText('ad_support_chats'),
-                      stream: FirebaseFirestore.instance
-                          .collection('support_chats')
-                          .snapshots(),
-                      onTap: () => context
-                          .pushNamed(AdminSupportInboxWidget.routeName),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+      child: FutureBuilder<Map<String, dynamic>>(
+        future: _loadStats(),
+        builder: (context, snap) {
+          final stats = snap.data ?? const <String, dynamic>{};
+          final users = (stats['users'] as int?) ?? 0;
+          final products = (stats['products'] as int?) ?? 0;
+          final orders = (stats['orders'] as int?) ?? 0;
+          final unreadSupport = (stats['unread_support'] as int?) ?? 0;
 
-  Widget _unreadSupportCard() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('support_chats')
-          .snapshots(),
-      builder: (context, snap) {
-        final docs = snap.data?.docs ?? [];
-        final totalThreads = docs.length;
-        int unreadThreads = 0;
-        for (final d in docs) {
-          final data = d.data() as Map<String, dynamic>;
-          final u = (data['unread_for_admin'] as num?)?.toInt() ?? 0;
-          if (u > 0) unreadThreads++;
-        }
-        final hasUnread = unreadThreads > 0;
-
-        return GestureDetector(
-          onTap: () =>
-              context.pushNamed(AdminSupportInboxWidget.routeName),
-          child: Container(
-            decoration: BoxDecoration(
-              color: _card,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: hasUnread ? kRed : _border,
-                width: hasUnread ? 1.5 : 1,
-              ),
-            ),
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: (hasUnread ? kRed : kPurple).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Icon(
-                        Icons.support_agent_outlined,
-                        color: hasUnread ? kRed : kPurple,
-                        size: 17,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Support Chats',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: _muted,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (hasUnread)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: kRed,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '$unreadThreads NEW',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  snap.hasData ? '$totalThreads' : '—',
-                  style: TextStyle(
-                    color: hasUnread ? kRed : _text,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _statCountCard({
-    required IconData icon,
-    required Color color,
-    required String label,
-    VoidCallback? onTap,
-    required Stream<QuerySnapshot> stream,
-  }) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: stream,
-      builder: (context, snap) {
-        final count = snap.data?.docs.length ?? 0;
-        return GestureDetector(
-          onTap: onTap,
-          child: Container(
-          decoration: BoxDecoration(
-            color: _card,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _border),
-          ),
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          return Column(
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: Icon(icon, color: color, size: 17),
-                  ),
-                  const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: _muted,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: _statCountCardStatic(
+                      icon: Icons.people_alt_outlined,
+                      color: kBlue,
+                      label: FFLocalizations.of(context).getText('ad_total_users'),
+                      count: users,
+                      onTap: () => context.pushNamed(AdminUsersWidget.routeName),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _statCountCardStatic(
+                      icon: Icons.inventory_2_outlined,
+                      color: kAmber,
+                      label: FFLocalizations.of(context).getText('ad_products'),
+                      count: products,
+                      onTap: () => context.pushNamed(AdminProductsWidget.routeName),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                snap.hasData ? '$count' : '—',
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _statCountCardStatic(
+                      icon: Icons.shopping_bag_outlined,
+                      color: kGreen,
+                      label: FFLocalizations.of(context).getText('ad_orders'),
+                      count: orders,
+                      onTap: () => context.pushNamed(AdminOrdersWidget.routeName),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _statCountCardStatic(
+                      icon: Icons.support_agent_outlined,
+                      color: unreadSupport > 0 ? kRed : kPurple,
+                      label: unreadSupport > 0
+                          ? '${FFLocalizations.of(context).getText('ad_support_new')} ($unreadSupport${FFLocalizations.of(context).getText('ad_support_new_suffix')})'
+                          : FFLocalizations.of(context).getText('ad_support_chats'),
+                      count: unreadSupport,
+                      onTap: () => context.pushNamed(AdminSupportInboxWidget.routeName),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> _loadStats() async {
+    try {
+      final result = await zannext_api.ApiClient.get('/admin/stats');
+      return (result as Map).cast<String, dynamic>();
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  Widget _statCountCardStatic({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required int count,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: _card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(height: 10),
+            Text('$count',
                 style: TextStyle(
                   color: _text,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-          ),
-        );
-      },
+                  height: 1.0,
+                )),
+            const SizedBox(height: 4),
+            Text(label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _muted,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                )),
+          ],
+        ),
+      ),
     );
   }
+
+
 
   // ═══════════════════════════════════════════════════════════
   // QUICK ACTIONS
@@ -716,22 +609,6 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
     ) ?? false;
   }
 
-  Future<void> _deleteOrderDoc(DocumentSnapshot doc) async {
-    try {
-      await doc.reference.delete();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(FFLocalizations.of(context).getText('ad_order_deleted')),
-        backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
-      ));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('${FFLocalizations.of(context).getText('ad_delete_failed')}$e'),
-        backgroundColor: kRed, behavior: SnackBarBehavior.floating,
-      ));
-    }
-  }
 
   Future<bool> _confirmDeleteUser(String name) async {
     return await showDialog<bool>(
@@ -755,18 +632,21 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
     ) ?? false;
   }
 
-  Future<void> _deleteUserDoc(DocumentSnapshot doc) async {
+  Future<void> _deleteUserDoc(Map<String, dynamic> user) async {
+    final id = (user['id'] ?? '').toString();
+    if (id.isEmpty) return;
     try {
-      await doc.reference.delete();
+      await zannext_api.ApiClient.delete('/admin/users/\$id');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(FFLocalizations.of(context).getText('ad_user_deleted')),
         backgroundColor: kGreen, behavior: SnackBarBehavior.floating,
       ));
+      safeSetState(() {});
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not delete: $e'),
+        content: Text('Could not remove: \$e'),
         backgroundColor: kRed, behavior: SnackBarBehavior.floating,
       ));
     }
@@ -778,15 +658,11 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
   Widget _buildLatestOrders() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('orders')
-            .orderBy('date', descending: true)
-            .limit(5)
-            .snapshots(),
+      child: FutureBuilder<List<dynamic>>(
+        future: _loadRecentOrders(),
         builder: (context, snap) {
           if (!snap.hasData) return _loadingStrip();
-          final docs = snap.data!.docs;
+          final docs = snap.data!;
           if (docs.isEmpty) return _emptyStrip(FFLocalizations.of(context).getText('ad_no_orders'));
 
           return Container(
@@ -797,16 +673,16 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
             ),
             child: Column(
               children: List.generate(docs.length, (i) {
-                final data = docs[i].data() as Map<String, dynamic>;
+                final data = docs[i] as Map<String, dynamic>;
                 final name = (data['product_name'] ?? FFLocalizations.of(context).getText('ad_order_fallback')).toString();
                 final status = (data['status'] ?? 'Pending').toString();
                 final price = (data['price'] as num?)?.toDouble() ?? 0;
-                final images = (data['Item_images'] as List?) ?? [];
+                final images = (data['item_images'] as List?) ?? [];
 
                 return Column(
                   children: [
                     Dismissible(
-                      key: ValueKey('dash_order_${docs[i].id}'),
+                      key: ValueKey('dash_order_${data['id']}'),
                       direction: DismissDirection.endToStart,
                       background: Container(
                         alignment: Alignment.centerRight,
@@ -822,7 +698,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                         ),
                       ),
                       confirmDismiss: (_) => _confirmDeleteOrder(name),
-                      onDismissed: (_) => _deleteOrderDoc(docs[i]),
+                      onDismissed: (_) => _deleteOrderById(data['id'] as String),
                       child: InkWell(
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -918,15 +794,11 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
   Widget _buildRecentUsers() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .orderBy('created_time', descending: true)
-            .limit(5)
-            .snapshots(),
+      child: FutureBuilder<List<dynamic>>(
+        future: _loadRecentUsers(),
         builder: (context, snap) {
           if (!snap.hasData) return _loadingStrip();
-          final docs = snap.data!.docs;
+          final docs = snap.data!;
           if (docs.isEmpty) return _emptyStrip(FFLocalizations.of(context).getText('ad_no_users'));
 
           return Container(
@@ -937,16 +809,16 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
             ),
             child: Column(
               children: List.generate(docs.length, (i) {
-                final data = docs[i].data() as Map<String, dynamic>;
+                final data = docs[i] as Map<String, dynamic>;
                 final name = (data['display_name'] ?? FFLocalizations.of(context).getText('ad_user_fallback')).toString();
                 final email = (data['email'] ?? '').toString();
                 final photo = _imgUrl((data['photo_url'] ?? '').toString());
-                final isAdminUser = (data['isAdmin'] as bool?) ?? false;
+                final isAdminUser = (data['is_admin'] as bool?) ?? false;
 
                 return Column(
                   children: [
                     Dismissible(
-                      key: ValueKey('dash_user_${docs[i].id}'),
+                      key: ValueKey('dash_user_${data['id']}'),
                       direction: DismissDirection.endToStart,
                       background: Container(
                         alignment: Alignment.centerRight,
@@ -962,7 +834,7 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
                         ),
                       ),
                       confirmDismiss: (_) => _confirmDeleteUser(name),
-                      onDismissed: (_) => _deleteUserDoc(docs[i]),
+                      onDismissed: (_) => _deleteUserDoc(docs[i] as Map<String, dynamic>),
                       child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(
@@ -1055,26 +927,22 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
   Widget _buildTopProducts() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('Inventory')
-            .orderBy('view_count', descending: true)
-            .limit(5)
-            .snapshots(),
+      child: FutureBuilder<List<dynamic>>(
+        future: _loadTopProducts(),
         builder: (context, snap) {
           if (!snap.hasData) return _loadingStrip();
-          final docs = snap.data!.docs;
+          final docs = snap.data!;
           if (docs.isEmpty) return _emptyStrip(FFLocalizations.of(context).getText('ad_no_products'));
 
           return Column(
             children: docs.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
+              final data = doc as Map<String, dynamic>;
               final name =
-                  (data['inventory_name'] ?? FFLocalizations.of(context).getText('ad_product_fallback')).toString();
+                  (data['name'] ?? FFLocalizations.of(context).getText('ad_product_fallback')).toString();
               final price =
-                  (data['inventory_price'] as num?)?.toDouble() ?? 0;
+                  (data['price'] as num?)?.toDouble() ?? 0;
               final views = (data['view_count'] as num?)?.toInt() ?? 0;
-              final images = (data['inventory_images'] as List?) ?? [];
+              final images = (data['images'] as List?) ?? [];
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -1188,4 +1056,38 @@ class _AdminDashboardWidgetState extends State<AdminDashboardWidget> {
               style: TextStyle(color: _muted, fontSize: 13)),
         ),
       );
+
+  Future<List<dynamic>> _loadRecentOrders() async {
+    try {
+      final r = await zannext_api.ApiClient.get('/admin/recent-orders');
+      return r as List;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<dynamic>> _loadRecentUsers() async {
+    try {
+      final r = await zannext_api.ApiClient.get('/admin/recent-users');
+      return r as List;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<dynamic>> _loadTopProducts() async {
+    try {
+      final r = await zannext_api.ApiClient.get('/admin/top-products');
+      return r as List;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _deleteOrderById(String orderId) async {
+    try {
+      await zannext_api.ApiClient.delete('/orders/$orderId');
+    } catch (_) {}
+  }
+
 }

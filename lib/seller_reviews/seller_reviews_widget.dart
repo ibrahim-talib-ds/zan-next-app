@@ -1,16 +1,17 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/repositories/review_repository.dart';
+import '/models/review.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'seller_reviews_model.dart';
 export 'seller_reviews_model.dart';
 
 class SellerReviewsWidget extends StatefulWidget {
-  const SellerReviewsWidget({super.key, required this.sellerRef});
+  const SellerReviewsWidget({super.key, required this.sellerId});
 
-  final DocumentReference? sellerRef;
+  final String? sellerId;
 
   static String routeName = 'SellerReviews';
   static String routePath = '/sellerReviews';
@@ -21,6 +22,7 @@ class SellerReviewsWidget extends StatefulWidget {
 
 class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
   late SellerReviewsModel _model;
+  Future<List<Review>>? _reviewsFuture;
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   static const Color kGreen = Color(0xFF1B7A4E);
@@ -39,6 +41,10 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
   void initState() {
     super.initState();
     _model = createModel(context, () => SellerReviewsModel());
+    final sid = widget.sellerId ?? currentUserUid;
+    if (sid.isNotEmpty) {
+      _reviewsFuture = ReviewRepository.listForSeller(sid);
+    }
   }
 
   @override
@@ -69,13 +75,8 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
         ),
         centerTitle: true,
       ),
-      body: StreamBuilder<List<ReviewsRecord>>(
-        stream: queryReviewsRecord(
-          queryBuilder: (r) => r
-              .where('seller', isEqualTo: widget.sellerRef)
-              .orderBy('date', descending: true),
-          limit: 200,
-        ),
+      body: FutureBuilder<List<Review>>(
+        future: _reviewsFuture,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
@@ -105,7 +106,7 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
           final all = snapshot.data!;
           final filter = _model.filter ?? 'all';
           final list = filter == 'unreplied'
-              ? all.where((r) => r.sellerReply.isEmpty).toList()
+              ? all.where((r) => (r.sellerReply ?? '').isEmpty).toList()
               : all;
 
           return Column(
@@ -135,9 +136,9 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
     );
   }
 
-  Widget _buildFilterChips(List<ReviewsRecord> all) {
+  Widget _buildFilterChips(List<Review> all) {
     final unreplied =
-        all.where((r) => r.sellerReply.isEmpty).length;
+        all.where((r) => (r.sellerReply ?? '').isEmpty).length;
     final chips = [
       ('all', 'All (${all.length})'),
       ('unreplied', 'Unreplied ($unreplied)'),
@@ -198,8 +199,8 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
     );
   }
 
-  Widget _reviewCard(ReviewsRecord r) {
-    final hasReply = r.sellerReply.isNotEmpty;
+  Widget _reviewCard(Review r) {
+    final hasReply = (r.sellerReply ?? '').isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -226,10 +227,10 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
                   shape: BoxShape.circle,
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: r.reviewersImage.isEmpty
+                child: (r.reviewersImage ?? '').isEmpty
                     ? Icon(Icons.person_rounded, color: _muted, size: 20)
                     : Image.network(
-                        r.reviewersImage,
+                        r.reviewersImage ?? '',
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Icon(
                             Icons.person_rounded,
@@ -243,7 +244,7 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      r.reviewersName,
+                      r.reviewersName ?? 'User',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -266,9 +267,9 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        if (r.date != null)
+                        if (r.createdAt != null)
                           Text(
-                            _timeAgo(r.date!),
+                            _timeAgo(r.createdAt!),
                             style: TextStyle(
                                 color: _muted, fontSize: 11),
                           ),
@@ -297,10 +298,10 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
                 ),
             ],
           ),
-          if (r.reviewsMessage.isNotEmpty) ...[
+          if ((r.message ?? '').isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
-              r.reviewsMessage,
+              r.message ?? '',
               style: TextStyle(
                 color: _text.withOpacity(0.85),
                 fontSize: 13,
@@ -347,7 +348,7 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    r.sellerReply,
+                    r.sellerReply ?? '',
                     style: TextStyle(
                       color: _text.withOpacity(0.85),
                       fontSize: 12.5,
@@ -403,8 +404,8 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
     );
   }
 
-  Future<void> _openReplySheet(ReviewsRecord r) async {
-    final controller = TextEditingController(text: r.sellerReply);
+  Future<void> _openReplySheet(Review r) async {
+    final controller = TextEditingController(text: r.sellerReply ?? '');
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -454,7 +455,7 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            r.sellerReply.isEmpty
+                            (r.sellerReply ?? '').isEmpty
                                 ? 'Reply to review'
                                 : 'Edit your reply',
                             style: TextStyle(
@@ -465,7 +466,7 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'From ${r.reviewersName}',
+                            'From ${r.reviewersName ?? 'User'}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -530,10 +531,7 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
                       return;
                     }
                     try {
-                      await r.reference.update({
-                        'seller_reply': text,
-                        'seller_reply_date': getCurrentTimestamp,
-                      });
+                      await ReviewRepository.reply(r.id, text);
                       if (ctx.mounted) Navigator.pop(ctx, true);
                     } catch (e) {
                       if (ctx.mounted) {
@@ -565,7 +563,7 @@ class _SellerReviewsWidgetState extends State<SellerReviewsWidget> {
                               color: Colors.white, size: 18),
                           const SizedBox(width: 8),
                           Text(
-                            r.sellerReply.isEmpty
+                            (r.sellerReply ?? '').isEmpty
                                 ? 'Post Reply'
                                 : 'Update Reply',
                             style: const TextStyle(

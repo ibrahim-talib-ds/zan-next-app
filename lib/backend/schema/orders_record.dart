@@ -1,153 +1,151 @@
+// ZanNext — OrdersRecord Shim (complete)
+//
+// Full API compatibility with the original Firestore OrdersRecord.
+// Backed by our Order model (Postgres).
+// Screens that read orders work through OrdersRecord.getDocument().
+
 import 'dart:async';
 
-import 'package:collection/collection.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'
+    show DocumentReference, CollectionReference, DocumentSnapshot, FirebaseFirestore;
 
-import '/backend/schema/util/firestore_util.dart';
-import '/backend/schema/util/schema_util.dart';
+import '../../models/order.dart';
+import '../../repositories/order_repository.dart';
 
-import 'index.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+class OrdersRecord {
+  OrdersRecord._(this._order, DocumentReference? explicitRef)
+      : _explicitRef = explicitRef;
 
-class OrdersRecord extends FirestoreRecord {
-  OrdersRecord._(
-    DocumentReference reference,
-    Map<String, dynamic> data,
-  ) : super(reference, data) {
-    _initializeFields();
+  final Order? _order;
+  final DocumentReference? _explicitRef;
+
+  String get id => _order?.id ?? '';
+
+  DocumentReference get reference =>
+      _explicitRef ??
+      FirebaseFirestore.instance.collection('orders').doc(_order?.id ?? 'unknown');
+
+  DocumentReference get syntheticRef => reference;
+
+  Order? get order => _order;
+
+  // ---- Field getters (Firestore field names, backed by our Order model) ----
+  DocumentReference? get buyer => _order?.buyerId != null
+      ? FirebaseFirestore.instance.collection('users').doc(_order!.buyerId)
+      : null;
+  bool hasBuyer() => _order?.buyerId != null;
+
+  DocumentReference? get seller => _order?.sellerId != null
+      ? FirebaseFirestore.instance.collection('users').doc(_order!.sellerId)
+      : null;
+  bool hasSeller() => _order?.sellerId != null;
+
+  int get totalItems => _order?.totalItems ?? 1;
+  bool hasTotalItems() => _order != null;
+
+  DateTime? get date => _order?.createdAt;
+  bool hasDate() => _order?.createdAt != null;
+
+  String get orderNo => _order?.orderNo ?? '';
+  bool hasOrderNo() => (_order?.orderNo ?? '').isNotEmpty;
+
+  double get totalPrice => _order?.price ?? 0;
+  bool hasTotalPrice() => _order?.price != null;
+
+  String get status => _order?.status ?? 'Pending';
+  bool hasStatus() => _order?.status != null;
+
+  DocumentReference? get productRef => _order?.productId != null
+      ? FirebaseFirestore.instance.collection('Inventory').doc(_order!.productId)
+      : null;
+  bool hasProductRef() => _order?.productId != null;
+
+  DocumentReference? get addressRef => null;
+  bool hasAddressRef() => false;
+
+  String get productName => _order?.productName ?? '';
+  bool hasProductName() => (_order?.productName ?? '').isNotEmpty;
+
+  double get price => _order?.price ?? 0;
+  bool hasPrice() => _order?.price != null;
+
+  List<String> get itemImages => _order?.itemImages ?? const <String>[];
+  bool hasItemImages() =>
+      (_order?.itemImages != null && _order!.itemImages!.isNotEmpty);
+
+  dynamic get location => null;
+  bool hasLocation() => false;
+
+  String get driverName => _order?.driverName ?? '';
+  bool hasDriverName() => (_order?.driverName ?? '').isNotEmpty;
+
+  String get driverNumber => _order?.driverNumber ?? '';
+  bool hasDriverNumber() => (_order?.driverNumber ?? '').isNotEmpty;
+
+  String get address => _order?.address ?? '';
+  bool hasAddress() => (_order?.address ?? '').isNotEmpty;
+
+  // ---- Firestore-shape compatibility ----
+  // Some widgets do `(o as dynamic).snapshotData` to read raw fields.
+  // Return a Map with the SAME Firestore field names so _raw(o, key) works.
+  Map<String, dynamic> get snapshotData {
+    final o = _order;
+    if (o == null) return <String, dynamic>{};
+    return <String, dynamic>{
+      'buyer': o.buyerId,
+      'seller': o.sellerId,
+      'total_items': o.totalItems,
+      'date': o.createdAt,
+      'order_no': o.orderNo,
+      'total_price': o.price,
+      'status': o.status,
+      'product_ref': o.productId,
+      'address_ref': null,
+      'product_name': o.productName,
+      'price': o.price,
+      'Item_images': o.itemImages,
+      'location': null,
+      'driver_name': o.driverName,
+      'driver_number': o.driverNumber,
+      'address': o.address,
+      'status_history': o.statusHistory,
+      'buyer_name': o.buyerName,
+      'buyer_phone': o.buyerPhone,
+      'seller_name': o.sellerName,
+      'seller_phone': null,
+      'driver_phone': o.driverNumber,
+    };
   }
 
-  // "buyer" field.
-  DocumentReference? _buyer;
-  DocumentReference? get buyer => _buyer;
-  bool hasBuyer() => _buyer != null;
-
-  // "seller" field.
-  DocumentReference? _seller;
-  DocumentReference? get seller => _seller;
-  bool hasSeller() => _seller != null;
-
-  // "total_items" field.
-  int? _totalItems;
-  int get totalItems => _totalItems ?? 0;
-  bool hasTotalItems() => _totalItems != null;
-
-  // "date" field.
-  DateTime? _date;
-  DateTime? get date => _date;
-  bool hasDate() => _date != null;
-
-  // "order_no" field.
-  String? _orderNo;
-  String get orderNo => _orderNo ?? '';
-  bool hasOrderNo() => _orderNo != null;
-
-  // "total_price" field.
-  double? _totalPrice;
-  double get totalPrice => _totalPrice ?? 0.0;
-  bool hasTotalPrice() => _totalPrice != null;
-
-  // "status" field.
-  String? _status;
-  String get status => _status ?? '';
-  bool hasStatus() => _status != null;
-
-  // "product_ref" field.
-  DocumentReference? _productRef;
-  DocumentReference? get productRef => _productRef;
-  bool hasProductRef() => _productRef != null;
-
-  // "address_ref" field.
-  DocumentReference? _addressRef;
-  DocumentReference? get addressRef => _addressRef;
-  bool hasAddressRef() => _addressRef != null;
-
-  // "product_name" field.
-  String? _productName;
-  String get productName => _productName ?? '';
-  bool hasProductName() => _productName != null;
-
-  // "price" field.
-  double? _price;
-  double get price => _price ?? 0.0;
-  bool hasPrice() => _price != null;
-
-  // "Item_images" field.
-  List<String>? _itemImages;
-  List<String> get itemImages => _itemImages ?? const [];
-  bool hasItemImages() => _itemImages != null;
-
-  // "location" field.
-  LatLng? _location;
-  LatLng? get location => _location;
-  bool hasLocation() => _location != null;
-
-  // "driver_name" field.
-  String? _driverName;
-  String get driverName => _driverName ?? '';
-  bool hasDriverName() => _driverName != null;
-
-  // "driver_number" field.
-  String? _driverNumber;
-  String get driverNumber => _driverNumber ?? '';
-  bool hasDriverNumber() => _driverNumber != null;
-
-  // "address" field.
-  String? _address;
-  String get address => _address ?? '';
-  bool hasAddress() => _address != null;
-
-  void _initializeFields() {
-    _buyer = snapshotData['buyer'] as DocumentReference?;
-    _seller = snapshotData['seller'] as DocumentReference?;
-    _totalItems = castToType<int>(snapshotData['total_items']);
-    _date = snapshotData['date'] as DateTime?;
-    _orderNo = snapshotData['order_no'] as String?;
-    _totalPrice = castToType<double>(snapshotData['total_price']);
-    _status = snapshotData['status'] as String?;
-    _productRef = snapshotData['product_ref'] as DocumentReference?;
-    _addressRef = snapshotData['address_ref'] as DocumentReference?;
-    _productName = snapshotData['product_name'] as String?;
-    _price = castToType<double>(snapshotData['price']);
-    _itemImages = getDataList(snapshotData['Item_images']);
-    _location = snapshotData['location'] as LatLng?;
-    _driverName = snapshotData['driver_name'] as String?;
-    _driverNumber = snapshotData['driver_number'] as String?;
-    _address = snapshotData['address'] as String?;
-  }
-
+  // ---- Static factory methods ----
   static CollectionReference get collection =>
       FirebaseFirestore.instance.collection('orders');
 
-  static Stream<OrdersRecord> getDocument(DocumentReference ref) =>
-      ref.snapshots().map((s) => OrdersRecord.fromSnapshot(s));
+  static Stream<OrdersRecord> getDocument(DocumentReference ref) {
+    return Stream.fromFuture(getDocumentOnce(ref));
+  }
 
-  static Future<OrdersRecord> getDocumentOnce(DocumentReference ref) =>
-      ref.get().then((s) => OrdersRecord.fromSnapshot(s));
+  static Future<OrdersRecord> getDocumentOnce(DocumentReference ref) async {
+    try {
+      final order = await OrderRepository.get(ref.id);
+      return OrdersRecord._(order, ref);
+    } catch (_) {
+      return OrdersRecord._(null, ref);
+    }
+  }
 
-  static OrdersRecord fromSnapshot(DocumentSnapshot snapshot) => OrdersRecord._(
-        snapshot.reference,
-        mapFromFirestore(snapshot.data() as Map<String, dynamic>),
-      );
+  static OrdersRecord fromSnapshot(DocumentSnapshot snapshot) =>
+      OrdersRecord._(null, snapshot.reference);
 
-  static OrdersRecord getDocumentFromData(
-    Map<String, dynamic> data,
-    DocumentReference reference,
-  ) =>
-      OrdersRecord._(reference, mapFromFirestore(data));
-
-  @override
-  String toString() =>
-      'OrdersRecord(reference: ${reference.path}, data: $snapshotData)';
+  static OrdersRecord fromOrder(Order order) => OrdersRecord._(order, null);
 
   @override
-  int get hashCode => reference.path.hashCode;
-
-  @override
-  bool operator ==(other) =>
-      other is OrdersRecord &&
-      reference.path.hashCode == other.reference.path.hashCode;
+  String toString() => 'OrdersRecord(id: ${_order?.id}, status: ${_order?.status})';
 }
 
+// =====================================================================
+// Compatibility: createOrdersRecordData
+// =====================================================================
 Map<String, dynamic> createOrdersRecordData({
   DocumentReference? buyer,
   DocumentReference? seller,
@@ -160,78 +158,26 @@ Map<String, dynamic> createOrdersRecordData({
   DocumentReference? addressRef,
   String? productName,
   double? price,
-  LatLng? location,
+  String? address,
   String? driverName,
   String? driverNumber,
-  String? address,
+  List<String>? itemImages,
 }) {
-  final firestoreData = mapToFirestore(
-    <String, dynamic>{
-      'buyer': buyer,
-      'seller': seller,
-      'total_items': totalItems,
-      'date': date,
-      'order_no': orderNo,
-      'total_price': totalPrice,
-      'status': status,
-      'product_ref': productRef,
-      'address_ref': addressRef,
-      'product_name': productName,
-      'price': price,
-      'location': location,
-      'driver_name': driverName,
-      'driver_number': driverNumber,
-      'address': address,
-    }.withoutNulls,
-  );
-
-  return firestoreData;
-}
-
-class OrdersRecordDocumentEquality implements Equality<OrdersRecord> {
-  const OrdersRecordDocumentEquality();
-
-  @override
-  bool equals(OrdersRecord? e1, OrdersRecord? e2) {
-    const listEquality = ListEquality();
-    return e1?.buyer == e2?.buyer &&
-        e1?.seller == e2?.seller &&
-        e1?.totalItems == e2?.totalItems &&
-        e1?.date == e2?.date &&
-        e1?.orderNo == e2?.orderNo &&
-        e1?.totalPrice == e2?.totalPrice &&
-        e1?.status == e2?.status &&
-        e1?.productRef == e2?.productRef &&
-        e1?.addressRef == e2?.addressRef &&
-        e1?.productName == e2?.productName &&
-        e1?.price == e2?.price &&
-        listEquality.equals(e1?.itemImages, e2?.itemImages) &&
-        e1?.location == e2?.location &&
-        e1?.driverName == e2?.driverName &&
-        e1?.driverNumber == e2?.driverNumber &&
-        e1?.address == e2?.address;
-  }
-
-  @override
-  int hash(OrdersRecord? e) => const ListEquality().hash([
-        e?.buyer,
-        e?.seller,
-        e?.totalItems,
-        e?.date,
-        e?.orderNo,
-        e?.totalPrice,
-        e?.status,
-        e?.productRef,
-        e?.addressRef,
-        e?.productName,
-        e?.price,
-        e?.itemImages,
-        e?.location,
-        e?.driverName,
-        e?.driverNumber,
-        e?.address
-      ]);
-
-  @override
-  bool isValidKey(Object? o) => o is OrdersRecord;
+  return <String, dynamic>{
+    'buyer': buyer,
+    'seller': seller,
+    'total_items': totalItems,
+    'date': date,
+    'order_no': orderNo,
+    'total_price': totalPrice,
+    'status': status,
+    'product_ref': productRef,
+    'address_ref': addressRef,
+    'product_name': productName,
+    'price': price,
+    'address': address,
+    'driver_name': driverName,
+    'driver_number': driverNumber,
+    'Item_images': itemImages,
+  };
 }

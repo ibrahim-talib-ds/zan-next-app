@@ -2,8 +2,8 @@ import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '/services/api_client.dart' as zannext_api;
 
 import 'admin_sellers_model.dart';
 export 'admin_sellers_model.dart';
@@ -174,10 +174,8 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
   // SELLERS LIST
   // ═══════════════════════════════════════════════════════════
   Widget _buildSellersList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .snapshots(),
+    return FutureBuilder<List<dynamic>>(
+      future: _fetchSellers(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _state(Icons.error_outline_rounded,
@@ -197,23 +195,13 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
           );
         }
 
-        // Filter: sellers = users with isSeller == true OR role contains 'seller'
-        // Fallback: if none, show all non-admin users
-        final allUsers = snapshot.data!.docs;
-
-        var sellers = allUsers.where((d) {
-          final data = d.data() as Map<String, dynamic>;
-          final isSeller = data['isSeller'] as bool? ?? false;
-          final role = (data['role'] ?? '').toString().toLowerCase();
-          final isAdmin = data['isAdmin'] as bool? ?? false;
-          return isSeller || role.contains('seller') || (!isAdmin);
-        }).toList();
+        var sellers = snapshot.data!;
 
         // Apply search filter
         final q = _model.searchQuery;
         if (q.isNotEmpty) {
           sellers = sellers.where((d) {
-            final data = d.data() as Map<String, dynamic>;
+            final data = d as Map<String, dynamic>;
             final name = (data['display_name'] ?? '').toString().toLowerCase();
             final email = (data['email'] ?? '').toString().toLowerCase();
             return name.contains(q) || email.contains(q);
@@ -241,7 +229,7 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
                       const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 24),
                   itemCount: sellers.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) => _sellerTile(sellers[i]),
+                  itemBuilder: (context, i) => _sellerTile(sellers[i] as Map<String, dynamic>),
                 ),
               ),
             ),
@@ -283,14 +271,13 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
     );
   }
 
-  Widget _sellerTile(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  Widget _sellerTile(Map<String, dynamic> data) {
     final name = (data['display_name'] ?? FFLocalizations.of(context).getText('as_user_fallback')).toString();
     final email = (data['email'] ?? '').toString();
     final photo = _imgUrl((data['photo_url'] ?? '').toString());
-    final isVerified = (data['isVerified'] as bool?) ?? false;
-    final isSuspended = (data['isSuspended'] as bool?) ?? false;
-    final isAdmin = (data['isAdmin'] as bool?) ?? false;
+    final isVerified = (data['is_verified'] as bool?) ?? false;
+    final isSuspended = (data['is_suspended'] as bool?) ?? false;
+    final isAdmin = (data['is_admin'] as bool?) ?? false;
     final city = (data['city'] ?? '').toString();
 
     return Container(
@@ -410,7 +397,7 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
                       : FFLocalizations.of(context).getText('as_btn_verify'),
                   color: kGreen,
                   active: isVerified,
-                  onTap: () => _toggleVerified(doc, !isVerified),
+                  onTap: () => _toggleVerified(data['id'] as String, !isVerified),
                 ),
               ),
               const SizedBox(width: 8),
@@ -424,7 +411,7 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
                       : FFLocalizations.of(context).getText('as_btn_suspend'),
                   color: kRed,
                   active: isSuspended,
-                  onTap: () => _toggleSuspended(doc, !isSuspended),
+                  onTap: () => _toggleSuspended(data['id'] as String, !isSuspended),
                 ),
               ),
               const SizedBox(width: 8),
@@ -435,10 +422,7 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
                   context.pushNamed(
                     SellerDashbordWidget.routeName,
                     queryParameters: {
-                      'sellerRef': serializeParam(
-                        doc.reference,
-                        ParamType.DocumentReference,
-                      ),
+                      'sellerRef': data['id'] as String,
                     }.withoutNulls,
                   );
                 },
@@ -532,9 +516,10 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
   // ═══════════════════════════════════════════════════════════
   // ACTIONS
   // ═══════════════════════════════════════════════════════════
-  Future<void> _toggleVerified(DocumentSnapshot doc, bool value) async {
+  Future<void> _toggleVerified(String userId, bool value) async {
     try {
-      await doc.reference.update({'isVerified': value});
+      await zannext_api.ApiClient.patch('/admin/users/$userId',
+          body: {'is_verified': value});
       if (!mounted) return;
       _snack(value
           ? FFLocalizations.of(context).getText('as_snack_verified')
@@ -545,7 +530,7 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
     }
   }
 
-  Future<void> _toggleSuspended(DocumentSnapshot doc, bool value) async {
+  Future<void> _toggleSuspended(String userId, bool value) async {
     // Confirm when suspending
     if (value) {
       final confirmed = await showDialog<bool>(
@@ -586,7 +571,8 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
     }
 
     try {
-      await doc.reference.update({'isSuspended': value});
+      await zannext_api.ApiClient.patch('/admin/users/$userId',
+          body: {'is_suspended': value});
       if (!mounted) return;
       _snack(value
           ? FFLocalizations.of(context).getText('as_snack_suspended')
@@ -649,4 +635,14 @@ class _AdminSellersWidgetState extends State<AdminSellersWidget> {
       ),
     );
   }
+
+  Future<List<dynamic>> _fetchSellers() async {
+    try {
+      final r = await zannext_api.ApiClient.get('/admin/sellers');
+      return r as List;
+    } catch (_) {
+      return const [];
+    }
+  }
+
 }

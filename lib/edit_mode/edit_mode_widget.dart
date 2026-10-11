@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/repositories/product_repository.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -10,11 +11,9 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import '/flutter_flow/upload_data.dart';
 import 'dart:ui';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart' show MediaSource;
 import 'package:provider/provider.dart';
 
 import 'edit_mode_model.dart';
@@ -25,10 +24,10 @@ export 'edit_mode_model.dart';
 class EditModeWidget extends StatefulWidget {
   const EditModeWidget({
     super.key,
-    required this.targetProduct,
+    required this.productId,
   });
 
-  final DocumentReference? targetProduct;
+  final String? productId;
 
   static String routeName = 'EditMode';
   static String routePath = '/EditMode';
@@ -44,9 +43,6 @@ class _EditModeWidgetState extends State<EditModeWidget> {
 
   bool _loadedInitial = false;
   bool _isUploadingPhotos = false;
-  bool _trending = false;
-  bool _newArrival = false;
-  bool _showInAll = true;
 
   String? _conditionValue;
   String? _genderValue;
@@ -120,26 +116,23 @@ class _EditModeWidgetState extends State<EditModeWidget> {
     _materialController.text = p.materials.join(', ');
     _brandController.text = ''; // brand field not in schema yet
 
-    _locationController.text = p.location ?? '';
-    _whatsappController.text = p.sellerWhatsap ?? '';
+    _locationController.text = p.location;
+    _whatsappController.text = p.sellerWhatsap;
     if (_callController.text.isEmpty) {
-      _callController.text = p.sellerNumber ?? '';
+      _callController.text = p.sellerNumber;
     }
 
     _conditionValue = p.condition;
     _genderValue = p.gender;
     _shippingDaysValue = p.shippingDays;
 
-    _trending = p.topSelling;
-    _newArrival = p.newIn;
-    _showInAll = p.allProducts;
 
     _photoUrls = List<String>.from(p.inventoryImages);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.targetProduct == null) {
+    if (widget.productId == null) {
       return Scaffold(
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         body: const Center(child: Text('Product not found')),
@@ -149,7 +142,7 @@ class _EditModeWidgetState extends State<EditModeWidget> {
     final theme = FlutterFlowTheme.of(context);
 
     return StreamBuilder<InventoryRecord>(
-      stream: InventoryRecord.getDocument(widget.targetProduct!),
+      stream: InventoryRecord.getByIdStream(widget.productId!),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Scaffold(
@@ -365,35 +358,6 @@ class _EditModeWidgetState extends State<EditModeWidget> {
                           ),
                           const SizedBox(height: 22),
 
-                          _sectionTitle(context, 'Visibility'),
-                          _switchRow(
-                            context,
-                            icon: Icons.trending_up_rounded,
-                            iconColor: const Color(0xFFFF5964),
-                            label: 'Trending',
-                            value: _trending,
-                            onChanged: (v) =>
-                                safeSetState(() => _trending = v),
-                          ),
-                          _switchRow(
-                            context,
-                            icon: Icons.fiber_new_rounded,
-                            iconColor: const Color(0xFF39D2C0),
-                            label: 'New Arrival',
-                            value: _newArrival,
-                            onChanged: (v) =>
-                                safeSetState(() => _newArrival = v),
-                          ),
-                          _switchRow(
-                            context,
-                            icon: Icons.grid_view_rounded,
-                            iconColor: const Color(0xFF4B39EF),
-                            label: 'Show in All Products',
-                            value: _showInAll,
-                            onChanged: (v) =>
-                                safeSetState(() => _showInAll = v),
-                          ),
-                          const SizedBox(height: 28),
 
                           _saveButton(context, product),
                           const SizedBox(height: 20),
@@ -477,7 +441,7 @@ class _EditModeWidgetState extends State<EditModeWidget> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  valueOrDefault<String>(product.categories, 'No category'),
+                  valueOrDefault<String>(product.categories, 'Uncategorized'),
                   style: theme.bodySmall.override(
                     font: GoogleFonts.inter(
                       fontWeight: FontWeight.w400,
@@ -904,58 +868,6 @@ class _EditModeWidgetState extends State<EditModeWidget> {
     );
   }
 
-  Widget _switchRow(
-    BuildContext context, {
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    final theme = FlutterFlowTheme.of(context);
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 16, 6),
-      child: Container(
-        padding: const EdgeInsetsDirectional.fromSTEB(14, 4, 6, 4),
-        decoration: BoxDecoration(
-          color: theme.secondaryBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.alternate, width: 1),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: iconColor, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                label,
-                style: theme.bodyMedium.override(
-                  font: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
-                    fontStyle: theme.bodyMedium.fontStyle,
-                  ),
-                  color: theme.primaryText,
-                  fontSize: 14,
-                  letterSpacing: 0.0,
-                  fontWeight: FontWeight.w600,
-                  fontStyle: theme.bodyMedium.fontStyle,
-                ),
-              ),
-            ),
-            Switch.adaptive(
-              value: value,
-              onChanged: onChanged,
-              activeColor: theme.primaryBackground,
-              activeTrackColor: theme.primary,
-              inactiveTrackColor: theme.alternate,
-              inactiveThumbColor: theme.secondaryBackground,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ============================================================
   // SAVE BUTTON
@@ -967,7 +879,7 @@ class _EditModeWidgetState extends State<EditModeWidget> {
       padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
       child: FFButtonWidget(
         onPressed: () => _save(product),
-        text: 'Save Changes',
+        text: 'Save Product Updates',
         icon: const Icon(Icons.save_rounded, size: 20),
         options: FFButtonOptions(
           width: double.infinity,
@@ -1012,11 +924,11 @@ class _EditModeWidgetState extends State<EditModeWidget> {
       final price = double.tryParse(_priceController.text.trim());
       final stock = int.tryParse(_stockController.text.trim()) ?? 1;
 
-      await product.reference.update({
-        'inventory_name': name,
-        'inventory_description': _descriptionController.text.trim(),
-        'inventory_price': price ?? product.inventoryPrice,
-        'inventory_images': _photoUrls,
+      await ProductRepository.update(product.id, {
+        'name': name,
+        'description': _descriptionController.text.trim(),
+        'price': price ?? product.inventoryPrice,
+        'images': _photoUrls,
         'available_colors': _splitCsv(_colorController.text),
         'available_alphasize': _splitCsv(_sizeController.text),
         'materials': _splitCsv(_materialController.text),
@@ -1025,11 +937,8 @@ class _EditModeWidgetState extends State<EditModeWidget> {
         'gender': _genderValue,
         'shipping_days': _shippingDaysValue,
         'location': _locationController.text.trim(),
-        'seller_whatsap': _whatsappController.text.trim(),
+        'seller_whatsapp': _whatsappController.text.trim(),
         'seller_number': _callController.text.trim(),
-        'top_selling': _trending,
-        'new_in': _newArrival,
-        'all_products': _showInAll,
         // 'stock': stock,  // schema has no stock field
       });
 

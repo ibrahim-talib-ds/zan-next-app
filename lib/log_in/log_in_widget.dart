@@ -408,6 +408,23 @@ class _LogInWidgetState extends State<LogInWidget>
                                     ),
                                   ],
                                 ),
+                                GestureDetector(
+                                  onTap: () => context.pushNamed(
+                                      ForgotPasswordWidget.routeName),
+                                  child: Text(
+                                    'Forgot password?',
+                                    style: theme.bodySmall.override(
+                                      font: GoogleFonts.inter(
+                                        fontWeight: FontWeight.w600,
+                                        fontStyle: theme.bodySmall.fontStyle,
+                                      ),
+                                      color: theme.primary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      fontStyle: theme.bodySmall.fontStyle,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 24),
@@ -595,6 +612,12 @@ class _LogInWidgetState extends State<LogInWidget>
       focusNode: _model.passwordFocusNode,
       obscureText: !_model.passwordVisibility,
       autofillHints: const [AutofillHints.password],
+      textInputAction: TextInputAction.go,
+      onFieldSubmitted: (_) {
+        if (!_model.isSubmitting) {
+          _signInButton(context);
+        }
+      },
       validator: _model.passwordTextControllerValidator.asValidator(context),
       style: theme.bodyMedium.override(
         font: GoogleFonts.inter(
@@ -669,7 +692,7 @@ class _LogInWidgetState extends State<LogInWidget>
     final theme = FlutterFlowTheme.of(context);
 
     return FFButtonWidget(
-      onPressed: () async {
+      onPressed: _model.isSubmitting ? null : () async {
         logFirebaseEvent('LOG_IN_PAGE_SIGN_IN_BTN_ON_TAP');
         GoRouter.of(context).prepareAuthEvent();
 
@@ -677,16 +700,23 @@ class _LogInWidgetState extends State<LogInWidget>
         // 🔐 Remember this email if checkbox is ticked
         await _saveRememberedEmail(email);
 
-        final user = await authManager.signInWithEmail(
-          context,
-          email,
-          _model.passwordTextController.text,
-        );
-        if (user == null) return;
+        safeSetState(() => _model.isSubmitting = true);
+        try {
+          final user = await authManager.signInWithEmail(
+            context,
+            email,
+            _model.passwordTextController.text,
+          );
+          if (user == null) return;
 
-        context.goNamedAuth(HomeWidget.routeName, context.mounted);
+          context.goNamedAuth(HomeWidget.routeName, context.mounted);
+        } finally {
+          if (mounted) safeSetState(() => _model.isSubmitting = false);
+        }
       },
-      text: FFLocalizations.of(context).getText('login_button'),
+      text: _model.isSubmitting
+          ? 'Signing in…'
+          : FFLocalizations.of(context).getText('login_button'),
       options: FFButtonOptions(
         width: double.infinity,
         height: 52,

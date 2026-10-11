@@ -1,137 +1,151 @@
+// ZanNext — ChatsRecord Shim
+//
+// Full API compatibility with the original Firestore ChatsRecord.
+// Backed by our Chat model (Postgres).
+
 import 'dart:async';
 
-import 'package:collection/collection.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'
+    show DocumentReference, CollectionReference, DocumentSnapshot, FirebaseFirestore;
 
-import '/backend/schema/util/firestore_util.dart';
-import '/backend/schema/util/schema_util.dart';
+import '../../models/chat.dart';
+import '../../repositories/chat_repository.dart';
 
-import 'index.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+class ChatsRecord {
+  ChatsRecord._(this._chat, DocumentReference? explicitRef)
+      : _explicitRef = explicitRef;
 
-/// This represents the "Room" or the "Conversation" between two people.
-class ChatsRecord extends FirestoreRecord {
-  ChatsRecord._(
-    DocumentReference reference,
-    Map<String, dynamic> data,
-  ) : super(reference, data) {
-    _initializeFields();
+  final Chat? _chat;
+  final DocumentReference? _explicitRef;
+
+  String get id => _chat?.id ?? '';
+
+  DocumentReference get reference =>
+      _explicitRef ??
+      FirebaseFirestore.instance.collection('Chats').doc(_chat?.id ?? 'unknown');
+
+  DocumentReference get syntheticRef => reference;
+
+  Chat? get chat => _chat;
+
+  // ---- Field getters ----
+  List<DocumentReference> get users {
+    final c = _chat;
+    if (c == null) return const <DocumentReference>[];
+    final refs = <DocumentReference>[];
+    if (c.buyerId.isNotEmpty) {
+      refs.add(FirebaseFirestore.instance.collection('users').doc(c.buyerId));
+    }
+    if (c.sellerId.isNotEmpty) {
+      refs.add(FirebaseFirestore.instance.collection('users').doc(c.sellerId));
+    }
+    return refs;
+  }
+  bool hasUsers() => _chat != null;
+
+  String get lastMessage => _chat?.lastMessage ?? '';
+  bool hasLastMessage() => (_chat?.lastMessage ?? '').isNotEmpty;
+
+  DateTime? get lastMessageTime => _chat?.lastMessageTime;
+  bool hasLastMessageTime() => _chat?.lastMessageTime != null;
+
+  DocumentReference? get productRef => _chat?.productId != null
+      ? FirebaseFirestore.instance.collection('Inventory').doc(_chat!.productId)
+      : null;
+  bool hasProductRef() => _chat?.productId != null;
+
+  DocumentReference? get buyerRef => _chat?.buyerId != null
+      ? FirebaseFirestore.instance.collection('users').doc(_chat!.buyerId)
+      : null;
+  bool hasBuyerRef() => _chat?.buyerId != null;
+
+  DocumentReference? get sellerRef => _chat?.sellerId != null
+      ? FirebaseFirestore.instance.collection('users').doc(_chat!.sellerId)
+      : null;
+  bool hasSellerRef() => _chat?.sellerId != null;
+
+  int get unreadCount => 0;
+  bool hasUnreadCount() => false;
+
+  List<DocumentReference> get lastMessageSeenBy {
+    final seen = _chat?.lastMessageSeenBy;
+    if (seen == null) return const <DocumentReference>[];
+    return seen
+        .map((uid) => FirebaseFirestore.instance.collection('users').doc(uid))
+        .toList();
+  }
+  bool hasLastMessageSeenBy() =>
+      _chat?.lastMessageSeenBy != null && _chat!.lastMessageSeenBy!.isNotEmpty;
+
+  String get productName => _chat?.productName ?? '';
+  bool hasProductName() => (_chat?.productName ?? '').isNotEmpty;
+
+  double get price => _chat?.price ?? 0;
+  bool hasPrice() => _chat?.price != null;
+
+  List<String> get itemImages => _chat?.itemImages ?? const <String>[];
+  bool hasItemImages() =>
+      (_chat?.itemImages != null && _chat!.itemImages!.isNotEmpty);
+
+  // Alias: widget reads `itemsImages` (matching Firestore field `items_images`)
+  List<String> get itemsImages => itemImages;
+  bool hasItemsImages() => hasItemImages();
+
+  // Alias: widget reads `userName` (array of display names)
+  List<String> get userName {
+    // Return placeholder names from the two user IDs
+    final c = _chat;
+    if (c == null) return const <String>[];
+    return <String>[c.buyerId, c.sellerId];
+  }
+  bool hasUserName() => _chat != null;
+
+  // ---- Raw snapshot data for compat ----
+  Map<String, dynamic> get snapshotData {
+    final c = _chat;
+    if (c == null) return <String, dynamic>{};
+    return <String, dynamic>{
+      'buyer_ref': c.buyerId,
+      'seller_ref': c.sellerId,
+      'product_ref': c.productId,
+      'product_name': c.productName,
+      'price': c.price,
+      'item_images': c.itemImages,
+      'last_message': c.lastMessage,
+      'last_message_time': c.lastMessageTime,
+      'last_message_seen_by': c.lastMessageSeenBy,
+    };
   }
 
-  // "users" field.
-  List<DocumentReference>? _users;
-  List<DocumentReference> get users => _users ?? const [];
-  bool hasUsers() => _users != null;
-
-  // "last_message" field.
-  String? _lastMessage;
-  String get lastMessage => _lastMessage ?? '';
-  bool hasLastMessage() => _lastMessage != null;
-
-  // "last_message_time" field.
-  DateTime? _lastMessageTime;
-  DateTime? get lastMessageTime => _lastMessageTime;
-  bool hasLastMessageTime() => _lastMessageTime != null;
-
-  // "product_ref" field.
-  DocumentReference? _productRef;
-  DocumentReference? get productRef => _productRef;
-  bool hasProductRef() => _productRef != null;
-
-  // "buyer_ref" field.
-  DocumentReference? _buyerRef;
-  DocumentReference? get buyerRef => _buyerRef;
-  bool hasBuyerRef() => _buyerRef != null;
-
-  // "seller_ref" field.
-  DocumentReference? _sellerRef;
-  DocumentReference? get sellerRef => _sellerRef;
-  bool hasSellerRef() => _sellerRef != null;
-
-  // "unread_count" field.
-  int? _unreadCount;
-  int get unreadCount => _unreadCount ?? 0;
-  bool hasUnreadCount() => _unreadCount != null;
-
-  // "last_message_seen_by" field.
-  List<DocumentReference>? _lastMessageSeenBy;
-  List<DocumentReference> get lastMessageSeenBy =>
-      _lastMessageSeenBy ?? const [];
-  bool hasLastMessageSeenBy() => _lastMessageSeenBy != null;
-
-  // "User_name" field.
-  List<String>? _userName;
-  List<String> get userName => _userName ?? const [];
-  bool hasUserName() => _userName != null;
-
-  // "user_photos" field.
-  List<String>? _userPhotos;
-  List<String> get userPhotos => _userPhotos ?? const [];
-  bool hasUserPhotos() => _userPhotos != null;
-
-  // "items_images" field.
-  List<String>? _itemsImages;
-  List<String> get itemsImages => _itemsImages ?? const [];
-  bool hasItemsImages() => _itemsImages != null;
-
-  // "product_name" field.
-  String? _productName;
-  String get productName => _productName ?? '';
-  bool hasProductName() => _productName != null;
-
-  // "Price" field.
-  double? _price;
-  double get price => _price ?? 0.0;
-  bool hasPrice() => _price != null;
-
-  void _initializeFields() {
-    _users = getDataList(snapshotData['users']);
-    _lastMessage = snapshotData['last_message'] as String?;
-    _lastMessageTime = snapshotData['last_message_time'] as DateTime?;
-    _productRef = snapshotData['product_ref'] as DocumentReference?;
-    _buyerRef = snapshotData['buyer_ref'] as DocumentReference?;
-    _sellerRef = snapshotData['seller_ref'] as DocumentReference?;
-    _unreadCount = castToType<int>(snapshotData['unread_count']);
-    _lastMessageSeenBy = getDataList(snapshotData['last_message_seen_by']);
-    _userName = getDataList(snapshotData['User_name']);
-    _userPhotos = getDataList(snapshotData['user_photos']);
-    _itemsImages = getDataList(snapshotData['items_images']);
-    _productName = snapshotData['product_name'] as String?;
-    _price = castToType<double>(snapshotData['Price']);
-  }
-
+  // ---- Static factory methods ----
   static CollectionReference get collection =>
       FirebaseFirestore.instance.collection('Chats');
 
   static Stream<ChatsRecord> getDocument(DocumentReference ref) =>
-      ref.snapshots().map((s) => ChatsRecord.fromSnapshot(s));
+      Stream.fromFuture(getDocumentOnce(ref));
 
-  static Future<ChatsRecord> getDocumentOnce(DocumentReference ref) =>
-      ref.get().then((s) => ChatsRecord.fromSnapshot(s));
+  static Future<ChatsRecord> getDocumentOnce(DocumentReference ref) async {
+    try {
+      final chat = await ChatRepository.get(ref.id);
+      return ChatsRecord._(chat, ref);
+    } catch (_) {
+      return ChatsRecord._(null, ref);
+    }
+  }
 
-  static ChatsRecord fromSnapshot(DocumentSnapshot snapshot) => ChatsRecord._(
-        snapshot.reference,
-        mapFromFirestore(snapshot.data() as Map<String, dynamic>),
-      );
+  static ChatsRecord fromSnapshot(DocumentSnapshot snapshot) =>
+      ChatsRecord._(null, snapshot.reference);
 
-  static ChatsRecord getDocumentFromData(
-    Map<String, dynamic> data,
-    DocumentReference reference,
-  ) =>
-      ChatsRecord._(reference, mapFromFirestore(data));
-
-  @override
-  String toString() =>
-      'ChatsRecord(reference: ${reference.path}, data: $snapshotData)';
+  static ChatsRecord fromChat(Chat chat) => ChatsRecord._(chat, null);
 
   @override
-  int get hashCode => reference.path.hashCode;
-
-  @override
-  bool operator ==(other) =>
-      other is ChatsRecord &&
-      reference.path.hashCode == other.reference.path.hashCode;
+  String toString() => 'ChatsRecord(id: ${_chat?.id})';
 }
 
+// =====================================================================
+// Compatibility: createChatsRecordData (FlutterFlow helper)
+// Returns a Firestore-style map. Screens migrate to real API calls later.
+// =====================================================================
 Map<String, dynamic> createChatsRecordData({
   List<DocumentReference>? users,
   String? lastMessage,
@@ -141,71 +155,22 @@ Map<String, dynamic> createChatsRecordData({
   DocumentReference? sellerRef,
   int? unreadCount,
   List<DocumentReference>? lastMessageSeenBy,
-  List<String>? userName,
-  List<String>? userPhotos,
-  List<String>? itemsImages,
   String? productName,
   double? price,
+  List<String>? itemImages,
+  List<String>? itemsImages,
 }) {
-  final firestoreData = mapToFirestore(
-    <String, dynamic>{
-      'users': users,
-      'last_message': lastMessage,
-      'last_message_time': lastMessageTime,
-      'product_ref': productRef,
-      'buyer_ref': buyerRef,
-      'seller_ref': sellerRef,
-      'unread_count': unreadCount,
-      'last_message_seen_by': lastMessageSeenBy,
-      'User_name': userName,
-      'user_photos': userPhotos,
-      'items_images': itemsImages,
-      'product_name': productName,
-      'Price': price,
-    }.withoutNulls,
-  );
-
-  return firestoreData;
-}
-
-class ChatsRecordDocumentEquality implements Equality<ChatsRecord> {
-  const ChatsRecordDocumentEquality();
-
-  @override
-  bool equals(ChatsRecord? e1, ChatsRecord? e2) {
-    const listEquality = ListEquality();
-    return listEquality.equals(e1?.users, e2?.users) &&
-        e1?.lastMessage == e2?.lastMessage &&
-        e1?.lastMessageTime == e2?.lastMessageTime &&
-        e1?.productRef == e2?.productRef &&
-        e1?.buyerRef == e2?.buyerRef &&
-        e1?.sellerRef == e2?.sellerRef &&
-        e1?.unreadCount == e2?.unreadCount &&
-        listEquality.equals(e1?.lastMessageSeenBy, e2?.lastMessageSeenBy) &&
-        listEquality.equals(e1?.userName, e2?.userName) &&
-        listEquality.equals(e1?.userPhotos, e2?.userPhotos) &&
-        listEquality.equals(e1?.itemsImages, e2?.itemsImages) &&
-        e1?.productName == e2?.productName &&
-        e1?.price == e2?.price;
-  }
-
-  @override
-  int hash(ChatsRecord? e) => const ListEquality().hash([
-        e?.users,
-        e?.lastMessage,
-        e?.lastMessageTime,
-        e?.productRef,
-        e?.buyerRef,
-        e?.sellerRef,
-        e?.unreadCount,
-        e?.lastMessageSeenBy,
-        e?.userName,
-        e?.userPhotos,
-        e?.itemsImages,
-        e?.productName,
-        e?.price
-      ]);
-
-  @override
-  bool isValidKey(Object? o) => o is ChatsRecord;
+  return <String, dynamic>{
+    'users': users,
+    'last_message': lastMessage,
+    'last_message_time': lastMessageTime,
+    'product_ref': productRef,
+    'buyer_ref': buyerRef,
+    'seller_ref': sellerRef,
+    'unread_count': unreadCount,
+    'last_message_seen_by': lastMessageSeenBy,
+    'product_name': productName,
+    'price': price,
+    'items_images': itemsImages ?? itemImages,
+  };
 }

@@ -1,22 +1,25 @@
-import '/auth/firebase_auth/auth_util.dart';
-import '/backend/backend.dart';
-import '/flutter_flow/flutter_flow_util.dart';
+import '/repositories/review_repository.dart';
 import '/flutter_flow/internationalization.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
-/// Bottom sheet for writing a product review.
+/// Bottom sheet for writing a product review (Postgres backend).
 /// Returns `true` if a review was submitted.
 class WriteReviewSheet extends StatefulWidget {
   const WriteReviewSheet({
     super.key,
-    required this.product,
-    this.existingReview,
+    required this.productId,
+    required this.productName,
+    this.existingReviewId,
+    this.existingRating,
+    this.existingMessage,
   });
 
-  final InventoryRecord product;
-  final ReviewsRecord? existingReview;
+  final String productId;
+  final String productName;
+  final String? existingReviewId;
+  final num? existingRating;
+  final String? existingMessage;
 
   @override
   State<WriteReviewSheet> createState() => _WriteReviewSheetState();
@@ -34,10 +37,10 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
   @override
   void initState() {
     super.initState();
-    if (widget.existingReview != null) {
-      _rating = widget.existingReview!.rating.toDouble();
-      _controller.text = widget.existingReview!.reviewsMessage;
+    if (widget.existingRating != null) {
+      _rating = widget.existingRating!.toDouble();
     }
+    _controller.text = widget.existingMessage ?? '';
   }
 
   @override
@@ -47,7 +50,6 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
   }
 
   Future<void> _submit() async {
-    if (currentUserReference == null) return;
     final text = _controller.text.trim();
     if (text.isEmpty) {
       _snack(FFLocalizations.of(context).getText('wr_empty'));
@@ -56,46 +58,15 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
 
     setState(() => _saving = true);
     try {
-      // Update existing OR create new
-      if (widget.existingReview != null) {
-        await widget.existingReview!.reference.update({
-          'rating': _rating.round(),
-          'reviews_message': text,
-          'date': getCurrentTimestamp,
-        });
-      } else {
-        // Check if user already reviewed this product
-        final existing = await FirebaseFirestore.instance
-            .collection('reviews')
-            .where('product_ref', isEqualTo: widget.product.reference)
-            .where('reviewer_ref', isEqualTo: currentUserReference)
-            .limit(1)
-            .get();
-
-        if (existing.docs.isNotEmpty) {
-          // Update their existing review
-          await existing.docs.first.reference.update({
-            'rating': _rating.round(),
-            'reviews_message': text,
-            'date': getCurrentTimestamp,
-          });
-        } else {
-          // Create new review
-          await ReviewsRecord.collection.doc().set({
-            'reviewers_name': currentUserDisplayName,
-            'reviewers_image': currentUserPhoto,
-            'reviewer_ref': currentUserReference,
-            'reviews_message': text,
-            'rating': _rating.round(),
-            'date': getCurrentTimestamp,
-            'product_ref': widget.product.reference,
-            'seller': widget.product.sellersRef,
-          });
-        }
+      // Edit = delete existing + create (backend recalcs rating on create).
+      if ((widget.existingReviewId ?? '').isNotEmpty) {
+        await ReviewRepository.delete(widget.existingReviewId!);
       }
-
-      // Recalculate product rating (simple avg)
-      await _recalcProductRating();
+      await ReviewRepository.create(
+        widget.productId,
+        rating: _rating.round(),
+        message: text,
+      );
 
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -105,26 +76,6 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
       setState(() => _saving = false);
       _snack('${FFLocalizations.of(context).getText('wr_failed')}$e');
     }
-  }
-
-  Future<void> _recalcProductRating() async {
-    try {
-      final snap = await FirebaseFirestore.instance
-          .collection('reviews')
-          .where('product_ref', isEqualTo: widget.product.reference)
-          .get();
-      if (snap.docs.isEmpty) return;
-      double total = 0;
-      for (final d in snap.docs) {
-        final r = d.data()['rating'];
-        if (r is num) total += r.toDouble();
-      }
-      final avg = total / snap.docs.length;
-      await widget.product.reference.update({
-        'rating': avg,
-        'reviews': snap.docs.length,
-      });
-    } catch (_) {}
   }
 
   void _snack(String msg, {bool success = false}) {
@@ -146,7 +97,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
     final border = isDark ? const Color(0xFF2A2A2C) : const Color(0xFFE5E7EB);
     final soft = isDark ? const Color(0xFF2A2A2C) : const Color(0xFFF0F2F5);
 
-    final isEditing = widget.existingReview != null;
+    final isEditing = (widget.existingReviewId ?? '').isNotEmpty;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -162,7 +113,6 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Handle
             Center(
               child: Container(
                 width: 44,
@@ -174,8 +124,6 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
               ),
             ),
             const SizedBox(height: 18),
-
-            // Header
             Row(
               children: [
                 Container(
@@ -205,7 +153,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        widget.product.inventoryName,
+                        widget.productName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: muted, fontSize: 12),
@@ -216,8 +164,6 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
               ],
             ),
             const SizedBox(height: 22),
-
-            // Star rating
             Text(
               FFLocalizations.of(context).getText('wr_your_rating'),
               style: TextStyle(
@@ -245,8 +191,6 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
               ),
             ),
             const SizedBox(height: 22),
-
-            // Review text
             Text(
               FFLocalizations.of(context).getText('wr_your_review'),
               style: TextStyle(
@@ -282,8 +226,6 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Save button
             GestureDetector(
               onTap: _saving ? null : _submit,
               child: Container(

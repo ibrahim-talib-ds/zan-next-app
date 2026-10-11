@@ -1,5 +1,6 @@
 import 'dart:math';
 import '/components/product_bottom_info.dart';
+import '/components/product_badge.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -94,8 +95,7 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
             Expanded(
               child: StreamBuilder<List<InventoryRecord>>(
                 stream: queryInventoryRecord(
-                  queryBuilder: (r) =>
-                      r.where('new_in', isEqualTo: true),
+                  filterNewIn: true,
                   limit: 200,
                 ),
                 builder: (context, snap) {
@@ -325,10 +325,7 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
           context.pushNamed(
             ProductDetailsWidget.routeName,
             queryParameters: {
-              'inventoryRef': serializeParam(
-                record.reference,
-                ParamType.DocumentReference,
-              ),
+              'inventoryRef': serializeParam( record.id, ParamType.String),
             }.withoutNulls,
           );
         },
@@ -357,33 +354,12 @@ class _NewProductsWidgetState extends State<NewProductsWidget> {
                         ),
                       ),
                     ),
-                    Positioned(
-                      top: 6,
-                      left: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: kRed,
-                          borderRadius: BorderRadius.circular(6),
-                          boxShadow: [
-                            BoxShadow(
-                              color: kRed.withOpacity(0.35),
-                              blurRadius: 6,
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          FFLocalizations.of(context).getText('newarrivals_badge'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
+                    if (productBadge(context, record) != null)
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: productBadge(context, record)!,
                       ),
-                    ),
                   ],
                 ),
               ),

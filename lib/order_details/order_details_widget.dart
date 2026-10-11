@@ -1,23 +1,22 @@
 import '/auth/firebase_auth/auth_util.dart';
-import '/backend/backend.dart';
+import '/repositories/chat_repository.dart';
+import '/repositories/order_repository.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'order_details_model.dart';
-import '/services/notification_sender.dart';
 export 'order_details_model.dart';
 
+/// Order details — 100% Postgres.
+/// Buyer tab: my orders. Seller tab: orders I sell (with status controls:
+/// Pending -> Confirmed -> On the way -> Delivered, plus Cancel).
 class OrderDetailsWidget extends StatefulWidget {
-  const OrderDetailsWidget({
-    super.key,
-    this.initialTab,
-  });
+  const OrderDetailsWidget({super.key, this.initialTab});
 
-  /// 'buyer' or 'seller'. Defaults to 'buyer'.
   final String? initialTab;
 
   static String routeName = 'Order_details';
@@ -51,11 +50,33 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
     return u.startsWith('http://') ? u.replaceFirst('http://', 'https://') : u;
   }
 
+  String _s(Map m, List<String> keys, [String fb = '']) {
+    for (final k in keys) {
+      final v = m[k];
+      if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+    }
+    return fb;
+  }
+
+  DateTime? _d(Map m, List<String> keys) {
+    for (final k in keys) {
+      final p = DateTime.tryParse((m[k] ?? '').toString());
+      if (p != null) return p;
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> _all = const [];
+  bool _loading = true;
+  String? _error;
+  bool _hasSellerOrders = false;
+
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => OrderDetailsModel());
     _model.activeTab = widget.initialTab ?? 'buyer';
+    _load();
   }
 
   @override
@@ -64,9 +85,44 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
     super.dispose();
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // BUILD
-  // ═══════════════════════════════════════════════════════════
+  Future<void> _load() async {
+    if (currentUserUid.isEmpty) {
+      if (mounted) safeSetState(() => _loading = false);
+      return;
+    }
+    try {
+      final raw = await zannext_api.ApiClient.get('/orders?user_id=$currentUserUid');
+      final list = (raw as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      list.sort((a, b) {
+        final ad = _d(a, ['created_at', 'date']) ?? DateTime(1970);
+        final bd = _d(b, ['created_at', 'date']) ?? DateTime(1970);
+        return bd.compareTo(ad);
+      });
+      _all = list;
+      _hasSellerOrders = _all.any((o) => _s(o, ['seller_id']) == currentUserUid);
+      if (_model.activeTab == 'seller' && !_hasSellerOrders) {
+        _model.activeTab = 'buyer';
+      }
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    }
+    if (mounted) safeSetState(() => _loading = false);
+  }
+
+  List<Map<String, dynamic>> _visible() {
+    final isBuyer = _model.activeTab == 'buyer';
+    return _all.where((o) {
+      final mine = isBuyer
+          ? _s(o, ['buyer_id']) == currentUserUid
+          : _s(o, ['seller_id']) == currentUserUid;
+      if (!mine) return false;
+      final hidden = isBuyer ? o['hidden_for_buyer'] : o['hidden_for_seller'];
+      return hidden != true && hidden != 'true';
+    }).toList();
+  }
+
+  // ── BUILD ──────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -82,22 +138,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
           child: Column(
             children: [
               _buildHeader(),
-              // Check if user has seller orders to decide if we show tabs
-              if (currentUserReference != null)
-                StreamBuilder<List<OrdersRecord>>(
-                  stream: queryOrdersRecord(
-                    queryBuilder: (q) => q.where(
-                      'seller',
-                      isEqualTo: currentUserReference,
-                    ),
-                    limit: 1,
-                  ),
-                  builder: (context, snap) {
-                    final hasSellerOrders =
-                        (snap.data ?? const []).isNotEmpty;
-                    return _buildTabs(showSellerTab: hasSellerOrders);
-                  },
-                ),
+              if (_hasSellerOrders) _buildTabs(),
               Expanded(child: _buildBody()),
             ],
           ),
@@ -106,109 +147,6 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
     );
   }
 
-  Widget _buildBody() {
-    if (currentUserReference == null) {
-      return _stateMessage(
-        icon: Icons.lock_outline_rounded,
-        title: FFLocalizations.of(context).getText('od_please_sign_in'),
-        subtitle: FFLocalizations.of(context).getText('od_sign_in_sub'),
-      );
-    }
-
-    final isBuyerTab = _model.activeTab == 'buyer';
-
-    return StreamBuilder<List<OrdersRecord>>(
-      stream: queryOrdersRecord(
-        queryBuilder: (q) => isBuyerTab
-            ? q.where('buyer', isEqualTo: currentUserReference)
-            : q.where('seller', isEqualTo: currentUserReference),
-        limit: 100,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return _stateMessage(
-            icon: Icons.error_outline_rounded,
-            title: FFLocalizations.of(context).getText('od_could_not_load'),
-            subtitle: '${snapshot.error}',
-            iconColor: kRed,
-          );
-        }
-        if (!snapshot.hasData) {
-          return _SpinnerWithTimeout(
-            onTimeout: () => _emptyOrdersState(isBuyerTab),
-          );
-        }
-        final hiddenField =
-            isBuyerTab ? 'hidden_for_buyer' : 'hidden_for_seller';
-        final orders = snapshot.data!.where((o) {
-          try {
-            final data = (o as dynamic).snapshotData;
-            if (data is Map) {
-              return data[hiddenField] != true;
-            }
-          } catch (_) {}
-          return true;
-        }).toList();
-
-        orders.sort((a, b) {
-          final ad = a.date ?? DateTime(1970);
-          final bd = b.date ?? DateTime(1970);
-          return bd.compareTo(ad);
-        });
-
-        if (orders.isEmpty) {
-          return _emptyOrdersState(isBuyerTab);
-        }
-
-        return RefreshIndicator(
-          color: kGreen,
-          onRefresh: () async => safeSetState(() {}),
-          child: ListView.separated(
-            padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 24),
-            itemCount: orders.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, i) {
-              final order = orders[i];
-              return Dismissible(
-                key: ValueKey('order_${order.reference.id}'),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding:
-                      const EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
-                  decoration: BoxDecoration(
-                    color: kRed,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.delete_outline_rounded,
-                          color: Colors.white, size: 22),
-                      const SizedBox(width: 6),
-                      Text(FFLocalizations.of(context).getText('od_delete'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          )),
-                    ],
-                  ),
-                ),
-                confirmDismiss: (_) => _confirmDeleteOrder(order),
-                onDismissed: (_) => _deleteOrder(order),
-                child: _buildOrderCard(order, isBuyer: isBuyerTab),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // HEADER
-  // ═══════════════════════════════════════════════════════════
   Widget _buildHeader() {
     final topPad = MediaQuery.of(context).padding.top;
     return Container(
@@ -240,19 +178,14 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                FFLocalizations.of(context).getText('od_header_title'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text(FFLocalizations.of(context).getText('od_header_title'),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700)),
               const SizedBox(height: 2),
-              Text(
-                FFLocalizations.of(context).getText('od_header_sub'),
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
-              ),
+              Text(FFLocalizations.of(context).getText('od_header_sub'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11)),
             ],
           ),
           const Spacer(),
@@ -260,42 +193,28 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             icon: const Icon(Icons.more_vert_rounded,
                 color: Colors.white, size: 22),
             onSelected: (v) {
-              if (v == 'clear_delivered') _confirmClearDelivered();
-              if (v == 'clear_cancelled') _confirmClearCancelled();
-              if (v == 'clear_all') _confirmClearAllOrders();
+              if (v == 'clear_all') _confirmBulkClear(all: true);
+              if (v == 'clear_delivered') _confirmBulkClear();
             },
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'clear_delivered',
-                child: Row(
-                  children: [
-                    const Icon(Icons.done_all_rounded, size: 18),
-                    const SizedBox(width: 10),
-                    Text(FFLocalizations.of(context).getText('od_menu_clear_delivered')),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'clear_cancelled',
-                child: Row(
-                  children: [
-                    const Icon(Icons.cancel_outlined, size: 18),
-                    const SizedBox(width: 10),
-                    Text(FFLocalizations.of(context).getText('od_menu_clear_cancelled')),
-                  ],
-                ),
+                child: Row(children: [
+                  const Icon(Icons.done_all_rounded, size: 18),
+                  const SizedBox(width: 10),
+                  Text(FFLocalizations.of(context)
+                      .getText('od_menu_clear_delivered')),
+                ]),
               ),
               PopupMenuItem(
                 value: 'clear_all',
-                child: Row(
-                  children: [
-                    const Icon(Icons.delete_sweep_rounded,
-                        size: 18, color: kRed),
-                    const SizedBox(width: 10),
-                    Text(FFLocalizations.of(context).getText('od_menu_clear_all'),
-                        style: const TextStyle(color: kRed)),
-                  ],
-                ),
+                child: Row(children: [
+                  const Icon(Icons.delete_sweep_rounded,
+                      size: 18, color: kRed),
+                  const SizedBox(width: 10),
+                  Text(FFLocalizations.of(context).getText('od_menu_clear_all'),
+                      style: const TextStyle(color: kRed)),
+                ]),
               ),
             ],
           ),
@@ -304,183 +223,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // DELETE HELPERS
-  // ═══════════════════════════════════════════════════════════
-  Future<bool> _confirmDeleteOrder(OrdersRecord order) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: _card,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
-            title: Text(FFLocalizations.of(context).getText('od_delete_order_title'),
-                style: TextStyle(
-                    color: _text,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16)),
-            content: Text(
-              '${FFLocalizations.of(context).getText('od_delete_order_body_prefix')}${order.productName ?? FFLocalizations.of(context).getText('od_this_order')}${FFLocalizations.of(context).getText('od_delete_order_body_mid')}',
-              style: TextStyle(color: _muted, fontSize: 13, height: 1.4),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(FFLocalizations.of(context).getText('od_cancel'),
-                    style: TextStyle(
-                        color: _muted, fontWeight: FontWeight.w600)),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(FFLocalizations.of(context).getText('od_delete'),
-                    style: const TextStyle(
-                        color: kRed, fontWeight: FontWeight.w800)),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
-  Future<void> _deleteOrder(OrdersRecord order) async {
-    try {
-      // Soft delete: hide for this user only
-      final isBuyer = order.buyer == currentUserReference;
-      final field =
-          isBuyer ? 'hidden_for_buyer' : 'hidden_for_seller';
-      await order.reference.update({field: true});
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(FFLocalizations.of(context).getText('od_order_removed')),
-          backgroundColor: kGreen,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      safeSetState(() {});
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${FFLocalizations.of(context).getText('od_could_not_delete')}$e'),
-          backgroundColor: kRed,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  Future<void> _confirmClearDelivered() async {
-    final ok = await _confirmBulk(
-        FFLocalizations.of(context).getText('od_clear_delivered_title'),
-        FFLocalizations.of(context).getText('od_clear_delivered_body'));
-    if (ok) await _bulkHide(statuses: ['delivered']);
-  }
-
-  Future<void> _confirmClearCancelled() async {
-    final ok = await _confirmBulk(
-        FFLocalizations.of(context).getText('od_clear_cancelled_title'),
-        FFLocalizations.of(context).getText('od_clear_cancelled_body'));
-    if (ok) await _bulkHide(statuses: ['cancelled']);
-  }
-
-  Future<void> _confirmClearAllOrders() async {
-    final ok = await _confirmBulk(
-        FFLocalizations.of(context).getText('od_clear_all_title'),
-        FFLocalizations.of(context).getText('od_clear_all_body'));
-    if (ok) await _bulkHide(statuses: null);
-  }
-
-  Future<bool> _confirmBulk(String title, String body) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: _card,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
-            title: Text(title,
-                style: TextStyle(
-                    color: _text,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16)),
-            content: Text(body,
-                style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(FFLocalizations.of(context).getText('od_cancel'),
-                    style: TextStyle(
-                        color: _muted, fontWeight: FontWeight.w600)),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(FFLocalizations.of(context).getText('od_clear'),
-                    style: const TextStyle(
-                        color: kRed, fontWeight: FontWeight.w800)),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
-  Future<void> _bulkHide({required List<String>? statuses}) async {
-    if (currentUserReference == null) return;
-    final isBuyerTab = _model.activeTab == 'buyer';
-    try {
-      final q = await FirebaseFirestore.instance
-          .collection('orders')
-          .where(isBuyerTab ? 'buyer' : 'seller',
-              isEqualTo: currentUserReference)
-          .get();
-
-      int count = 0;
-      final batch = FirebaseFirestore.instance.batch();
-      final field =
-          isBuyerTab ? 'hidden_for_buyer' : 'hidden_for_seller';
-
-      for (final doc in q.docs) {
-        final data = doc.data();
-        final status =
-            (data['status'] ?? '').toString().toLowerCase();
-        if (statuses != null) {
-          final matches = statuses.any((s) => status.contains(s));
-          if (!matches) continue;
-        }
-        batch.update(doc.reference, {field: true});
-        count++;
-      }
-      await batch.commit();
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${FFLocalizations.of(context).getText('od_cleared_prefix')}$count${FFLocalizations.of(context).getText('od_cleared_suffix')}'),
-          backgroundColor: kGreen,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      safeSetState(() {});
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${FFLocalizations.of(context).getText('od_could_not_clear')}$e'),
-          backgroundColor: kRed,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // TABS
-  // ═══════════════════════════════════════════════════════════
-  Widget _buildTabs({required bool showSellerTab}) {
-    // If no seller orders, force buyer tab — no need to switch
-    if (!showSellerTab) return const SizedBox(height: 8);
-
+  Widget _buildTabs() {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 6),
       child: Container(
@@ -532,34 +275,218 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 15,
-              color: active ? Colors.white : _muted,
-            ),
+            Icon(icon, size: 15, color: active ? Colors.white : _muted),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: active ? Colors.white : _muted,
-                fontSize: 13,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
+            Text(label,
+                style: TextStyle(
+                    color: active ? Colors.white : _muted,
+                    fontSize: 13,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
           ],
         ),
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // ORDER CARD
-  // ═══════════════════════════════════════════════════════════
-  Widget _buildOrderCard(OrdersRecord order, {required bool isBuyer}) {
-    final status = _statusOf(order.status);
-    final imageUrl = order.itemImages.isNotEmpty
-        ? order.itemImages.first
-        : '';
+  Widget _buildBody() {
+    if (currentUserUid.isEmpty) {
+      return _stateMessage(
+        icon: Icons.lock_outline_rounded,
+        title: FFLocalizations.of(context).getText('od_please_sign_in'),
+        subtitle: FFLocalizations.of(context).getText('od_sign_in_sub'),
+      );
+    }
+    if (_loading) {
+      return const Center(
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(kGreen),
+            strokeWidth: 3,
+          ),
+        ),
+      );
+    }
+    if (_error != null) {
+      return _stateMessage(
+        icon: Icons.error_outline_rounded,
+        title: FFLocalizations.of(context).getText('od_could_not_load'),
+        subtitle: _error!,
+        iconColor: kRed,
+      );
+    }
+    final isBuyer = _model.activeTab == 'buyer';
+    final orders = _visible();
+    if (orders.isEmpty) return _emptyOrdersState(isBuyer);
+
+    return RefreshIndicator(
+      color: kGreen,
+      onRefresh: _load,
+      child: ListView.separated(
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 24),
+        itemCount: orders.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, i) {
+          final o = orders[i];
+          return Dismissible(
+            key: ValueKey('order_${_s(o, ['id'])}'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
+              decoration: BoxDecoration(
+                color: kRed,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.delete_outline_rounded,
+                      color: Colors.white, size: 22),
+                  const SizedBox(width: 6),
+                  Text(FFLocalizations.of(context).getText('od_delete'),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13)),
+                ],
+              ),
+            ),
+            confirmDismiss: (_) => _confirmDelete(),
+            onDismissed: (_) => _hideOrder(o),
+            child: _buildOrderCard(o, isBuyer: isBuyer),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<bool> _confirmDelete() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: _card,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Text(
+                FFLocalizations.of(context).getText('od_delete_order_title'),
+                style: TextStyle(
+                    color: _text,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16)),
+            content: Text(
+                FFLocalizations.of(context).getText('od_delete_order_body_prefix') +
+                    FFLocalizations.of(context).getText('od_this_order') +
+                    FFLocalizations.of(context)
+                        .getText('od_delete_order_body_mid'),
+                style: TextStyle(color: _muted, fontSize: 13, height: 1.4)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(FFLocalizations.of(context).getText('od_cancel'),
+                    style: TextStyle(
+                        color: _muted, fontWeight: FontWeight.w600)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(FFLocalizations.of(context).getText('od_delete'),
+                    style: const TextStyle(
+                        color: kRed, fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _hideOrder(Map<String, dynamic> o) async {
+    try {
+      await OrderRepository.hide(_s(o, ['id']));
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text(FFLocalizations.of(context).getText('od_order_removed')),
+          backgroundColor: kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              '${FFLocalizations.of(context).getText('od_could_not_delete')}$e'),
+          backgroundColor: kRed,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmBulkClear({bool all = false}) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _card,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+            all
+                ? FFLocalizations.of(context).getText('od_clear_all_title')
+                : FFLocalizations.of(context)
+                    .getText('od_clear_delivered_title'),
+            style: TextStyle(
+                color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(FFLocalizations.of(context).getText('od_cancel'),
+                style:
+                    TextStyle(color: _muted, fontWeight: FontWeight.w600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(FFLocalizations.of(context).getText('od_clear'),
+                style: const TextStyle(
+                    color: kRed, fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final isBuyer = _model.activeTab == 'buyer';
+    var count = 0;
+    for (final o in _visible()) {
+      final status = _s(o, ['status']).toLowerCase();
+      if (!all && !(status.contains('deliver') || status.contains('cancel'))) {
+        continue;
+      }
+      try {
+        await OrderRepository.hide(_s(o, ['id']));
+        count++;
+      } catch (_) {}
+    }
+    await _load();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            '${FFLocalizations.of(context).getText('od_cleared_prefix')}$count${FFLocalizations.of(context).getText('od_cleared_suffix')}'),
+        backgroundColor: kGreen,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ── ORDER CARD ─────────────────────────────────────────────
+  Widget _buildOrderCard(Map<String, dynamic> o, {required bool isBuyer}) {
+    final status = _statusOf(_s(o, ['status']));
+    final images = (o['item_images'] is List)
+        ? (o['item_images'] as List).map((e) => e.toString()).toList()
+        : <String>[];
+    final imageUrl = images.isNotEmpty ? images.first : '';
 
     return Container(
       decoration: BoxDecoration(
@@ -569,13 +496,11 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
       ),
       child: Column(
         children: [
-          // ── Row 1: product info ──
           Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product image
                 Container(
                   width: 72,
                   height: 72,
@@ -587,71 +512,57 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                   child: imageUrl.isEmpty
                       ? Icon(Icons.image_not_supported_outlined,
                           color: _muted, size: 24)
-                      : Image.network(
-                          _imgUrl(imageUrl),
+                      : Image.network(_imgUrl(imageUrl),
                           fit: BoxFit.contain,
                           errorBuilder: (_, __, ___) => Icon(
-                            Icons.image_not_supported_outlined,
-                            color: _muted,
-                            size: 24,
-                          ),
-                        ),
+                              Icons.image_not_supported_outlined,
+                              color: _muted,
+                              size: 24)),
                 ),
                 const SizedBox(width: 12),
-                // Text info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        valueOrDefault<String>(
-                            order.productName, FFLocalizations.of(context).getText('od_product_fallback')),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: _text,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          height: 1.25,
-                        ),
-                      ),
+                          valueOrDefault<String>(_s(o, ['product_name']),
+                              FFLocalizations.of(context)
+                                  .getText('od_product_fallback')),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: _text,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              height: 1.25)),
                       const SizedBox(height: 6),
                       Text(
                         valueOrDefault<String>(
-                          formatNumber(
-                            order.price,
-                            formatType: FormatType.decimal,
-                            decimalType: DecimalType.automatic,
-                            currency: 'TZS ',
-                          ),
-                          'TZS 0',
-                        ),
+                            formatNumber(
+                                (o['price'] as num?)?.toDouble() ?? 0,
+                                formatType: FormatType.decimal,
+                                decimalType: DecimalType.automatic,
+                                currency: 'TZS '),
+                            'TZS 0'),
                         style: const TextStyle(
-                          color: kGreen,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
+                            color: kGreen,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 4),
-                      // Counterparty line
-                      _counterpartyLine(order, isBuyer: isBuyer),
+                      _counterpartyLine(o, isBuyer: isBuyer),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-
-          // ── Row 2: status bar ──
           Container(
             decoration: BoxDecoration(
               color: _soft,
-              border: Border(
-                top: BorderSide(color: _border),
-              ),
+              border: Border(top: BorderSide(color: _border)),
               borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(15),
-              ),
+                  bottom: Radius.circular(15)),
             ),
             padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 10),
             child: Row(
@@ -659,90 +570,77 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                 _statusBadge(status),
                 const Spacer(),
                 Text(
-                  order.date != null
-                      ? dateTimeFormat('yMMMd', order.date!)
+                  _d(o, ['created_at', 'date']) != null
+                      ? dateTimeFormat('yMMMd', _d(o, ['created_at', 'date'])!)
                       : '',
                   style: TextStyle(color: _muted, fontSize: 11.5),
                 ),
               ],
             ),
           ),
-
-          // ── Row 3: actions (different per role) ──
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-            child: isBuyer
-                ? _buyerActions(order)
-                : _sellerActions(order),
+            child:
+                isBuyer ? _buyerActions(o) : _sellerActions(o),
           ),
         ],
       ),
     );
   }
 
-  Widget _counterpartyLine(OrdersRecord order, {required bool isBuyer}) {
-    // For buyer: show seller name. For seller: show buyer name.
-    final ref = isBuyer ? order.seller : order.buyer;
-    if (ref == null) return const SizedBox.shrink();
-
-    return FutureBuilder<UsersRecord?>(
-      future: _getUser(ref),
-      builder: (context, snap) {
-        final name = snap.data?.displayName ?? '';
-        if (name.isEmpty) return const SizedBox.shrink();
-        return Row(
-          children: [
-            Icon(
-              isBuyer
-                  ? Icons.storefront_outlined
-                  : Icons.person_outline_rounded,
-              size: 13,
-              color: _muted,
-            ),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                isBuyer
-                    ? '${FFLocalizations.of(context).getText('od_seller_prefix')}$name'
-                    : '${FFLocalizations.of(context).getText('od_buyer_prefix')}$name',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: _muted, fontSize: 12),
-              ),
-            ),
-          ],
-        );
-      },
+  Widget _counterpartyLine(Map<String, dynamic> o, {required bool isBuyer}) {
+    final name = isBuyer
+        ? _s(o, ['seller_name'], _s(o, ['seller_id']))
+        : _s(o, ['buyer_name'], _s(o, ['buyer_id']));
+    if (name.isEmpty) return const SizedBox.shrink();
+    return Row(
+      children: [
+        Icon(
+          isBuyer ? Icons.storefront_outlined : Icons.person_outline_rounded,
+          size: 13,
+          color: _muted,
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            '${isBuyer ? FFLocalizations.of(context).getText('od_seller_prefix') : FFLocalizations.of(context).getText('od_buyer_prefix')}$name',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: _muted, fontSize: 12),
+          ),
+        ),
+      ],
     );
   }
 
-  Future<UsersRecord?> _getUser(DocumentReference? ref) async {
-    if (ref == null) return null;
-    try {
-      final snap = await ref.get();
-      if (snap.exists) return UsersRecord.fromSnapshot(snap);
-    } catch (_) {}
-    return null;
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // STATUS
-  // ═══════════════════════════════════════════════════════════
+  // ── STATUS ─────────────────────────────────────────────────
   _OrderStatus _statusOf(String? raw) {
     final s = (raw ?? '').toLowerCase().trim();
+    if (s.contains('cancel')) {
+      return _OrderStatus(
+          FFLocalizations.of(context).getText('od_status_cancelled'),
+          kRed,
+          Icons.cancel_outlined);
+    }
     if (s.contains('deliver')) {
-      return _OrderStatus(FFLocalizations.of(context).getText('od_status_delivered'), kGreen, Icons.check_circle_rounded);
+      return _OrderStatus(
+          FFLocalizations.of(context).getText('od_status_delivered'),
+          kGreen,
+          Icons.check_circle_rounded);
     }
     if (s.contains('ship') || s.contains('way')) {
-      return _OrderStatus(FFLocalizations.of(context).getText('od_status_on_way'), kBlue, Icons.local_shipping_rounded);
+      return _OrderStatus(
+          FFLocalizations.of(context).getText('od_status_on_way'),
+          kBlue,
+          Icons.local_shipping_rounded);
     }
-    if (s.contains('cancel')) {
-      return _OrderStatus(FFLocalizations.of(context).getText('od_status_cancelled'), kRed, Icons.cancel_outlined);
+    if (s.contains('confirm')) {
+      return _OrderStatus('Confirmed', kBlue, Icons.verified_rounded);
     }
-    if (s.contains('return')) {
-      return _OrderStatus(FFLocalizations.of(context).getText('od_status_returned'), _muted, Icons.replay_rounded);
-    }
-    return _OrderStatus(FFLocalizations.of(context).getText('od_status_pending'), kAmber, Icons.access_time_rounded);
+    return _OrderStatus(
+        FFLocalizations.of(context).getText('od_status_pending'),
+        kAmber,
+        Icons.access_time_rounded);
   }
 
   Widget _statusBadge(_OrderStatus st) {
@@ -757,51 +655,46 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
         children: [
           Icon(st.icon, color: st.color, size: 13),
           const SizedBox(width: 5),
-          Text(
-            st.label,
-            style: TextStyle(
-              color: st.color,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          Text(st.label,
+              style: TextStyle(
+                  color: st.color,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700)),
         ],
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // ACTIONS — BUYER
-  // ═══════════════════════════════════════════════════════════
-  Widget _buyerActions(OrdersRecord order) {
+  // ── BUYER ACTIONS ──────────────────────────────────────────
+  Widget _buyerActions(Map<String, dynamic> o) {
     return Row(
       children: [
         Expanded(
           child: _outlineBtn(
             icon: Icons.chat_bubble_outline_rounded,
             label: FFLocalizations.of(context).getText('od_contact_seller'),
-            onTap: () => _openChatWith(order.seller, order),
+            onTap: () => _openChat(o),
           ),
         ),
         const SizedBox(width: 8),
         _circleIcon(
           icon: Icons.local_shipping_outlined,
-          onTap: () => _openTrackingSheet(order),
+          onTap: () => _openTrackingSheet(o),
         ),
       ],
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // ACTIONS — SELLER
-  // ═══════════════════════════════════════════════════════════
-  Widget _sellerActions(OrdersRecord order) {
-    final status = _statusOf(order.status);
+  // ── SELLER ACTIONS ─────────────────────────────────────────
+  Widget _sellerActions(Map<String, dynamic> o) {
+    final status = _s(o, ['status']).toLowerCase();
+    final delivered = status.contains('deliver') || status.contains('cancel');
+    final next = _nextStatus(_s(o, ['status']));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Buyer address if present
-        if (order.address.isNotEmpty) ...[
+        if (_s(o, ['address']).isNotEmpty) ...[
           Container(
             decoration: BoxDecoration(
               color: _soft,
@@ -814,175 +707,164 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                     size: 15, color: kGreen),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    order.address,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: _muted,
-                      fontSize: 12,
-                      height: 1.35,
-                    ),
-                  ),
+                  child: Text(_s(o, ['address']),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: _muted, fontSize: 12, height: 1.35)),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 10),
         ],
-
-        // Quick status updates
         Row(
           children: [
             Expanded(
               child: _outlineBtn(
                 icon: Icons.chat_bubble_outline_rounded,
                 label: FFLocalizations.of(context).getText('od_message_buyer'),
-                onTap: () => _openChatWith(order.buyer, order),
+                onTap: () => _openChat(o),
               ),
             ),
             const SizedBox(width: 8),
-            if (status.label == 'Pending' || status.label == 'On the way')
+            if (!delivered)
               _circleIcon(
                 icon: Icons.local_shipping_rounded,
                 color: kBlue,
-                onTap: () => _advanceStatus(order, status),
+                onTap: () => _setStatus(o, next),
+              ),
+            if (!delivered) const SizedBox(width: 8),
+            if (!delivered)
+              _circleIcon(
+                icon: Icons.cancel_outlined,
+                color: kRed,
+                onTap: () => _setStatus(o, 'Cancelled'),
               )
             else
               _circleIcon(
                 icon: Icons.check_circle_rounded,
                 color: kGreen,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(FFLocalizations.of(context).getText('od_order_completed'))),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(FFLocalizations.of(context)
+                          .getText('od_order_completed'))));
                 },
               ),
           ],
         ),
+        if (!delivered) ...[
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text('Next: $next',
+                style: TextStyle(color: _muted, fontSize: 11)),
+          ),
+        ],
       ],
     );
   }
 
-  Future<void> _advanceStatus(
-      OrdersRecord order, _OrderStatus current) async {
-    String newStatus;
-    if (current.label == 'Pending') {
-      newStatus = 'On the way';
-    } else if (current.label == 'On the way') {
-      newStatus = 'Delivered';
-    } else {
-      newStatus = current.label;
-    }
+    String _nextStatus(String current) {
+    final s = current.toLowerCase().trim();
+    if (s.contains('pend')) return 'confirmed';
+    if (s.contains('confirm')) return 'shipped';
+    return 'delivered';
+  }
 
-    try {
-      await order.reference.update({'status': newStatus});
-
-      // 🔔 Push notify the buyer
-      await NotificationSender.sendToUser(
-        userRef: order.buyer,
-        title: 'Order Update: $newStatus',
-        body: 'Your order for "${order.productName}" is now $newStatus',
-        data: {
-          'route': 'Order_details',
-          'orderId': order.reference.id,
-        },
-      );
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${FFLocalizations.of(context).getText('od_status_updated_prefix')}$newStatus${FFLocalizations.of(context).getText('od_status_updated_suffix')}')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${FFLocalizations.of(context).getText('od_update_failed')}$e')),
-      );
+  String _pretty(String s) {
+    switch (s.toLowerCase().trim()) {
+      case 'confirmed': return 'Confirmed';
+      case 'shipped': return 'On the way';
+      case 'delivered': return 'Delivered';
+      case 'cancelled': return 'Cancelled';
+      default: return s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
     }
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // CHAT
-  // ═══════════════════════════════════════════════════════════
-  // ═══════════════════════════════════════════════════════════
-  // TRACKING BOTTOM SHEET
-  // ═══════════════════════════════════════════════════════════
-  Future<void> _openTrackingSheet(OrdersRecord order) async {
+    Future<void> _setStatus(Map<String, dynamic> o, String newStatus) async {
+    final id = _s(o, ['id']);
+    final pretty = _pretty(newStatus);
+    try {
+      await OrderRepository.updateStatus(id, newStatus);
+
+      // Notify the buyer: in-app notification + FCM push (backend /internal/notify)
+      final buyer = _s(o, ['buyer_id']);
+      if (buyer.isNotEmpty && buyer != currentUserUid) {
+        try {
+          await zannext_api.ApiClient.post('/internal/notify', body: {
+            'user_id': buyer,
+            'title': 'Order update: $pretty',
+            'body':
+                'Your order for "${_s(o, ['product_name'], 'item')}" is now $pretty',
+            'type': 'system',
+            'product_id': id,
+          });
+        } catch (_) {}
+      }
+
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              '${FFLocalizations.of(context).getText('od_status_updated_prefix')}$pretty${FFLocalizations.of(context).getText('od_status_updated_suffix')}')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              '${FFLocalizations.of(context).getText('od_update_failed')}$e')));
+    }
+  }
+
+  // ── CHAT ───────────────────────────────────────────────────
+  Future<void> _openChat(Map<String, dynamic> o) async {
+    if (currentUserUid.isEmpty) return;
+    try {
+      final images = (o['item_images'] is List)
+          ? (o['item_images'] as List).map((e) => e.toString()).toList()
+          : <String>[];
+      final chat = await ChatRepository.create({
+        'seller_id': _s(o, ['seller_id']),
+        if (_s(o, ['product_id']).isNotEmpty)
+          'product_id': _s(o, ['product_id']),
+        'product_name': _s(o, ['product_name']),
+        'price': (o['price'] as num?)?.toDouble() ?? 0,
+        'item_images': [
+          if (images.isNotEmpty) images.first,
+        ],
+      });
+      if (!mounted) return;
+      context.pushNamed(
+        ChatDWidget.routeName,
+        queryParameters: {
+          'chatId': serializeParam(chat.id, ParamType.String),
+        }.withoutNulls,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+              '${FFLocalizations.of(context).getText('od_could_not_open_chat')}$e')));
+    }
+  }
+
+  // ── TRACKING SHEET ─────────────────────────────────────────
+  Future<void> _openTrackingSheet(Map<String, dynamic> o) async {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _TrackingSheet(
-        order: order,
+        order: o,
         colors: _SheetColors(
-          bg: _bg,
-          card: _card,
-          soft: _soft,
-          text: _text,
-          muted: _muted,
-          border: _border,
-          isDark: _isDark,
+          bg: _bg, card: _card, soft: _soft, text: _text,
+          muted: _muted, border: _border,
         ),
       ),
     );
   }
 
-  Future<void> _openChatWith(
-      DocumentReference? otherRef, OrdersRecord order) async {
-    if (otherRef == null || currentUserReference == null) return;
-    try {
-      final existing = await FirebaseFirestore.instance
-          .collection('Chats')
-          .where('users', arrayContains: currentUserReference)
-          .where('product_ref', isEqualTo: order.productRef)
-          .limit(1)
-          .get();
-
-      DocumentReference chatRef;
-      if (existing.docs.isNotEmpty) {
-        chatRef = existing.docs.first.reference;
-      } else {
-        final newDoc = ChatsRecord.collection.doc();
-        await newDoc.set({
-          ...createChatsRecordData(
-            lastMessage: FFLocalizations.of(context).getText('od_chat_about_order'),
-            lastMessageTime: getCurrentTimestamp,
-            productRef: order.productRef,
-            buyerRef: order.buyer,
-            sellerRef: order.seller,
-            productName: order.productName,
-            price: order.price,
-          ),
-          ...mapToFirestore({
-            'users': [currentUserReference!, otherRef],
-            'User_name': [currentUserDisplayName, ''],
-            'items_images': [
-              order.itemImages.isNotEmpty ? order.itemImages.first : ''
-            ],
-          }),
-        });
-        chatRef = newDoc;
-      }
-
-      if (!mounted) return;
-      context.pushNamed(
-        ChatDWidget.routeName,
-        queryParameters: {
-          'receiveChats':
-              serializeParam(chatRef, ParamType.DocumentReference),
-        }.withoutNulls,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${FFLocalizations.of(context).getText('od_could_not_open_chat')}$e')),
-      );
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // BUTTON HELPERS
-  // ═══════════════════════════════════════════════════════════
+  // ── BUTTON HELPERS ─────────────────────────────────────────
   Widget _outlineBtn({
     required IconData icon,
     required String label,
@@ -1002,14 +884,11 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
           children: [
             Icon(icon, color: kGreen, size: 15),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: kGreen,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            Text(label,
+                style: const TextStyle(
+                    color: kGreen,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700)),
           ],
         ),
       ),
@@ -1036,12 +915,7 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // STATE MESSAGE
-  // ═══════════════════════════════════════════════════════════
-  // ═══════════════════════════════════════════════════════════
-  // EMPTY ORDERS STATE — friendly with CTA button
-  // ═══════════════════════════════════════════════════════════
+  // ── STATES ─────────────────────────────────────────────────
   Widget _emptyOrdersState(bool isBuyerTab) {
     return Center(
       child: Padding(
@@ -1075,13 +949,11 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
             Text(
               isBuyerTab
                   ? FFLocalizations.of(context).getText('od_empty_buyer_title')
-                  : FFLocalizations.of(context).getText('od_empty_seller_title'),
+                  : FFLocalizations.of(context)
+                      .getText('od_empty_seller_title'),
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _text,
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-              ),
+                  color: _text, fontSize: 19, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
@@ -1090,72 +962,13 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
                   : FFLocalizations.of(context).getText('od_empty_seller_sub'),
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _muted,
-                fontSize: 13.5,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 26),
-            GestureDetector(
-              onTap: () {
-                try {
-                  context.pushNamed(
-                    isBuyerTab
-                        ? HomeWidget.routeName
-                        : SelectAdWidget.routeName,
-                  );
-                } catch (_) {}
-              },
-              child: Container(
-                height: 52,
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [kGreen, kGreenDeep],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: kGreen.withOpacity(0.35),
-                      blurRadius: 14,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isBuyerTab
-                          ? Icons.storefront_rounded
-                          : Icons.add_circle_outline_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      isBuyerTab
-                          ? FFLocalizations.of(context).getText('od_start_shopping')
-                          : FFLocalizations.of(context).getText('od_add_product'),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  color: _muted, fontSize: 13.5, height: 1.5),
             ),
           ],
         ),
       ),
     );
   }
-
 
   Widget _stateMessage({
     required IconData icon,
@@ -1179,21 +992,16 @@ class _OrderDetailsWidgetState extends State<OrderDetailsWidget> {
               child: Icon(icon, color: iconColor, size: 44),
             ),
             const SizedBox(height: 20),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _text,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            Text(title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: _text,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _muted, fontSize: 13, height: 1.5),
-            ),
+            Text(subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: _muted, fontSize: 13, height: 1.5)),
           ],
         ),
       ),
@@ -1208,9 +1016,6 @@ class _OrderStatus {
   const _OrderStatus(this.label, this.color, this.icon);
 }
 
-// ═══════════════════════════════════════════════════════════
-// TRACKING SHEET — a modal bottom sheet with live timeline
-// ═══════════════════════════════════════════════════════════
 class _SheetColors {
   final Color bg;
   final Color card;
@@ -1218,7 +1023,6 @@ class _SheetColors {
   final Color text;
   final Color muted;
   final Color border;
-  final bool isDark;
   const _SheetColors({
     required this.bg,
     required this.card,
@@ -1226,14 +1030,13 @@ class _SheetColors {
     required this.text,
     required this.muted,
     required this.border,
-    required this.isDark,
   });
 }
 
 class _TrackingSheet extends StatelessWidget {
   const _TrackingSheet({required this.order, required this.colors});
 
-  final OrdersRecord order;
+  final Map<String, dynamic> order;
   final _SheetColors colors;
 
   static const Color kGreen = Color(0xFF1B7A4E);
@@ -1249,19 +1052,26 @@ class _TrackingSheet extends StatelessWidget {
     'Delivered',
   ];
 
+  String _s(List<String> keys, [String fb = '']) {
+    for (final k in keys) {
+      final v = order[k];
+      if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+    }
+    return fb;
+  }
+
   int _statusIndex(String s) {
     final v = s.trim().toLowerCase();
     for (var i = 0; i < kFlow.length; i++) {
       if (kFlow[i].toLowerCase() == v) return i;
     }
-    if (v == 'processing' || v == 'accepted') return 1;
-    if (v == 'way' || v.contains('ship') || v.contains('on the')) return 2;
-    if (v == 'delivered' || v == 'completed') return 3;
+    if (v.contains('confirm') || v == 'processing' || v == 'accepted') return 1;
+    if (v.contains('ship') || v.contains('way')) return 2;
+    if (v.contains('deliver') || v == 'completed') return 3;
     return 0;
   }
 
-  ({Color color, Color deep, IconData icon, String subtitle}) _cfg(
-      String s) {
+  ({Color color, Color deep, IconData icon, String subtitle}) _cfg(String s) {
     switch (s.trim().toLowerCase()) {
       case 'confirmed':
         return (
@@ -1271,7 +1081,6 @@ class _TrackingSheet extends StatelessWidget {
           subtitle: 'Seller confirmed your order',
         );
       case 'on the way':
-      case 'on_the_way':
       case 'shipped':
         return (
           color: kAmber,
@@ -1295,7 +1104,6 @@ class _TrackingSheet extends StatelessWidget {
           icon: Icons.cancel_rounded,
           subtitle: 'This order was cancelled',
         );
-      case 'pending':
       default:
         return (
           color: kGreen,
@@ -1307,7 +1115,7 @@ class _TrackingSheet extends StatelessWidget {
   }
 
   String _eta(String s) {
-    if (s.contains('pending')) return 'Within 1–2 hours';
+    if (s.contains('pend')) return 'Within 1–2 hours';
     if (s.contains('confirm')) return 'Within 45 minutes';
     if (s.contains('way') || s.contains('ship')) return '15–30 minutes';
     if (s.contains('deliver')) return 'Delivered';
@@ -1315,19 +1123,14 @@ class _TrackingSheet extends StatelessWidget {
     return '—';
   }
 
-  String _fmtTime(DateTime dt) {
-    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-    final m = dt.minute.toString().padLeft(2, '0');
-    final ap = dt.hour < 12 ? 'AM' : 'PM';
-    return '$h:$m $ap';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final status = order.status ?? 'Pending';
+    final status = _s(['status'], 'Pending');
     final cfg = _cfg(status);
     final idx = _statusIndex(status);
-    final progress = ((idx + 1) / kFlow.length).clamp(0.0, 1.0);
+    final cancelled = status.toLowerCase().contains('cancel');
+    final oid = _s(['id'], '--------');
+    final shortId = oid.length > 8 ? oid.substring(0, 8) : oid;
 
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -1341,7 +1144,6 @@ class _TrackingSheet extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle
               Container(
                 margin: const EdgeInsets.only(top: 10, bottom: 6),
                 width: 44,
@@ -1351,7 +1153,6 @@ class _TrackingSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              // Header row
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(16, 6, 8, 8),
                 child: Row(
@@ -1372,41 +1173,36 @@ class _TrackingSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            FFLocalizations.of(context).getText('ts_title'),
-                            style: TextStyle(
-                              color: colors.text,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
+                              FFLocalizations.of(context).getText('ts_title'),
+                              style: TextStyle(
+                                  color: colors.text,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w900)),
                           const SizedBox(height: 2),
-                          Text(
-                            '#${order.reference.id.substring(0, 8).toUpperCase()}',
-                            style: TextStyle(
-                              color: colors.muted,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
+                          Text('#${shortId.toUpperCase()}',
+                              style: TextStyle(
+                                  color: colors.muted,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.4)),
                         ],
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.close_rounded,
-                          color: colors.text, size: 20),
+                      icon:
+                          Icon(Icons.close_rounded, color: colors.text, size: 20),
                     ),
                   ],
                 ),
               ),
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 20),
+                  padding:
+                      const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ─── Status hero ───
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -1416,13 +1212,6 @@ class _TrackingSheet extends StatelessWidget {
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: cfg.color.withOpacity(0.30),
-                              blurRadius: 14,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
                         ),
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -1437,8 +1226,8 @@ class _TrackingSheet extends StatelessWidget {
                                     color: Colors.white.withOpacity(0.20),
                                     borderRadius: BorderRadius.circular(11),
                                   ),
-                                  child: Icon(cfg.icon,
-                                      color: Colors.white, size: 22),
+                                  child:
+                                      Icon(cfg.icon, color: Colors.white, size: 22),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -1447,484 +1236,130 @@ class _TrackingSheet extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        FFLocalizations.of(context).getText('ts_current_status'),
-                                        style: TextStyle(
-                                          color:
-                                              Colors.white.withOpacity(0.75),
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 1.2,
-                                        ),
-                                      ),
+                                          FFLocalizations.of(context)
+                                              .getText('ts_current_status'),
+                                          style: TextStyle(
+                                              color: Colors.white
+                                                  .withOpacity(0.75),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
+                                              letterSpacing: 1.2)),
                                       const SizedBox(height: 2),
-                                      Text(
-                                        status.toUpperCase(),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: 0.4,
-                                        ),
-                                      ),
+                                      Text(status.toUpperCase(),
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.4)),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 14),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: LinearProgressIndicator(
-                                value: progress,
-                                minHeight: 7,
-                                backgroundColor:
-                                    Colors.white.withOpacity(0.22),
-                                valueColor:
-                                    const AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
-                              ),
-                            ),
                             const SizedBox(height: 8),
-                            Text(
-                              cfg.subtitle,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.92),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            Text(cfg.subtitle,
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.85),
+                                    fontSize: 12.5)),
+                            const SizedBox(height: 4),
+                            Text('ETA: ${_eta(status.toLowerCase())}',
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 11)),
                           ],
                         ),
                       ),
-
-                      const SizedBox(height: 14),
-
-                      // ─── ETA card ───
-                      if (idx >= 0 && idx < 3)
-                        Container(
-                          decoration: BoxDecoration(
-                            color: kGreen.withOpacity(0.10),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: kGreen.withOpacity(0.25),
-                                width: 1.2),
-                          ),
-                          padding: const EdgeInsets.all(12),
+                      const SizedBox(height: 18),
+                      ...List.generate(kFlow.length, (i) {
+                        final done = !cancelled && i <= idx;
+                        final isLast = i == kFlow.length - 1;
+                        final color =
+                            done ? kGreen : colors.border;
+                        return IntrinsicHeight(
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: kGreen,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(
-                                    Icons.access_time_filled_rounded,
-                                    color: Colors.white,
-                                    size: 20),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      FFLocalizations.of(context).getText('ts_eta'),
-                                      style: TextStyle(
-                                        color: colors.muted,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 1.1,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      _eta(status),
-                                      style: const TextStyle(
-                                        color: kGreen,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      if (idx >= 0 && idx < 3)
-                        const SizedBox(height: 14),
-
-                      // ─── Timeline ───
-                      Container(
-                        decoration: BoxDecoration(
-                          color: colors.card,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: colors.border),
-                        ),
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 4,
-                                  height: 14,
-                                  decoration: BoxDecoration(
-                                    color: kGreen,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  FFLocalizations.of(context).getText('ts_timeline'),
-                                  style: TextStyle(
-                                    color: colors.text,
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            ...List.generate(kFlow.length, (i) {
-                              final label = kFlow[i];
-                              final done = i <= idx;
-                              final isNow = i == idx;
-                              return IntrinsicHeight(
-                                child: Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Column(
-                                      children: [
-                                        Container(
-                                          width: 22,
-                                          height: 22,
-                                          decoration: BoxDecoration(
-                                            color: done
-                                                ? kGreen
-                                                : Colors.transparent,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: done
-                                                  ? kGreen
-                                                  : colors.border,
-                                              width: 2,
-                                            ),
-                                            boxShadow: isNow
-                                                ? [
-                                                    BoxShadow(
-                                                      color: kGreen
-                                                          .withOpacity(0.45),
-                                                      blurRadius: 8,
-                                                      spreadRadius: 1,
-                                                    ),
-                                                  ]
-                                                : null,
-                                          ),
-                                          child: done
-                                              ? const Icon(
-                                                  Icons.check_rounded,
-                                                  color: Colors.white,
-                                                  size: 13)
-                                              : null,
-                                        ),
-                                        if (i < kFlow.length - 1)
-                                          Expanded(
-                                            child: Container(
-                                              width: 2,
-                                              color: i < idx
-                                                  ? kGreen
-                                                  : colors.border,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Padding(
-                                        padding: EdgeInsets.only(
-                                          bottom: i < kFlow.length - 1
-                                              ? 18
-                                              : 0,
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  label,
-                                                  style: TextStyle(
-                                                    color: done
-                                                        ? colors.text
-                                                        : colors.muted,
-                                                    fontSize: 13.5,
-                                                    fontWeight: isNow
-                                                        ? FontWeight.w900
-                                                        : FontWeight.w700,
-                                                  ),
-                                                ),
-                                                if (isNow) ...[
-                                                  const SizedBox(width: 8),
-                                                  Container(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 7,
-                                                        vertical: 2),
-                                                    decoration: BoxDecoration(
-                                                      color: kGreen
-                                                          .withOpacity(0.14),
-                                                      borderRadius:
-                                                          BorderRadius
-                                                              .circular(6),
-                                                    ),
-                                                    child: Text(
-                                                      FFLocalizations.of(context).getText('ts_now'),
-                                                      style: TextStyle(
-                                                        color: kGreen,
-                                                        fontSize: 9.5,
-                                                        fontWeight:
-                                                            FontWeight.w900,
-                                                        letterSpacing: 0.6,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              done
-                                                  ? (isNow
-                                                      ? FFLocalizations.of(context).getText('ts_in_progress')
-                                                      : FFLocalizations.of(context).getText('ts_completed'))
-                                                  : FFLocalizations.of(context).getText('ts_pending_step'),
-                                              style: TextStyle(
-                                                color: colors.muted,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      // ─── Product card ───
-                      Container(
-                        decoration: BoxDecoration(
-                          color: colors.card,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: colors.border),
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: colors.soft,
-                                borderRadius: BorderRadius.circular(11),
-                              ),
-                              padding: const EdgeInsets.all(4),
-                              child: order.itemImages.isNotEmpty
-                                  ? Image.network(
-                                      order.itemImages.first,
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (_, __, ___) => Icon(
-                                        Icons.image_not_supported_outlined,
-                                        color: colors.muted,
-                                        size: 20,
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.image_not_supported_outlined,
-                                      color: colors.muted,
-                                      size: 20,
-                                    ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              Column(
                                 children: [
-                                  Text(
-                                    order.productName ?? 'Product',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: colors.text,
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w800,
-                                      height: 1.3,
+                                  Container(
+                                    width: 22,
+                                    height: 22,
+                                    decoration: BoxDecoration(
+                                      color: done
+                                          ? kGreen
+                                          : colors.card,
+                                      shape: BoxShape.circle,
+                                      border:
+                                          Border.all(color: color, width: 2),
                                     ),
+                                    child: done
+                                        ? const Icon(Icons.check_rounded,
+                                            color: Colors.white, size: 13)
+                                        : null,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    formatNumber(
-                                      order.price,
-                                      formatType: FormatType.decimal,
-                                      decimalType: DecimalType.automatic,
-                                      currency: 'TZS ',
+                                  if (!isLast)
+                                    Expanded(
+                                      child: Container(
+                                        width: 2,
+                                        color: (i < idx && !cancelled)
+                                            ? kGreen
+                                            : colors.border,
+                                      ),
                                     ),
-                                    style: const TextStyle(
-                                      color: kGreen,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // ─── Delivery address ───
-                      if (order.address.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: colors.card,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: colors.border),
-                          ),
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: kGreen.withOpacity(0.12),
-                                  borderRadius: BorderRadius.circular(9),
-                                ),
-                                child: const Icon(
-                                    Icons.location_on_rounded,
-                                    color: kGreen,
-                                    size: 16),
-                              ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      FFLocalizations.of(context).getText('ts_delivering_to'),
-                                      style: TextStyle(
-                                        color: colors.muted,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 1.0,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      order.address,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: colors.text,
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w600,
-                                        height: 1.35,
-                                      ),
-                                    ),
-                                  ],
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(kFlow[i],
+                                          style: TextStyle(
+                                              color: done
+                                                  ? colors.text
+                                                  : colors.muted,
+                                              fontSize: 13.5,
+                                              fontWeight: done
+                                                  ? FontWeight.w800
+                                                  : FontWeight.w500)),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-
-                      const SizedBox(height: 14),
-
-                      // ─── Close button ───
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          height: 50,
+                        );
+                      }),
+                      if (cancelled)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: kGreen,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: kGreen.withOpacity(0.35),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
+                            color: kRed.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.cancel_rounded,
+                                  color: kRed, size: 18),
+                              SizedBox(width: 8),
+                              Text('This order was cancelled',
+                                  style: TextStyle(
+                                      color: kRed,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700)),
                             ],
                           ),
-                          child: Center(
-                            child: Text(
-                              FFLocalizations.of(context).getText('ts_done'),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SpinnerWithTimeout extends StatefulWidget {
-  const _SpinnerWithTimeout({required this.onTimeout});
-  final Widget Function() onTimeout;
-  @override
-  State<_SpinnerWithTimeout> createState() => _SpinnerWithTimeoutState();
-}
-
-class _SpinnerWithTimeoutState extends State<_SpinnerWithTimeout> {
-  bool _timedOut = false;
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) setState(() => _timedOut = true);
-    });
-  }
-  @override
-  Widget build(BuildContext context) {
-    if (_timedOut) return widget.onTimeout();
-    return const Center(
-      child: SizedBox(
-        width: 40,
-        height: 40,
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1B7A4E)),
-          strokeWidth: 3,
         ),
       ),
     );

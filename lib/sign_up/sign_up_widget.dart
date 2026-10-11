@@ -668,7 +668,8 @@ class _SignUpWidgetState extends State<SignUpWidget>
     final theme = FlutterFlowTheme.of(context);
 
     return FFButtonWidget(
-      onPressed: (_model.txtnameTextController.text.trim().isEmpty ||
+      onPressed: (_model.isSubmitting ||
+              _model.txtnameTextController.text.trim().isEmpty ||
               _model.txtemailTextController.text.trim().isEmpty ||
               _model.textPassortTextController.text.isEmpty)
           ? null
@@ -676,28 +677,25 @@ class _SignUpWidgetState extends State<SignUpWidget>
               logFirebaseEvent('SIGN_UP_PAGE_SIGN_UP_BTN_ON_TAP');
               GoRouter.of(context).prepareAuthEvent();
 
-              final user = await authManager.createAccountWithEmail(
-                context,
-                _model.txtemailTextController.text.trim(),
-                _model.textPassortTextController.text,
-              );
-              if (user == null) return;
-
-              // Save name + phone to the Users record
+              safeSetState(() => _model.isSubmitting = true);
               try {
-                await UsersRecord.collection.doc(user.uid).update(
-                      createUsersRecordData(
-                        displayName:
-                            _model.txtnameTextController.text.trim(),
-                        phoneNumber:
-                            _model.txtphoneTextController.text.trim(),
-                      ),
-                    );
-              } catch (_) {}
+                final user = await authManager.signUpWithDetails(
+                  context,
+                  email: _model.txtemailTextController.text.trim(),
+                  password: _model.textPassortTextController.text,
+                  displayName: _model.txtnameTextController.text.trim(),
+                  phoneNumber: _model.txtphoneTextController.text.trim(),
+                );
+                if (user == null) return;
 
-              context.goNamedAuth(HomeWidget.routeName, context.mounted);
+                context.goNamedAuth(HomeWidget.routeName, context.mounted);
+              } finally {
+                if (mounted) safeSetState(() => _model.isSubmitting = false);
+              }
             },
-      text: FFLocalizations.of(context).getText('signup_button'),
+      text: _model.isSubmitting
+          ? 'Creating account…'
+          : FFLocalizations.of(context).getText('signup_button'),
       options: FFButtonOptions(
         width: double.infinity,
         height: 52,

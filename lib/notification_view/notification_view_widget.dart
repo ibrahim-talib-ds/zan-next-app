@@ -1,9 +1,10 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/models/notification.dart';
+import '/repositories/notification_repository.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'notification_view_model.dart';
@@ -14,10 +15,10 @@ export 'notification_view_model.dart';
 class NotificationViewWidget extends StatefulWidget {
   const NotificationViewWidget({
     super.key,
-    required this.notificationRef,
+    required this.notificationId,
   });
 
-  final DocumentReference? notificationRef;
+  final String? notificationId;
 
   static String routeName = 'NotificationView';
   static String routePath = '/notificationView';
@@ -72,11 +73,10 @@ class _NotificationViewWidgetState extends State<NotificationViewWidget> {
           children: [
             _header(),
             Expanded(
-              child: widget.notificationRef == null
+              child: widget.notificationId == null
                   ? _empty('Notification not found')
-                  : StreamBuilder<NotificationsRecord>(
-                      stream:
-                          NotificationsRecord.getDocument(widget.notificationRef!),
+                  : FutureBuilder<AppNotification>(
+                      future: NotificationRepository.get(widget.notificationId!),
                       builder: (context, snap) {
                         if (snap.hasError) {
                           return _empty('Could not load notification');
@@ -90,10 +90,10 @@ class _NotificationViewWidgetState extends State<NotificationViewWidget> {
                           );
                         }
                         final n = snap.data!;
-                        // Mark as read
+                        // Mark as read (best-effort, once)
                         if (!n.isRead) {
-                          n.reference
-                              .update({'is_read': true}).catchError((_) {});
+                          NotificationRepository.markRead(n.id)
+                              .catchError((_) {});
                         }
                         return _body(n);
                       },
@@ -166,11 +166,11 @@ class _NotificationViewWidgetState extends State<NotificationViewWidget> {
   // ═══════════════════════════════════════════════════════════
   // BODY
   // ═══════════════════════════════════════════════════════════
-  Widget _body(NotificationsRecord n) {
-    final title = n.title ?? 'Notification';
-    final body = n.notificationText ?? '';
-    final when = n.createdTime ?? n.date;
-    final img = _imgUrl(n.avater);
+  Widget _body(AppNotification n) {
+    final title = n.title.isEmpty ? 'Notification' : n.title;
+    final body = n.body;
+    final when = n.createdAt;
+    final img = _imgUrl(n.imageUrl);
     final type = _detectType(n);
 
     return SingleChildScrollView(
@@ -352,9 +352,9 @@ class _NotificationViewWidgetState extends State<NotificationViewWidget> {
   }
 
   ({Color color, IconData icon, String label}) _detectType(
-      NotificationsRecord n) {
-    final t = (n.title ?? '').toLowerCase();
-    final b = (n.notificationText ?? '').toLowerCase();
+      AppNotification n) {
+    final t = n.title.toLowerCase();
+    final b = n.body.toLowerCase();
     final hay = '$t $b';
     if (hay.contains('flash') || hay.contains('sale') || hay.contains('offer'))
       return (

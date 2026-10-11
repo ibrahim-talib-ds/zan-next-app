@@ -392,6 +392,74 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget>
 
   // ============================================================
   // SEND RESET BUTTON
+  // ═══════════════════════════════════════════════════════════
+  // Styled snackbar (same pattern as login/signup)
+  // ═══════════════════════════════════════════════════════════
+  void _banner(String msg, {bool success = false}) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              success
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.error_outline_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                msg,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                  height: 1.35,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor:
+            success ? const Color(0xFF1B7A4E) : const Color(0xFFDC0F0F),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        duration: Duration(seconds: success ? 3 : 4),
+        elevation: 4,
+      ),
+    );
+  }
+
+  String _friendlyError(String raw) {
+    final r = raw.toLowerCase();
+    if (r.contains('invalid email') || r.contains('not a valid')) {
+      return 'Please enter a valid email address.';
+    }
+    if (r.contains('rate limit') || r.contains('too many')) {
+      return 'Too many attempts. Please wait a moment and try again.';
+    }
+    if (r.contains('network') ||
+        r.contains('socketexception') ||
+        r.contains('timeout') ||
+        r.contains('connection') ||
+        r.contains('failed host lookup')) {
+      return 'Connection problem. Check your internet and try again.';
+    }
+    final cleaned = raw
+        .replaceAll(RegExp(r'^ApiException\(\d+\):\s*'), '')
+        .replaceAll(RegExp(r'^Exception:\s*'), '')
+        .trim();
+    if (cleaned.isEmpty || cleaned.length > 120) {
+      return 'Could not send reset email. Please try again.';
+    }
+    return cleaned;
+  }
+
   // ============================================================
   Widget _buildSendButton(BuildContext context) {
     final theme = FlutterFlowTheme.of(context);
@@ -403,11 +471,7 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget>
 
         final email = _model.emailTextController.text.trim();
         if (email.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please enter your email address'),
-            ),
-          );
+          _banner('Please enter your email address');
           return;
         }
 
@@ -418,27 +482,17 @@ class _ForgotPasswordWidgetState extends State<ForgotPasswordWidget>
           );
 
           if (!mounted) return;
-          // Show success inline; no external page needed
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Reset link sent! Check your email inbox.\nIf it\'s not there, check spam.',
-              ),
-              backgroundColor: Color(0xFF1B7A4E),
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 6),
-            ),
+          _banner(
+            'Reset link sent! Check your inbox (and spam).',
+            success: true,
           );
-          await Future.delayed(const Duration(seconds: 1));
+          await Future.delayed(const Duration(seconds: 2));
           if (!mounted) return;
           Navigator.of(context).pop();
 
         } catch (e) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Could not send reset email: $e')),
-          );
+          _banner(_friendlyError('$e'));
         }
       },
       text: 'Send Reset Link',

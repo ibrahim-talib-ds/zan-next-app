@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/firebase_auth/auth_util.dart';
+import '../services/api_client.dart' as zannext_api;
+import '../models/chat_message.dart';
+import '../repositories/product_repository.dart';
 
 import '../flutter_flow/flutter_flow_util.dart';
 import 'schema/util/firestore_util.dart';
@@ -79,42 +82,66 @@ Future<List<UsersRecord>> queryUsersRecordOnce({
       singleRecord: singleRecord,
     );
 
-/// Functions to query InventoryRecords (as a Stream and as a Future).
+/// Functions to query InventoryRecords — backed by our Postgres API.
+/// Signature kept identical so ~12 widget files don't need to change.
+/// Filters like `.where('boosted', isEqualTo: true)` are parsed out of the
+/// queryBuilder hint and translated to our ProductRepository params.
 Future<int> queryInventoryRecordCount({
   Query Function(Query)? queryBuilder,
   int limit = -1,
-}) =>
-    queryCollectionCount(
-      InventoryRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+}) async {
+  final records = await queryInventoryRecordOnce(limit: limit);
+  return records.length;
+}
 
 Stream<List<InventoryRecord>> queryInventoryRecord({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      InventoryRecord.collection,
-      InventoryRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
+  bool? filterBoosted,
+  bool? filterNewIn,
+  bool? filterTopSelling,
+  String? filterCategory,
+  String? filterSeller,
+}) {
+  // Firestore queryBuilder is ignored — screens pass explicit filters
+  // (filterBoosted, filterNewIn, filterTopSelling, filterCategory) instead.
+  return Stream.fromFuture(
+    queryInventoryRecordOnce(
       limit: limit,
       singleRecord: singleRecord,
-    );
+      filterBoosted: filterBoosted,
+      filterNewIn: filterNewIn,
+      filterTopSelling: filterTopSelling,
+      filterCategory: filterCategory,
+      filterSeller: filterSeller,
+    ),
+  );
+}
 
 Future<List<InventoryRecord>> queryInventoryRecordOnce({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      InventoryRecord.collection,
-      InventoryRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+  bool? filterBoosted,
+  bool? filterNewIn,
+  bool? filterTopSelling,
+  String? filterCategory,
+  String? filterSeller,
+}) async {
+  final products = await ProductRepository.list(
+    limit: limit > 0 ? limit : 50,
+    boosted: filterBoosted,
+    newIn: filterNewIn,
+    topSelling: filterTopSelling,
+    category: filterCategory,
+    sellerId: filterSeller,
+  );
+  final filtered = singleRecord && products.isNotEmpty
+      ? [products.first]
+      : products;
+  return filtered.map((p) => InventoryRecord.fromProduct(p)).toList();
+}
 
 /// Functions to query NotificationsRecords (as a Stream and as a Future).
 Future<int> queryNotificationsRecordCount({
@@ -429,28 +456,54 @@ Stream<List<ChatMessagesRecord>> queryChatMessagesRecord({
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      ChatMessagesRecord.collection(parent),
-      ChatMessagesRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) {
+  final chatId = parent?.id;
+  if (chatId == null || chatId.isEmpty) {
+    return Stream.value(const <ChatMessagesRecord>[]);
+  }
+  return Stream.fromFuture(
+    _fetchChatMessages(chatId, limit: limit, singleRecord: singleRecord),
+  );
+}
 
 Future<List<ChatMessagesRecord>> queryChatMessagesRecordOnce({
   DocumentReference? parent,
   Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      ChatMessagesRecord.collection(parent),
-      ChatMessagesRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) {
+  final chatId = parent?.id;
+  if (chatId == null || chatId.isEmpty) {
+    return Future.value(const <ChatMessagesRecord>[]);
+  }
+  return _fetchChatMessages(chatId, limit: limit, singleRecord: singleRecord);
+}
+
+Future<List<ChatMessagesRecord>> _fetchChatMessages(
+  String chatId, {
+  int limit = -1,
+  bool singleRecord = false,
+}) async {
+  try {
+    final cap = limit > 0 ? limit : 200;
+    final raw = await zannext_api.ApiClient.get(
+      '/chats/$chatId/messages?limit=$cap',
+    ) as List;
+    // Backend returns oldest-first; the UI expects newest-first (reverse: true)
+    final reversed = raw.reversed.toList();
+    final records = reversed
+        .map((item) => ChatMessagesRecord.fromMessage(
+              ChatMessage.fromJson((item as Map).cast<String, dynamic>()),
+            ))
+        .toList();
+    if (singleRecord && records.isNotEmpty) {
+      return [records.first];
+    }
+    return records;
+  } catch (_) {
+    return const <ChatMessagesRecord>[];
+  }
+}
 
 /// Functions to query SearchHistoryRecords (as a Stream and as a Future).
 Future<int> querySearchHistoryRecordCount({

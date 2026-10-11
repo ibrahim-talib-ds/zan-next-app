@@ -1,0 +1,72 @@
+=== users -> users ===
+  inserted: 3
+=== category_config -> category_config ===
+  done
+=== Inventory -> products ===
+  done
+=== address -> addresses ===
+  + placeholder user sNWKEsUY1RTeOe3pyXPE2kQ63Bb2 (ref'd by addresses/fFNl7LyGX2bdc48rLnT1)
+  done
+=== orders -> orders ===
+  done
+=== Chats -> chats ===
+  + placeholder user Hx9eQW6icXRBkQmlu8wfSeyvMBs2 (ref'd by chats/1ytJz9owGzDV1KAvXNow)
+  + placeholder product ohw3mGfti6JtZRZbZ7Y1 (ref'd by chats/1ytJz9owGzDV1KAvXNow)
+  done (2 chats)
+=== Chats/{id}/chat_messages -> chat_messages ===
+  done
+=== reviews -> reviews ===
+  done
+=== Wishlist -> wishlist ===
+  + placeholder product fGt3peMhCWSRvClKgaxj (ref'd by wishlist/4c6dCstJBLEMpb8UpDaG)
+  + placeholder product 9jynuACugQYjswgEkU6j (ref'd by wishlist/DNXrxdls7XqoUxxBa2Bq)
+  + placeholder product I80abeQf9Li2YyqE69xF (ref'd by wishlist/qwnveZ4KYPKCIK690TcP)
+  done
+=== notifications -> notifications ===
+  + placeholder user vK0rx69vgXR7PNOb4P9ugZb6cPz1 (ref'd by notifications/BN9OkLYcfv6hXcoggBAx)
+  + placeholder user rHjwmOJvqRYIzsfn6ExZgPwCQof1 (ref'd by notifications/JfK6N8TJMyrSApLDnUx3)
+  done
+=== support_chats -> support_chats ===
+  done (5 threads)
+=== support_messages (sub: 'support_messages' + 'messages') ===
+  done
+=== search_history -> search_history ===
+  done
+=== last_seen + Inventory/{id}/viewers -> product_views ===
+  + placeholder product 08fuJBxop5Ng6tu384Ye (ref'd by product_views/CCf7EkfXUEdGJCf561yY)
+  + placeholder product v4qHkgKZNBjbHXtiVCdg (ref'd by product_views/EERPC3CMFSqoS4ysMdqW)
+  + placeholder product GHReowfFnElrRD9DAAeQ (ref'd by product_views/SuUyLEV7BmmVvOSoZV7g)
+  + placeholder product swUcyuPSxdK8b78CJhmX (ref'd by product_views/V9c141PRlTduSj58PERy)
+  done
+
+=== COMMITTED ===
+
+=== SKIPPED ROWS ===
+  chat_messages        7yj6jE2lPK8bB2hqnW4A           no sender_ref
+  chat_messages        c4Z2ySNdwPqhT5RwJIHc           no sender_ref
+  wishlist             YSG2jgQHUEbyoWc7zIDS           duplicate user/product (7nxuzr4RrYNy5EKmHDFWIzxaYYO2, 9jynuACugQYjswgEkU6j)
+  notifications        Kp4m6X3WJY2i4nqKlr0A           no user_ref
+  notifications        LZqMdGvW7BucpGXBS11X           no user_ref
+  notifications        nPlciDFg4SSAzMP6XKi1           no user_ref
+  notifications        rclcIJ1vXQaGfBZc324G           no user_ref
+  search_history       5VbjsihIU8YBYlFRqWbE           no user_ref
+  search_history       6dWRVEm1C1L9sSRyMUbq           no user_ref
+  product_views        W9IuVNCIyk2MQ13M8GVI           duplicate product/user
+  product_views        pKUklllWQzvWDLlSENuY           duplicate product/user
+  product_views        ssAHKbsgj9WWjxFdpy0K           duplicate product/user
+
+=== CURRENT ROW COUNTS IN POSTGRES ===
+  users                7
+  products             15
+  orders               1
+  chats                2
+  chat_messages        2
+  reviews              3
+  addresses            3
+  wishlist             3
+  notifications        29
+  support_chats        5
+  support_messages     25
+  search_history       17
+  product_views        10
+  category_config      16

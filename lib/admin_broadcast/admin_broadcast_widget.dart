@@ -1,9 +1,9 @@
 import '/backend/backend.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/internationalization.dart';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'admin_broadcast_model.dart';
@@ -628,47 +628,22 @@ class _AdminBroadcastWidgetState extends State<AdminBroadcastWidget> {
     safeSetState(() => _model.isSending = true);
 
     try {
-      // 1. Fetch all users (batched, limited to first 500)
-      final usersSnap = await FirebaseFirestore.instance
-          .collection('users')
-          .limit(500)
-          .get();
-
-      if (usersSnap.docs.isEmpty) {
-        if (!mounted) return;
-        _snack(FFLocalizations.of(context).getText('ab_no_users'), error: true);
-        safeSetState(() => _model.isSending = false);
-        return;
-      }
-
-      // 2. Write one notification doc per user (batched in chunks of 500)
-      final batch = FirebaseFirestore.instance.batch();
-      final now = FieldValue.serverTimestamp();
-
-      for (final userDoc in usersSnap.docs) {
-        final ref = FirebaseFirestore.instance
-            .collection('notifications')
-            .doc();
-        batch.set(ref, {
+      // Send via our admin API — backend creates one notification per user
+      final result = await zannext_api.ApiClient.post(
+        '/admin/broadcast',
+        body: {
           'title': title,
-          'notification_text': body,
-          'user_ref': userDoc.reference,
-          'is_read': false,
-          'created_time': now,
-          'date': now,
-          'avater': '',
-          'product_id': '',
+          'body': body,
           'type': _model.selectedType ?? 'info',
-          'is_broadcast': true,
-        });
-      }
+        },
+      );
 
-      await batch.commit();
+      final sent = (result as Map)['sent'] as int? ?? 0;
 
       if (!mounted) return;
       safeSetState(() => _model.isSending = false);
 
-      _snack('${FFLocalizations.of(context).getText('ab_sent_prefix')}${usersSnap.docs.length}${FFLocalizations.of(context).getText('ab_sent_suffix')}');
+      _snack('${FFLocalizations.of(context).getText('ab_sent_prefix')}$sent${FFLocalizations.of(context).getText('ab_sent_suffix')}');
 
       // Clear form
       await Future.delayed(const Duration(milliseconds: 800));

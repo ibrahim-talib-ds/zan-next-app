@@ -1,8 +1,10 @@
 import '/components/product_bottom_info.dart';
 import 'package:share_plus/share_plus.dart';
-import '/components/report_sheet_widget.dart';
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
+import '/repositories/product_repository.dart';
+import '/repositories/chat_repository.dart';
+import '/services/api_client.dart' as zannext_api;
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/utils/responsive.dart';
@@ -10,7 +12,6 @@ import '/flutter_flow/internationalization.dart';
 import '/seller_reviews/seller_reviews_widget.dart';
 import '/index.dart';
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
@@ -32,7 +33,7 @@ class SellerDashbordWidget extends StatefulWidget {
 
   /// If null → we assume the current user is the seller (owner mode).
   /// If set → we show the public profile of that seller (visitor mode).
-  final DocumentReference? sellerRef;
+  final String? sellerRef;
 
   static String routeName = 'Seller_Dashbord';
   static String routePath = '/sellerDashbord';
@@ -88,15 +89,32 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
     return u.startsWith('http://') ? u.replaceFirst('http://', 'https://') : u;
   }
 
-  // The seller we're looking at — either the explicit ref or the current user
-  DocumentReference? get _sellerRef =>
-      widget.sellerRef ?? currentUserReference;
+  // The seller we're looking at — Postgres id (explicit or current user)
+  String get _sellerId => (widget.sellerRef ?? currentUserUid).toString();
+
+  String _s(Map<String, dynamic>? m, List<String> keys, [String fb = '']) {
+    if (m == null) return fb;
+    for (final k in keys) {
+      final v = m[k];
+      if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+    }
+    return fb;
+  }
+
+  Future<Map<String, dynamic>?> _fetchSeller() async {
+    if (_sellerId.isEmpty) return null;
+    try {
+      final r = await zannext_api.ApiClient.get('/users/$_sellerId');
+      if (r is Map) return Map<String, dynamic>.from(r);
+    } catch (_) {}
+    return null;
+  }
 
   // Are we the seller?
   bool get _isOwner {
-    if (currentUserReference == null) return false;
-    if (widget.sellerRef == null) return true;
-    return widget.sellerRef == currentUserReference;
+    if (currentUserUid.isEmpty) return false;
+    if (widget.sellerRef == null || widget.sellerRef!.isEmpty) return true;
+    return widget.sellerRef == currentUserUid;
   }
 
   @override
@@ -115,9 +133,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   // ═══════════════════════════════════════════════════════════
   // BUILD
   // ═══════════════════════════════════════════════════════════
-  @override
+  @override  @override
   Widget build(BuildContext context) {
-    if (_sellerRef == null) {
+    if (currentUserUid.isEmpty && (widget.sellerRef ?? '').isEmpty) {
       return _scaffold(
         body: _stateMessage(
           icon: Icons.person_off_outlined,
@@ -128,19 +146,13 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
     }
 
     return _scaffold(
-      body: StreamBuilder<UsersRecord>(
-        stream: UsersRecord.getDocument(_sellerRef!),
+      body: FutureBuilder<Map<String, dynamic>?>(
+        future: _fetchSeller(),
         builder: (context, userSnap) {
           final seller = userSnap.data;
 
           return StreamBuilder<List<InventoryRecord>>(
-            stream: queryInventoryRecord(
-              queryBuilder: (r) => r.where(
-                'sellers_ref',
-                isEqualTo: _sellerRef,
-              ),
-              limit: 100,
-            ),
+            stream: queryInventoryRecord(filterSeller: _sellerId, limit: 100),
             builder: (context, invSnap) {
               final products = invSnap.data ?? const <InventoryRecord>[];
 
@@ -183,7 +195,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                       _buildProductGrid(_isOwner ? products : _filteredProducts(products)),
                       if (_isOwner) ...[
                         const SizedBox(height: 28),
-                        _buildReviewsToReplySection(seller),
+                        _buildReviewsToReplySection(),
                       ],
                       const SizedBox(height: 20),
                     ],
@@ -201,54 +213,9 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   // ═══════════════════════════════════════════════════════════
   // REPORT BUTTON — for visitors only
   // ═══════════════════════════════════════════════════════════
-  Widget _buildReportBtn() {
-    if (currentUserReference == null) return const SizedBox.shrink();
-    if (_sellerRef == currentUserReference) return const SizedBox.shrink();
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('reports')
-          .where('reporter_ref', isEqualTo: currentUserReference)
-          .where('target_ref', isEqualTo: _sellerRef)
-          .limit(1)
-          .snapshots(),
-      builder: (context, snap) {
-        final alreadyReported = (snap.data?.docs.isNotEmpty ?? false);
-
-        return Container(
-          decoration: BoxDecoration(
-            color: alreadyReported
-                ? kAmber.withOpacity(0.15)
-                : Colors.white.withOpacity(0.15),
-            shape: BoxShape.circle,
-          ),
-          child: FlutterFlowIconButton(
-            borderColor: Colors.transparent,
-            borderRadius: 22,
-            borderWidth: 1,
-            buttonSize: 44,
-            fillColor: Colors.transparent,
-            icon: Icon(
-              alreadyReported
-                  ? Icons.flag_rounded
-                  : Icons.flag_outlined,
-              color: alreadyReported ? kAmber : Colors.white,
-              size: 20,
-            ),
-            onPressed: alreadyReported
-                ? () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(FFLocalizations.of(context).getText('sd_already_reported')),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                : _openReportSheet,
-          ),
-        );
-      },
-    );
+    Widget _buildReportBtn() {
+    // Reports are not migrated to Postgres yet (Part 6).
+    return const SizedBox.shrink();
   }
 
   Widget _buildThreeDotMenu() {
@@ -312,73 +279,21 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
     );
   }
 
-  void _hideSellerConfirm() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: _card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(FFLocalizations.of(context).getText('sd_hide_seller'),
-            style: TextStyle(color: _text, fontWeight: FontWeight.w800, fontSize: 16)),
-        content: Text(
-          FFLocalizations.of(context).getText('sd_hide_seller_body'),
-          style: TextStyle(color: _muted, fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(FFLocalizations.of(context).getText('sd_cancel'), style: TextStyle(color: _muted)),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              if (currentUserReference == null || _sellerRef == null) return;
-              try {
-                final userDoc = await currentUserReference!.get();
-                final data = userDoc.data() as Map<String, dynamic>? ?? {};
-                final hidden = List<dynamic>.from(data['hidden_sellers'] ?? []);
-                if (!hidden.contains(_sellerRef!.id)) {
-                  hidden.add(_sellerRef!.id);
-                  await currentUserReference!
-                      .update({'hidden_sellers': hidden});
-                }
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(FFLocalizations.of(context).getText('sd_seller_hidden')),
-                    backgroundColor: kGreen,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                context.safePop();
-              } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Could not hide: $e')),
-                );
-              }
-            },
-            child: Text(FFLocalizations.of(context).getText('sd_hide'),
-                style: const TextStyle(color: kRed, fontWeight: FontWeight.w800)),
-          ),
-        ],
+    void _hideSellerConfirm() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Hiding sellers will arrive with the new backend — coming soon.'),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  Future<void> _openReportSheet() async {
-    if (_sellerRef == null) return;
-    final name = widget.sellerRef == null
-        ? FFLocalizations.of(context).getText('sd_my_shop')
-        : FFLocalizations.of(context).getText('sd_seller');
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => ReportSheetWidget(
-        targetType: 'user',
-        targetRef: _sellerRef!,
-        targetLabel: name,
+    Future<void> _openReportSheet() async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Reporting is being upgraded to the new backend — available soon.'),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -404,13 +319,13 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   // ═══════════════════════════════════════════════════════════
   // HERO HEADER
   // ═══════════════════════════════════════════════════════════
-  Widget _buildHeroHeader(UsersRecord? seller, List<InventoryRecord> products) {
+    Widget _buildHeroHeader(Map<String, dynamic>? seller, List<InventoryRecord> products) {
     final topPad = MediaQuery.of(context).padding.top;
-    final photo = _imgUrl(seller?.photoUrl);
-    final name = seller?.displayName ?? (_isOwner
+    final photo = _imgUrl(_s(seller, ['photo_url', 'photoUrl']));
+    final name = _s(seller, ['display_name', 'displayName'], (_isOwner
         ? FFLocalizations.of(context).getText('sd_my_shop')
-        : FFLocalizations.of(context).getText('sd_seller'));
-    final city = seller?.city ?? '';
+        : FFLocalizations.of(context).getText('sd_seller')));
+    final city = _s(seller, ['city']);
     final rating = _avgRating(products);
     final totalReviews = products.fold<int>(0, (s, p) => s + p.reviews);
 
@@ -429,7 +344,6 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
       ),
       child: Column(
         children: [
-          // Top row — back / title / menu
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 12, 0),
             child: Row(
@@ -454,20 +368,17 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                   ),
                 ),
                 const Spacer(),
-                if (!_isOwner && _sellerRef != null)
+                if (!_isOwner && _sellerId.isNotEmpty)
                   _buildThreeDotMenu(),
                 if (_isOwner) const SizedBox(width: 44),
               ],
             ),
           ),
           const SizedBox(height: 16),
-
-          // Avatar + name + city + rating
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                // Avatar with verified ring
                 Container(
                   width: 76,
                   height: 76,
@@ -512,8 +423,6 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                   ),
                 ),
                 const SizedBox(width: 14),
-
-                // Name + city + rating
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,7 +442,6 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          // Verified badge
                           Container(
                             padding: const EdgeInsets.all(3),
                             decoration: const BoxDecoration(
@@ -565,7 +473,6 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      // Rating chip
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
@@ -618,8 +525,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   // ═══════════════════════════════════════════════════════════
   // OWNER: STATS ROW
   // ═══════════════════════════════════════════════════════════
-  Widget _buildOwnerStats(List<InventoryRecord> products) {
-    // Compute view count from products
+    Widget _buildOwnerStats(List<InventoryRecord> products) {
     final totalViews =
         products.fold<int>(0, (s, p) => s + p.viewCount);
 
@@ -641,12 +547,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
               const SizedBox(width: 10),
               Expanded(
                 child: FutureBuilder<int>(
-                  future: queryOrdersRecordCount(
-                    queryBuilder: (q) => q.where(
-                      'seller',
-                      isEqualTo: currentUserReference,
-                    ),
-                  ),
+                  future: _sellerOrdersCount(),
                   builder: (context, snap) {
                     return _statCard(
                       icon: Icons.shopping_bag_outlined,
@@ -688,6 +589,18 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
         ],
       ),
     );
+  }
+
+  Future<int> _sellerOrdersCount() async {
+    try {
+      final raw = await zannext_api.ApiClient.get('/orders?user_id=$currentUserUid');
+      if (raw is List) {
+        return raw
+            .where((o) => ((o as Map)['seller_id'] ?? '').toString() == currentUserUid)
+            .length;
+      }
+    } catch (_) {}
+    return 0;
   }
 
   Widget _statCard({
@@ -853,14 +766,13 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   // ═══════════════════════════════════════════════════════════
   // VISITOR: PRIMARY ACTIONS (Chat + Call + WhatsApp)
   // ═══════════════════════════════════════════════════════════
-  Widget _buildVisitorActions(UsersRecord? seller) {
-    final phone = seller?.phoneNumber.trim() ?? '';
+    Widget _buildVisitorActions(Map<String, dynamic>? seller) {
+    final phone = _s(seller, ['phone_number', 'phoneNumber']);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          // Chat button (primary, wide)
           Expanded(
             flex: 3,
             child: InkWell(
@@ -903,8 +815,6 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
             ),
           ),
           const SizedBox(width: 10),
-
-          // Call button
           _circleAction(
             icon: Icons.call_rounded,
             color: kBlue,
@@ -917,8 +827,6 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                   },
           ),
           const SizedBox(width: 10),
-
-          // WhatsApp button
           _circleAction(
             icon: Icons.chat_bubble_rounded,
             color: const Color(0xFF25D366),
@@ -939,10 +847,11 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   // ═══════════════════════════════════════════════════════════
   // VISITOR: SHOP INFO CARD (location, joined, rating)
   // ═══════════════════════════════════════════════════════════
-  Widget _buildShopInfoCard(UsersRecord? seller, List<InventoryRecord> products) {
-    final city = (seller?.city ?? '').trim();
-    final district = (seller?.district ?? '').trim();
-    final joined = seller?.createdTime;
+    Widget _buildShopInfoCard(Map<String, dynamic>? seller, List<InventoryRecord> products) {
+    final city = _s(seller, ['city']);
+    final district = _s(seller, ['district']);
+    final joined = DateTime.tryParse(
+        _s(seller, ['created_at', 'createdTime', 'createdAt']));
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1251,124 +1160,113 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   // REVIEWS TO REPLY (owner-only section)
   // Shows a count + preview, taps into SellerReviewsWidget
   // ═══════════════════════════════════════════════════════════
-  Widget _buildReviewsToReplySection(UsersRecord? seller) {
-    if (seller == null) return const SizedBox.shrink();
+    Widget _buildReviewsToReplySection() {
+    return FutureBuilder<List<InventoryRecord>>(
+      future: queryInventoryRecordOnce(filterSeller: _sellerId, limit: 50),
+      builder: (context, prodSnap) {
+        final products = prodSnap.data ?? const <InventoryRecord>[];
+        return FutureBuilder<List<dynamic>>(
+          future: _fetchAllSellerReviews(products),
+          builder: (context, snap) {
+            final all = snap.data ?? const [];
+            final unreplied = const [];
 
-    return StreamBuilder<List<ReviewsRecord>>(
-      stream: queryReviewsRecord(
-        queryBuilder: (r) => r
-            .where('seller', isEqualTo: seller.reference)
-            .orderBy('date', descending: true),
-        limit: 200,
-      ),
-      builder: (context, snap) {
-        if (!snap.hasData) return const SizedBox.shrink();
-
-        final all = snap.data!;
-        final unreplied =
-            all.where((r) => r.sellerReply.isEmpty).toList();
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader(
-              FFLocalizations.of(context).getText('sd_customer_reviews'),
-              trailing: '${all.length}',
-            ),
-            const SizedBox(height: 4),
-            GestureDetector(
-              onTap: () {
-                context.pushNamed(
-                  SellerReviewsWidget.routeName,
-                  queryParameters: {
-                    'sellerRef': serializeParam(
-                      seller.reference,
-                      ParamType.DocumentReference,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionHeader(
+                  FFLocalizations.of(context).getText('sd_customer_reviews'),
+                  trailing: '${all.length}',
+                ),
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: () {
+                    context.pushNamed(
+                      SellerReviewsWidget.routeName,
+                      queryParameters: {
+                        'sellerId': serializeParam(
+                            currentUserUid, ParamType.String),
+                      }.withoutNulls,
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: _card,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _border),
                     ),
-                  }.withoutNulls,
-                );
-              },
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: _card,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: unreplied.isNotEmpty
-                        ? kAmber.withOpacity(0.5)
-                        : _border,
-                    width: unreplied.isNotEmpty ? 1.5 : 1,
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: kGreen.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.check_circle_rounded,
+                            color: kGreen,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${all.length} ${all.length == 1 ? FFLocalizations.of(context).getText('sd_review_singular') : FFLocalizations.of(context).getText('sd_review_plural')}',
+                                style: TextStyle(
+                                  color: _text,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                FFLocalizations.of(context).getText('sd_keep_up'),
+                                style: TextStyle(color: _muted, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFF9CA3AF),
+                          size: 22,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: (unreplied.isNotEmpty ? kAmber : kGreen)
-                            .withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        unreplied.isNotEmpty
-                            ? Icons.mark_chat_unread_rounded
-                            : Icons.check_circle_rounded,
-                        color: unreplied.isNotEmpty ? kAmber : kGreen,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            unreplied.isEmpty
-                                ? 'All reviews answered'
-                                : '${unreplied.length} ${unreplied.length == 1 ? FFLocalizations.of(context).getText('sd_review_singular') : FFLocalizations.of(context).getText('sd_review_plural')} ${FFLocalizations.of(context).getText('sd_reviews_need_reply')}',
-                            style: TextStyle(
-                              color: _text,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            unreplied.isEmpty
-                                ? FFLocalizations.of(context).getText('sd_keep_up')
-                                : 'Tap to reply and boost your seller score',
-                            style: TextStyle(
-                              color: _muted,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: _muted,
-                      size: 22,
-                    ),
-                  ],
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    '${FFLocalizations.of(context).getText('sd_total_reviews')} ${all.length}',
+                    style: TextStyle(color: _muted, fontSize: 11.5),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                '${FFLocalizations.of(context).getText('sd_total_reviews')} ${all.length}  ·  '
-                '${FFLocalizations.of(context).getText('sd_unreplied')} ${unreplied.length}',
-                style: TextStyle(color: _muted, fontSize: 11.5),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         );
       },
     );
+  }
+
+  Future<List<dynamic>> _fetchAllSellerReviews(List<InventoryRecord> products) async {
+    final out = <dynamic>[];
+    for (final p in products.take(20)) {
+      try {
+        final raw = await zannext_api.ApiClient.get('/products/${p.id}/reviews');
+        if (raw is List) out.addAll(raw);
+      } catch (_) {}
+    }
+    return out;
   }
 
   Widget _buildSectionHeader(String title, {String? trailing}) {
@@ -1512,10 +1410,7 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
       onTap: () => context.pushNamed(
         ProductDetailsWidget.routeName,
         queryParameters: {
-          'inventoryRef': serializeParam(
-            item.reference,
-            ParamType.DocumentReference,
-          ),
+          'inventoryRef': serializeParam( item.id, ParamType.String),
         }.withoutNulls,
       ),
       child: Container(
@@ -1724,15 +1619,18 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
                               icon: Icons.edit_outlined,
                               label: FFLocalizations.of(context).getText('sd_edit'),
                               color: kBlue,
-                              onTap: () => context.pushNamed(
-                                EditModeWidget.routeName,
-                                queryParameters: {
-                                  'targetProduct': serializeParam(
-                                    item.reference,
-                                    ParamType.DocumentReference,
-                                  ),
-                                }.withoutNulls,
-                              ),
+                              onTap: () async {
+                                await context.pushNamed(
+                                  EditModeWidget.routeName,
+                                  queryParameters: {
+                                    'productId': serializeParam(
+                                      item.id,
+                                      ParamType.String,
+                                    ),
+                                  }.withoutNulls,
+                                );
+                                if (mounted) safeSetState(() {});
+                              },
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -1760,10 +1658,11 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   Future<void> _toggleAvailable(InventoryRecord item) async {
     final current = item.available;
     try {
-      await item.reference.update({
-        'available': !current,
+      await ProductRepository.update(item.id, {
+        'is_online': !current,
       });
       if (!mounted) return;
+      safeSetState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -1855,11 +1754,13 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
 
     if (confirmed == true) {
       try {
-        await item.reference.delete();
+        await ProductRepository.delete(item.id);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(FFLocalizations.of(context).getText('sd_product_deleted'))),
         );
+        // 🔄 Refresh the product list so the deleted card disappears
+        safeSetState(() {});
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1872,63 +1773,43 @@ class _SellerDashbordWidgetState extends State<SellerDashbordWidget> {
   // ═══════════════════════════════════════════════════════════
   // CHAT WITH SELLER (visitor action)
   // ═══════════════════════════════════════════════════════════
-  Future<void> _openChatWithSeller(UsersRecord? seller) async {
-    if (currentUserReference == null || _sellerRef == null) return;
-
+    Future<void> _openChatWithSeller(Map<String, dynamic>? seller) async {
+    if ((widget.sellerRef ?? '').isEmpty) return;
+    if (currentUserUid.isEmpty) return;
     try {
-      // Find an existing chat with this seller (any product)
-      final existing = await FirebaseFirestore.instance
-          .collection('Chats')
-          .where('users', arrayContains: currentUserReference)
-          .where('seller_ref', isEqualTo: _sellerRef)
-          .limit(1)
-          .get();
-
-      DocumentReference chatRef;
-      if (existing.docs.isNotEmpty) {
-        chatRef = existing.docs.first.reference;
-      } else {
-        final newDoc = ChatsRecord.collection.doc();
-        await newDoc.set({
-          ...createChatsRecordData(
-            lastMessage: 'Hi, I want to ask about your shop',
-            lastMessageTime: getCurrentTimestamp,
-            buyerRef: currentUserReference,
-            sellerRef: _sellerRef,
-            productName: FFLocalizations.of(context).getText('sd_shop_inquiry'),
-            price: 0,
-          ),
-          ...mapToFirestore({
-            'users': [
-              currentUserReference!,
-              _sellerRef!,
-            ],
-            'User_name': [
-              currentUserDisplayName,
-              seller?.displayName ?? FFLocalizations.of(context).getText('sd_seller'),
-            ],
-            'items_images': [
-              _imgUrl(seller?.photoUrl).isNotEmpty
-                  ? _imgUrl(seller?.photoUrl)
-                  : 'https://static.thenounproject.com/png/4974686-200.png'
-            ],
-          }),
-        });
-        chatRef = newDoc;
+      final prods = await queryInventoryRecordOnce(
+          filterSeller: widget.sellerRef, limit: 5);
+      if (prods.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('This seller has no products to chat about yet.')),
+        );
+        return;
       }
-
+      final p0 = prods.first;
+      final chat = await ChatRepository.create({
+        'seller_id': widget.sellerRef,
+        'product_id': p0.id,
+        'product_name': p0.inventoryName,
+        'price': p0.inventoryPrice,
+        'item_images': [
+          p0.inventoryImages.isNotEmpty
+              ? p0.inventoryImages.first
+              : 'https://static.thenounproject.com/png/4974686-200.png',
+        ],
+      });
       if (!mounted) return;
       context.pushNamed(
         ChatDWidget.routeName,
         queryParameters: {
-          'receiveChats':
-              serializeParam(chatRef, ParamType.DocumentReference),
+          'chatId': serializeParam(chat.id, ParamType.String),
         }.withoutNulls,
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open chat: $e')),
+        SnackBar(content: Text('Could not start chat: $e')),
       );
     }
   }

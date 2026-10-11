@@ -1,5 +1,6 @@
 import 'dart:math';
 import '/components/product_bottom_info.dart';
+import '/components/product_badge.dart';
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -101,8 +102,7 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
             Expanded(
               child: StreamBuilder<List<InventoryRecord>>(
                 stream: queryInventoryRecord(
-                  queryBuilder: (r) =>
-                      r.where('top_selling', isEqualTo: true),
+                  filterTopSelling: true,
                   limit: 200,
                 ),
                 builder: (context, snap) {
@@ -333,10 +333,7 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
           context.pushNamed(
             ProductDetailsWidget.routeName,
             queryParameters: {
-              'inventoryRef': serializeParam(
-                record.reference,
-                ParamType.DocumentReference,
-              ),
+              'inventoryRef': serializeParam( record.id, ParamType.String),
             }.withoutNulls,
           );
         },
@@ -365,6 +362,12 @@ class _TrendingProductWidgetState extends State<TrendingProductWidget> {
                         ),
                       ),
                     ),
+                    if (productBadge(context, record) != null)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: productBadge(context, record)!,
+                      ),
                     if (isTop3)
                       Positioned(
                         top: 6,

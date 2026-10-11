@@ -1,5 +1,6 @@
 import '/auth/firebase_auth/auth_util.dart';
-import '/backend/backend.dart';
+import '/repositories/address_repository.dart';
+import '/repositories/user_repository.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -63,7 +64,7 @@ class _LocationModalWidgetState extends State<LocationModalWidget> {
   // ─── Save location ────────────────────────────────────────
   Future<void> _save() async {
     if (!_canSave) return;
-    if (currentUserReference == null) return;
+    if (currentUserUid.isEmpty) return;
     safeSetState(() => _model.saving = true);
 
     final region = _model.selectedRegion!;
@@ -72,42 +73,33 @@ class _LocationModalWidgetState extends State<LocationModalWidget> {
     final displayCity = '$ward, $district, $region';
 
     try {
-      // 1. Upsert the AddressRecord
-      final snap = await AddressRecord.collection
-          .where('user', isEqualTo: currentUserReference)
-          .limit(1)
-          .get();
-
-      if (snap.docs.isEmpty) {
-        await AddressRecord.collection.doc().set(
-              createAddressRecordData(
-                user: currentUserReference,
-                city: ward,
-                district: district,
-                streetAddress: '$ward, $district',
-                label: 'Home',
-                isDefault: true,
-                createdTime: getCurrentTimestamp,
-              ),
-            );
+      // 1. Upsert address via API
+      final uid = currentUserUid;
+      final existing = await AddressRepository.listForUser(uid);
+      if (existing.isEmpty) {
+        await AddressRepository.create({
+          'user_id': uid,
+          'city': ward,
+          'district': district,
+          'street_address': '$ward, $district',
+          'label': 'Home',
+        });
       } else {
-        await snap.docs.first.reference.update({
+        await AddressRepository.update(existing.first.id, {
           'city': ward,
           'district': district,
           'street_address': '$ward, $district',
         });
       }
 
-      // 2. Update UsersRecord with city + district for fast reads
+      // 2. Update user profile with city + district
       try {
-        await currentUserReference!.update({
+        await UserRepository.update(uid, {
           'city': ward,
           'district': district,
         });
       } catch (_) {
-        // If those fields don't exist on the schema yet, ignore —
-        // AddressRecord is still the source of truth.
-        debugPrint('📍 User record has no city/district fields');
+        debugPrint('📍 user update failed — address still saved');
       }
 
       if (!mounted) return;
