@@ -1,4 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// ZanNext — firestore_util shim, Firebase-free.
+//
+// Public API compatible with the app. All methods are no-ops / empty results.
+
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:from_css_color/from_css_color.dart';
 
@@ -6,6 +11,113 @@ import '/backend/schema/util/schema_util.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 
 typedef RecordBuilder<T> = T Function(DocumentSnapshot snapshot);
+
+class DocumentReference {
+  const DocumentReference(this.path);
+  final String path;
+
+  String get id => path.isEmpty ? '' : path.split('/').last;
+
+  DocumentReference get parent {
+    final parts = path.split('/');
+    if (parts.length <= 1) return const DocumentReference('');
+    return DocumentReference(parts.sublist(0, parts.length - 1).join('/'));
+  }
+
+  CollectionReference collection(String name) =>
+      CollectionReference(path.isEmpty ? name : '$path/$name');
+
+  DocumentReference doc([String? id]) => DocumentReference(
+      id == null ? path : (path.isEmpty ? id : '$path/$id'));
+
+  Future<DocumentSnapshot> get() async =>
+      DocumentSnapshot(reference: this);
+
+  Stream<DocumentSnapshot> snapshots() =>
+      Stream.value(DocumentSnapshot(reference: this));
+
+  Future<void> set(Map<String, dynamic> data, {bool merge = false}) async {}
+  Future<void> update(Map<String, dynamic> data) async {}
+  Future<void> delete() async {}
+
+  @override
+  bool operator ==(Object other) =>
+      other is DocumentReference && other.path == path;
+
+  @override
+  int get hashCode => path.hashCode;
+
+  @override
+  String toString() => 'DocumentReference($path)';
+}
+
+class Query<T> {
+  const Query();
+
+  Query<T> where(String field, {dynamic isEqualTo, dynamic isNotEqualTo,
+      dynamic isLessThan, dynamic isLessThanOrEqualTo,
+      dynamic isGreaterThan, dynamic isGreaterThanOrEqualTo,
+      dynamic arrayContains, dynamic arrayContainsAny,
+      dynamic whereIn, dynamic whereNotIn, dynamic isNull}) => this;
+
+  Query<T> limit(int n) => this;
+  Query<T> orderBy(String field, {bool descending = false}) => this;
+  Query<T> startAfterDocument(Object? doc) => this;
+  Future<int> count() async => 0;
+}
+
+class CollectionReference extends Query<Map<String, dynamic>> {
+  const CollectionReference(this.path) : super();
+  final String path;
+
+  String get id => path.isEmpty ? '' : path.split('/').last;
+  DocumentReference get parent => DocumentReference(path);
+
+  DocumentReference doc([String? id]) => DocumentReference(
+      id == null ? path : (path.isEmpty ? id : '$path/$id'));
+
+  Future<DocumentSnapshot> get() async =>
+      DocumentSnapshot(reference: DocumentReference(path));
+
+  Stream<DocumentSnapshot> snapshots() =>
+      Stream.value(DocumentSnapshot(reference: DocumentReference(path)));
+}
+
+class DocumentSnapshot {
+  const DocumentSnapshot({
+    this.reference = const DocumentReference(''),
+    this.dataValue,
+  });
+
+  final DocumentReference reference;
+  final Map<String, dynamic>? dataValue;
+
+  bool get exists => dataValue != null;
+
+  Map<String, dynamic>? data() => dataValue;
+
+  @override
+  String toString() => 'DocumentSnapshot(${reference.path})';
+}
+
+class QueryDocumentSnapshot extends DocumentSnapshot {
+  const QueryDocumentSnapshot({super.reference, super.dataValue});
+}
+
+class GeoPoint {
+  const GeoPoint(this.latitude, this.longitude);
+  final double latitude;
+  final double longitude;
+}
+
+class FirebaseFirestore {
+  FirebaseFirestore._();
+  static final FirebaseFirestore instance = FirebaseFirestore._();
+
+  CollectionReference collection(String name) => CollectionReference(name);
+  CollectionReference collectionGroup(String name) => CollectionReference(name);
+  DocumentReference doc(String path) => DocumentReference(path);
+}
 
 abstract class FirestoreRecord {
   FirestoreRecord(this.reference, this.snapshotData);
@@ -15,8 +127,6 @@ abstract class FirestoreRecord {
 
 abstract class FFFirebaseStruct extends BaseStruct {
   FFFirebaseStruct(this.firestoreUtilData);
-
-  /// Utility class for Firestore updates
   FirestoreUtilData firestoreUtilData = FirestoreUtilData();
 }
 
@@ -38,27 +148,9 @@ Map<String, dynamic> mapFromFirestore(Map<String, dynamic> data) =>
     mergeNestedFields(data)
         .where((k, _) => k != FirestoreUtilData.name)
         .map((key, value) {
-      // Handle Timestamp
-      if (value is Timestamp) {
-        value = value.toDate();
-      }
-      // Handle list of Timestamp
-      if (value is Iterable && value.isNotEmpty && value.first is Timestamp) {
-        value = value.map((v) => (v as Timestamp).toDate()).toList();
-      }
-      // Handle GeoPoint
-      if (value is GeoPoint) {
-        value = value.toLatLng();
-      }
-      // Handle list of GeoPoint
-      if (value is Iterable && value.isNotEmpty && value.first is GeoPoint) {
-        value = value.map((v) => (v as GeoPoint).toLatLng()).toList();
-      }
-      // Handle nested data.
       if (value is Map) {
         value = mapFromFirestore(value as Map<String, dynamic>);
       }
-      // Handle list of nested data.
       if (value is Iterable && value.isNotEmpty && value.first is Map) {
         value = value
             .map((v) => mapFromFirestore(v as Map<String, dynamic>))
@@ -69,27 +161,21 @@ Map<String, dynamic> mapFromFirestore(Map<String, dynamic> data) =>
 
 Map<String, dynamic> mapToFirestore(Map<String, dynamic> data) =>
     data.where((k, v) => k != FirestoreUtilData.name).map((key, value) {
-      // Handle GeoPoint
       if (value is LatLng) {
         value = value.toGeoPoint();
       }
-      // Handle list of GeoPoint
       if (value is Iterable && value.isNotEmpty && value.first is LatLng) {
         value = value.map((v) => (v as LatLng).toGeoPoint()).toList();
       }
-      // Handle Color
       if (value is Color) {
         value = value.toCssString();
       }
-      // Handle list of Color
       if (value is Iterable && value.isNotEmpty && value.first is Color) {
         value = value.map((v) => (v as Color).toCssString()).toList();
       }
-      // Handle nested data.
       if (value is Map) {
         value = mapToFirestore(value as Map<String, dynamic>);
       }
-      // Handle list of nested data.
       if (value is Iterable && value.isNotEmpty && value.first is Map) {
         value = value
             .map((v) => mapToFirestore(v as Map<String, dynamic>))
@@ -109,8 +195,6 @@ extension LatLngExtension on GeoPoint {
   LatLng toLatLng() => LatLng(latitude, longitude);
 }
 
-DocumentReference toRef(String ref) => FirebaseFirestore.instance.doc(ref);
-
 T? safeGet<T>(T Function() func, [Function(dynamic)? reportError]) {
   try {
     return func();
@@ -123,7 +207,6 @@ T? safeGet<T>(T Function() func, [Function(dynamic)? reportError]) {
 Map<String, dynamic> mergeNestedFields(Map<String, dynamic> data) {
   final nestedData = data.where((k, _) => k.contains('.'));
   final fieldNames = nestedData.keys.map((k) => k.split('.').first).toSet();
-  // Remove nested values (e.g. 'foo.bar') and merge them into a map.
   data.removeWhere((k, _) => k.contains('.'));
   fieldNames.forEach((name) {
     final mergedValues = mergeNestedFields(
@@ -138,11 +221,9 @@ Map<String, dynamic> mergeNestedFields(Map<String, dynamic> data) {
       ...mergedValues,
     };
   });
-  // Merge any nested maps inside any of the fields as well.
   data.where((_, v) => v is Map).forEach((k, v) {
     data[k] = mergeNestedFields(v as Map<String, dynamic>);
   });
-
   return data;
 }
 

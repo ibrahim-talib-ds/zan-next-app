@@ -6,8 +6,7 @@
 
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart'
-    show DocumentReference, CollectionReference, DocumentSnapshot, FirebaseFirestore;
+import '/backend/schema/util/firestore_util.dart';
 
 import '../../models/order.dart';
 import '../../repositories/order_repository.dart';

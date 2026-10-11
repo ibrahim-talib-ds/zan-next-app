@@ -3,8 +3,7 @@
 // Full API compatibility with the original Firestore InventoryRecord.
 // Backed by our Product model (from Postgres).
 
-import 'package:cloud_firestore/cloud_firestore.dart'
-    show DocumentReference, CollectionReference, DocumentSnapshot;
+import '/backend/schema/util/firestore_util.dart';
 
 import '../../models/product.dart';
 import '../../repositories/product_repository.dart';

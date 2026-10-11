@@ -5,8 +5,7 @@
 
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart'
-    show DocumentReference, Query, DocumentSnapshot, FirebaseFirestore;
+import '/backend/schema/util/firestore_util.dart';
 
 import '../../models/chat_message.dart';
 import '../../repositories/chat_repository.dart';
@@ -48,7 +47,7 @@ class ChatMessagesRecord {
   String get nameSender => _msg?.senderName ?? '';
   bool hasNameSender() => (_msg?.senderName ?? '').isNotEmpty;
 
-  DocumentReference get parentReference => reference.parent.parent!;
+  DocumentReference get parentReference => reference.parent.parent;
 
   // ---- Raw snapshot data for compat ----
   Map<String, dynamic> get snapshotData {

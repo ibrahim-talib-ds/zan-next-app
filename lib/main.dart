@@ -1,4 +1,3 @@
-import 'auth/firebase_auth/google_auth.dart';
 import '/services/app_language.dart';
 import '/services/local_notifications.dart';
 import 'dart:async';
@@ -8,16 +7,12 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'auth/firebase_auth/firebase_user_provider.dart';
 import 'auth/firebase_auth/auth_util.dart';
 
-import 'backend/firebase/firebase_config.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import 'flutter_flow/flutter_flow_util.dart';
 import 'flutter_flow/internationalization.dart';
 import 'package:flutter/foundation.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'flutter_flow/nav/nav.dart';
 import 'index.dart';
@@ -45,9 +40,7 @@ void main() async {
   GoRouter.optionURLReflectsImperativeAPIs = true;
   usePathUrlStrategy();
 
-  await initFirebase();
-
-  // ─── Push notifications ───────────────────────────────
+  // ─── Push notifications (Postgres-backed) ─────────────
   await LocalNotifications.init();
   unawaited(PushService.instance.init());
 
@@ -59,21 +52,6 @@ void main() async {
   await appState.initializePersistedState();
 
   await initializeStripe();
-  if (!kIsWeb) {
-    FlutterError.onError =
-        FirebaseCrashlytics.instance.recordFlutterFatalError;
-  }
-
-  // 🔐 Handle Google Sign-In redirect (mobile browsers)
-  // Firebase sends the user back to the app after Google auth.
-  // We must read the result before rendering the app.
-  if (kIsWeb) {
-    try {
-      await handleGoogleRedirectResult();
-    } catch (e) {
-      debugPrint('Google redirect error: $e');
-    }
-  }
 
   // 🔐 Check for password reset link in URL (web)
   final resetCode = _detectResetCode();
@@ -161,7 +139,7 @@ class _MyAppState extends State<MyApp> {
 
     _appStateNotifier = AppStateNotifier.instance;
     _router = createRouter(_appStateNotifier);
-    userStream = zanNextFirebaseUserStream()
+    userStream = apiUserStream
       ..listen((user) {
         _appStateNotifier.update(user);
       });

@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/firebase_auth/auth_util.dart';
 import '../services/api_client.dart' as zannext_api;
 import '../models/chat_message.dart';
@@ -24,8 +22,6 @@ import 'schema/last_seen_record.dart';
 import 'schema/sellers_record.dart';
 
 export 'dart:async' show StreamSubscription;
-export 'package:cloud_firestore/cloud_firestore.dart' hide Order;
-export 'package:firebase_core/firebase_core.dart';
 export 'schema/index.dart';
 export 'schema/util/firestore_util.dart';
 export 'schema/util/schema_util.dart';
@@ -45,738 +41,111 @@ export 'schema/search_history_record.dart';
 export 'schema/last_seen_record.dart';
 export 'schema/sellers_record.dart';
 
-/// Functions to query UsersRecords (as a Stream and as a Future).
-Future<int> queryUsersRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      UsersRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+/// Legacy Firestore query helpers — STUBBED.
+/// Real data now flows through lib/repositories/* (Postgres + FastAPI).
+/// Kept only so the ~150 files that still *reference* these symbols compile.
+/// None are on a live code path.
 
-Stream<List<UsersRecord>> queryUsersRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      UsersRecord.collection,
-      UsersRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+Future<int> queryUsersRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<UsersRecord>> queryUsersRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<UsersRecord>> queryUsersRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-Future<List<UsersRecord>> queryUsersRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      UsersRecord.collection,
-      UsersRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-/// Functions to query InventoryRecords — backed by our Postgres API.
-/// Signature kept identical so ~12 widget files don't need to change.
-/// Filters like `.where('boosted', isEqualTo: true)` are parsed out of the
-/// queryBuilder hint and translated to our ProductRepository params.
 Future<int> queryInventoryRecordCount({
-  Query Function(Query)? queryBuilder,
+  dynamic queryBuilder,
+  String? filterCategory,
+  String? filterSeller,
   int limit = -1,
-}) async {
-  final records = await queryInventoryRecordOnce(limit: limit);
-  return records.length;
-}
-
+}) async => 0;
 Stream<List<InventoryRecord>> queryInventoryRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
+  dynamic queryBuilder,
+  String? filterCategory,
+  String? filterMainCategory,
+  String? filterSubcategory,
+  String? filterSeller,
   bool? filterBoosted,
   bool? filterNewIn,
   bool? filterTopSelling,
-  String? filterCategory,
-  String? filterSeller,
-}) {
-  // Firestore queryBuilder is ignored — screens pass explicit filters
-  // (filterBoosted, filterNewIn, filterTopSelling, filterCategory) instead.
-  return Stream.fromFuture(
-    queryInventoryRecordOnce(
-      limit: limit,
-      singleRecord: singleRecord,
-      filterBoosted: filterBoosted,
-      filterNewIn: filterNewIn,
-      filterTopSelling: filterTopSelling,
-      filterCategory: filterCategory,
-      filterSeller: filterSeller,
-    ),
-  );
-}
-
+  bool? filterAllProducts,
+  bool? filterDeal,
+  bool? filterAvailable,
+  int limit = -1,
+  bool singleRecord = false,
+}) => Stream.value(const <InventoryRecord>[]);
 Future<List<InventoryRecord>> queryInventoryRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
+  dynamic queryBuilder,
+  String? filterCategory,
+  String? filterMainCategory,
+  String? filterSeller,
   bool? filterBoosted,
   bool? filterNewIn,
   bool? filterTopSelling,
-  String? filterCategory,
-  String? filterSeller,
-}) async {
-  final products = await ProductRepository.list(
-    limit: limit > 0 ? limit : 50,
-    boosted: filterBoosted,
-    newIn: filterNewIn,
-    topSelling: filterTopSelling,
-    category: filterCategory,
-    sellerId: filterSeller,
-  );
-  final filtered = singleRecord && products.isNotEmpty
-      ? [products.first]
-      : products;
-  return filtered.map((p) => InventoryRecord.fromProduct(p)).toList();
-}
-
-/// Functions to query NotificationsRecords (as a Stream and as a Future).
-Future<int> queryNotificationsRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      NotificationsRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
-
-Stream<List<NotificationsRecord>> queryNotificationsRecord({
-  Query Function(Query)? queryBuilder,
   int limit = -1,
   bool singleRecord = false,
-}) =>
-    queryCollection(
-      NotificationsRecord.collection,
-      NotificationsRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+}) async => const <InventoryRecord>[];
 
-Future<List<NotificationsRecord>> queryNotificationsRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      NotificationsRecord.collection,
-      NotificationsRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+Future<int> queryNotificationsRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<NotificationsRecord>> queryNotificationsRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<NotificationsRecord>> queryNotificationsRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-/// Functions to query ReviewsRecords (as a Stream and as a Future).
-Future<int> queryReviewsRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      ReviewsRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+Future<int> queryReviewsRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<ReviewsRecord>> queryReviewsRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<ReviewsRecord>> queryReviewsRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-Stream<List<ReviewsRecord>> queryReviewsRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      ReviewsRecord.collection,
-      ReviewsRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+Future<int> queryCartRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<CartRecord>> queryCartRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<CartRecord>> queryCartRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-Future<List<ReviewsRecord>> queryReviewsRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      ReviewsRecord.collection,
-      ReviewsRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+Future<int> queryOrdersRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<OrdersRecord>> queryOrdersRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<OrdersRecord>> queryOrdersRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-/// Functions to query CartRecords (as a Stream and as a Future).
-Future<int> queryCartRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      CartRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+Future<int> queryAddressRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<AddressRecord>> queryAddressRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<AddressRecord>> queryAddressRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-Stream<List<CartRecord>> queryCartRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      CartRecord.collection,
-      CartRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+Future<int> queryPayentRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<PayentRecord>> queryPayentRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<PayentRecord>> queryPayentRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-Future<List<CartRecord>> queryCartRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      CartRecord.collection,
-      CartRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+Future<int> queryWishlistRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<WishlistRecord>> queryWishlistRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<WishlistRecord>> queryWishlistRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-/// Functions to query OrdersRecords (as a Stream and as a Future).
-Future<int> queryOrdersRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      OrdersRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+Future<int> queryChatsRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<ChatsRecord>> queryChatsRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<ChatsRecord>> queryChatsRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-Stream<List<OrdersRecord>> queryOrdersRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      OrdersRecord.collection,
-      OrdersRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+Future<int> queryChatMessagesRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<ChatMessagesRecord>> queryChatMessagesRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<ChatMessagesRecord>> queryChatMessagesRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-Future<List<OrdersRecord>> queryOrdersRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      OrdersRecord.collection,
-      OrdersRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+Future<int> querySearchHistoryRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<SearchHistoryRecord>> querySearchHistoryRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<SearchHistoryRecord>> querySearchHistoryRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-/// Functions to query AddressRecords (as a Stream and as a Future).
-Future<int> queryAddressRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      AddressRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
+Future<int> queryLastSeenRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<LastSeenRecord>> queryLastSeenRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<LastSeenRecord>> queryLastSeenRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-Stream<List<AddressRecord>> queryAddressRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      AddressRecord.collection,
-      AddressRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+Future<int> querySellersRecordCount({dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<SellersRecord>> querySellersRecord({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<SellersRecord>> querySellersRecordOnce({dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
-Future<List<AddressRecord>> queryAddressRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      AddressRecord.collection,
-      AddressRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
+// ---------- generic stubs ----------
 
-/// Functions to query PayentRecords (as a Stream and as a Future).
-Future<int> queryPayentRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      PayentRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
-
-Stream<List<PayentRecord>> queryPayentRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      PayentRecord.collection,
-      PayentRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-Future<List<PayentRecord>> queryPayentRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      PayentRecord.collection,
-      PayentRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-/// Functions to query WishlistRecords (as a Stream and as a Future).
-Future<int> queryWishlistRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      WishlistRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
-
-Stream<List<WishlistRecord>> queryWishlistRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      WishlistRecord.collection,
-      WishlistRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-Future<List<WishlistRecord>> queryWishlistRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      WishlistRecord.collection,
-      WishlistRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-/// Functions to query ChatsRecords (as a Stream and as a Future).
-Future<int> queryChatsRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      ChatsRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
-
-Stream<List<ChatsRecord>> queryChatsRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      ChatsRecord.collection,
-      ChatsRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-Future<List<ChatsRecord>> queryChatsRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      ChatsRecord.collection,
-      ChatsRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-/// Functions to query ChatMessagesRecords (as a Stream and as a Future).
-Future<int> queryChatMessagesRecordCount({
-  DocumentReference? parent,
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      ChatMessagesRecord.collection(parent),
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
-
-Stream<List<ChatMessagesRecord>> queryChatMessagesRecord({
-  DocumentReference? parent,
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) {
-  final chatId = parent?.id;
-  if (chatId == null || chatId.isEmpty) {
-    return Stream.value(const <ChatMessagesRecord>[]);
-  }
-  return Stream.fromFuture(
-    _fetchChatMessages(chatId, limit: limit, singleRecord: singleRecord),
-  );
-}
-
-Future<List<ChatMessagesRecord>> queryChatMessagesRecordOnce({
-  DocumentReference? parent,
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) {
-  final chatId = parent?.id;
-  if (chatId == null || chatId.isEmpty) {
-    return Future.value(const <ChatMessagesRecord>[]);
-  }
-  return _fetchChatMessages(chatId, limit: limit, singleRecord: singleRecord);
-}
-
-Future<List<ChatMessagesRecord>> _fetchChatMessages(
-  String chatId, {
-  int limit = -1,
-  bool singleRecord = false,
-}) async {
-  try {
-    final cap = limit > 0 ? limit : 200;
-    final raw = await zannext_api.ApiClient.get(
-      '/chats/$chatId/messages?limit=$cap',
-    ) as List;
-    // Backend returns oldest-first; the UI expects newest-first (reverse: true)
-    final reversed = raw.reversed.toList();
-    final records = reversed
-        .map((item) => ChatMessagesRecord.fromMessage(
-              ChatMessage.fromJson((item as Map).cast<String, dynamic>()),
-            ))
-        .toList();
-    if (singleRecord && records.isNotEmpty) {
-      return [records.first];
-    }
-    return records;
-  } catch (_) {
-    return const <ChatMessagesRecord>[];
-  }
-}
-
-/// Functions to query SearchHistoryRecords (as a Stream and as a Future).
-Future<int> querySearchHistoryRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      SearchHistoryRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
-
-Stream<List<SearchHistoryRecord>> querySearchHistoryRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      SearchHistoryRecord.collection,
-      SearchHistoryRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-Future<List<SearchHistoryRecord>> querySearchHistoryRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      SearchHistoryRecord.collection,
-      SearchHistoryRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-/// Functions to query LastSeenRecords (as a Stream and as a Future).
-Future<int> queryLastSeenRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      LastSeenRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
-
-Stream<List<LastSeenRecord>> queryLastSeenRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      LastSeenRecord.collection,
-      LastSeenRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-Future<List<LastSeenRecord>> queryLastSeenRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      LastSeenRecord.collection,
-      LastSeenRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-/// Functions to query SellersRecords (as a Stream and as a Future).
-Future<int> querySellersRecordCount({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) =>
-    queryCollectionCount(
-      SellersRecord.collection,
-      queryBuilder: queryBuilder,
-      limit: limit,
-    );
-
-Stream<List<SellersRecord>> querySellersRecord({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollection(
-      SellersRecord.collection,
-      SellersRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-Future<List<SellersRecord>> querySellersRecordOnce({
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) =>
-    queryCollectionOnce(
-      SellersRecord.collection,
-      SellersRecord.fromSnapshot,
-      queryBuilder: queryBuilder,
-      limit: limit,
-      singleRecord: singleRecord,
-    );
-
-Future<int> queryCollectionCount(
-  Query collection, {
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-}) {
-  final builder = queryBuilder ?? (q) => q;
-  var query = builder(collection);
-  if (limit > 0) {
-    query = query.limit(limit);
-  }
-
-  return query.count().get().catchError((err) {
-    print('Error querying $collection: $err');
-  }).then((value) => value.count!);
-}
-
-Stream<List<T>> queryCollection<T>(
-  Query collection,
-  RecordBuilder<T> recordBuilder, {
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) {
-  final builder = queryBuilder ?? (q) => q;
-  var query = builder(collection);
-  if (limit > 0 || singleRecord) {
-    query = query.limit(singleRecord ? 1 : limit);
-  }
-  return query.snapshots().handleError((err) {
-    print('Error querying $collection: $err');
-  }).map((s) => s.docs
-      .map(
-        (d) => safeGet(
-          () => recordBuilder(d),
-          (e) => print('Error serializing doc ${d.reference.path}:\n$e'),
-        ),
-      )
-      .where((d) => d != null)
-      .map((d) => d!)
-      .toList());
-}
-
-Future<List<T>> queryCollectionOnce<T>(
-  Query collection,
-  RecordBuilder<T> recordBuilder, {
-  Query Function(Query)? queryBuilder,
-  int limit = -1,
-  bool singleRecord = false,
-}) {
-  final builder = queryBuilder ?? (q) => q;
-  var query = builder(collection);
-  if (limit > 0 || singleRecord) {
-    query = query.limit(singleRecord ? 1 : limit);
-  }
-  return query.get().then((s) => s.docs
-      .map(
-        (d) => safeGet(
-          () => recordBuilder(d),
-          (e) => print('Error serializing doc ${d.reference.path}:\n$e'),
-        ),
-      )
-      .where((d) => d != null)
-      .map((d) => d!)
-      .toList());
-}
-
-Filter filterIn(String field, List? list) => (list?.isEmpty ?? true)
-    ? Filter(field, whereIn: null)
-    : Filter(field, whereIn: list);
-
-Filter filterArrayContainsAny(String field, List? list) =>
-    (list?.isEmpty ?? true)
-        ? Filter(field, arrayContainsAny: null)
-        : Filter(field, arrayContainsAny: list);
-
-extension QueryExtension on Query {
-  Query whereIn(String field, List? list) => (list?.isEmpty ?? true)
-      ? where(field, whereIn: null)
-      : where(field, whereIn: list);
-
-  Query whereNotIn(String field, List? list) => (list?.isEmpty ?? true)
-      ? where(field, whereNotIn: null)
-      : where(field, whereNotIn: list);
-
-  Query whereArrayContainsAny(String field, List? list) =>
-      (list?.isEmpty ?? true)
-          ? where(field, arrayContainsAny: null)
-          : where(field, arrayContainsAny: list);
-}
+Future<int> queryCollectionCount(dynamic collection, {dynamic queryBuilder, int limit = -1}) async => 0;
+Stream<List<T>> queryCollection<T>(dynamic collection, dynamic recordBuilder, {dynamic queryBuilder, int limit = -1, bool singleRecord = false}) => Stream.value(const []);
+Future<List<T>> queryCollectionOnce<T>(dynamic collection, dynamic recordBuilder, {dynamic queryBuilder, int limit = -1, bool singleRecord = false}) async => const [];
 
 class FFFirestorePage<T> {
   final List<T> data;
   final Stream<List<T>>? dataStream;
-  final QueryDocumentSnapshot? nextPageMarker;
-
+  final Object? nextPageMarker;
   FFFirestorePage(this.data, this.dataStream, this.nextPageMarker);
 }
 
-Future<FFFirestorePage<T>> queryCollectionPage<T>(
-  Query collection,
-  RecordBuilder<T> recordBuilder, {
-  Query Function(Query)? queryBuilder,
-  DocumentSnapshot? nextPageMarker,
-  required int pageSize,
-  required bool isStream,
-}) async {
-  final builder = queryBuilder ?? (q) => q;
-  var query = builder(collection).limit(pageSize);
-  if (nextPageMarker != null) {
-    query = query.startAfterDocument(nextPageMarker);
-  }
-  Stream<QuerySnapshot>? docSnapshotStream;
-  QuerySnapshot docSnapshot;
-  if (isStream) {
-    docSnapshotStream = query.snapshots();
-    docSnapshot = await docSnapshotStream.first;
-  } else {
-    docSnapshot = await query.get();
-  }
-  final getDocs = (QuerySnapshot s) => s.docs
-      .map(
-        (d) => safeGet(
-          () => recordBuilder(d),
-          (e) => print('Error serializing doc ${d.reference.path}:\n$e'),
-        ),
-      )
-      .where((d) => d != null)
-      .map((d) => d!)
-      .toList();
-  final data = getDocs(docSnapshot);
-  final dataStream = docSnapshotStream?.map(getDocs);
-  final nextPageToken = docSnapshot.docs.isEmpty ? null : docSnapshot.docs.last;
-  return FFFirestorePage(data, dataStream, nextPageToken);
-}
+Future<FFFirestorePage<T>> queryCollectionPage<T>(dynamic collection, dynamic recordBuilder, {dynamic queryBuilder, Object? nextPageMarker, required int pageSize, required bool isStream}) async =>
+    FFFirestorePage<T>(const [], isStream ? Stream.value(const []) : null, null);
 
-// Creates a Firestore document representing the logged in user if it doesn't yet exist
-Future maybeCreateUser(User user) async {
-  final userRecord = UsersRecord.collection.doc(user.uid);
-  final userExists = await userRecord.get().then((u) => u.exists);
-  if (userExists) {
-    currentUserDocument = await UsersRecord.getDocumentOnce(userRecord);
-    return;
-  }
-
-  final userData = createUsersRecordData(
-    email: user.email ??
-        FirebaseAuth.instance.currentUser?.email ??
-        user.providerData.firstOrNull?.email,
-    displayName:
-        user.displayName ?? FirebaseAuth.instance.currentUser?.displayName,
-    photoUrl: user.photoURL,
-    uid: user.uid,
-    phoneNumber: user.phoneNumber,
-    createdTime: getCurrentTimestamp,
-  );
-
-  await userRecord.set(userData);
-  currentUserDocument = UsersRecord.getDocumentFromData(userData, userRecord);
-}
-
-Future updateUserDocument({String? email}) async {
-  await currentUserDocument?.reference
-      .update(createUsersRecordData(email: email));
-}
+Future<void> maybeCreateUser(dynamic user) async {}
+Future<void> updateUserDocument({String? email}) async {}
