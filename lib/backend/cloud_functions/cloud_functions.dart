@@ -1,25 +1,19 @@
-import 'package:cloud_functions/cloud_functions.dart';
+// ZanNext — Cloud Functions shim (Firebase-free)
+//
+// This used to call Firebase Cloud Functions for Stripe payment init.
+// After the Postgres migration, payment flows route through our FastAPI
+// backend (see lib/backend/stripe/payment_manager.dart).
+//
+// The stub below keeps `makeCloudCall` alive so callers still compile
+// while we migrate the Stripe flow to hit `/payments/*` endpoints.
+// Current behavior: returns an empty map — no network call.
 
 Future<Map<String, dynamic>> makeCloudCall(
   String callName,
   Map<String, dynamic> input,
 ) async {
-  try {
-    final response = await FirebaseFunctions.instance
-        .httpsCallable(callName, options: HttpsCallableOptions())
-        .call(input);
-    return response.data is Map
-        ? Map<String, dynamic>.from(response.data as Map)
-        : {};
-  } on FirebaseFunctionsException catch (e) {
-    print(
-      'Cloud call error!\n ${callName}'
-      'Code: ${e.code}\n'
-      'Details: ${e.details}\n'
-      'Message: ${e.message}',
-    );
-  } catch (e) {
-    print('Cloud call error:${callName} $e');
-  }
-  return {};
+  // TODO: route through backend (POST /payments/init) when Stripe is wired.
+  // For now, dormant — this function is never executed because the
+  // payment flow is disabled.
+  return const <String, dynamic>{};
 }
